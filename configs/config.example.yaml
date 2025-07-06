@@ -1,0 +1,46 @@
+# Server configuration
+server:
+  host: "localhost"
+  port: 8080
+  read_timeout: "30s"
+  write_timeout: "30s"
+  shutdown_timeout: "10s"
+
+# Database configuration
+database:
+  path: "~/.habibi-go/data.db"
+  backup_enabled: true
+  backup_interval: "24h"
+  max_connections: 10
+
+# Projects configuration
+projects:
+  default_directory: "~/projects"
+  auto_discover: true
+  worktree_base_path: ".worktrees"
+
+# Agent configuration
+agents:
+  default_timeout: "30m"
+  max_concurrent: 10
+  health_check_interval: "30s"
+  log_retention_days: 7
+  resource_limits:
+    memory_mb: 1024
+    cpu_percent: 50
+
+# Slack integration (optional)
+slack:
+  enabled: false
+  bot_token: ""
+  app_token: ""
+  signing_secret: ""
+  notification_channel: "#dev"
+
+# Logging configuration
+logging:
+  level: "info"
+  format: "json"
+  file_path: "~/.habibi-go/logs/app.log"
+  max_size_mb: 100
+  max_backups: 5

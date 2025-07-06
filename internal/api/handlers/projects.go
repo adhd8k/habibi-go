@@ -1,0 +1,219 @@
+package handlers
+
+import (
+	"net/http"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
+	"habibi-go/internal/models"
+	"habibi-go/internal/services"
+)
+
+type ProjectHandler struct {
+	projectService *services.ProjectService
+}
+
+func NewProjectHandler(projectService *services.ProjectService) *ProjectHandler {
+	return &ProjectHandler{
+		projectService: projectService,
+	}
+}
+
+func (h *ProjectHandler) GetProjects(c *gin.Context) {
+	projects, err := h.projectService.GetAllProjects()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    projects,
+	})
+}
+
+func (h *ProjectHandler) CreateProject(c *gin.Context) {
+	var req models.CreateProjectRequest
+	
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+	
+	project, err := h.projectService.CreateProject(&req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+	
+	c.JSON(http.StatusCreated, gin.H{
+		"success": true,
+		"data":    project,
+	})
+}
+
+func (h *ProjectHandler) GetProject(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "Invalid project ID",
+		})
+		return
+	}
+	
+	project, err := h.projectService.GetProject(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    project,
+	})
+}
+
+func (h *ProjectHandler) UpdateProject(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "Invalid project ID",
+		})
+		return
+	}
+	
+	var req models.UpdateProjectRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+	
+	project, err := h.projectService.UpdateProject(id, &req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    project,
+	})
+}
+
+func (h *ProjectHandler) DeleteProject(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "Invalid project ID",
+		})
+		return
+	}
+	
+	if err := h.projectService.DeleteProject(id); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Project deleted successfully",
+	})
+}
+
+func (h *ProjectHandler) GetProjectWithSessions(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "Invalid project ID",
+		})
+		return
+	}
+	
+	project, err := h.projectService.GetProjectWithSessions(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    project,
+	})
+}
+
+func (h *ProjectHandler) DiscoverProjects(c *gin.Context) {
+	type DiscoverRequest struct {
+		Directory string `json:"directory" binding:"required"`
+	}
+	
+	var req DiscoverRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+	
+	projects, err := h.projectService.DiscoverProjects(req.Directory)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    projects,
+	})
+}
+
+func (h *ProjectHandler) GetProjectStats(c *gin.Context) {
+	stats, err := h.projectService.GetProjectStats()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    stats,
+	})
+}
