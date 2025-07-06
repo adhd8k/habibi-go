@@ -4,6 +4,7 @@ export interface Project {
   path: string
   repository_url?: string
   default_branch: string
+  setup_command?: string
   config: Record<string, any>
   created_at: string
   updated_at: string
@@ -68,11 +69,12 @@ export interface CreateProjectRequest {
   path: string
   repository_url?: string
   default_branch?: string
+  setup_command?: string
 }
 
 export interface CreateSessionRequest {
-  project_name: string
-  session_name: string
+  project_id: number
+  name: string
   branch_name: string
 }
 

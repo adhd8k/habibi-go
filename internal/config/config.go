@@ -41,11 +41,12 @@ type ProjectsConfig struct {
 }
 
 type AgentsConfig struct {
-	DefaultTimeout       time.Duration `mapstructure:"default_timeout"`
-	MaxConcurrent        int           `mapstructure:"max_concurrent"`
-	HealthCheckInterval  time.Duration `mapstructure:"health_check_interval"`
-	LogRetentionDays     int           `mapstructure:"log_retention_days"`
+	DefaultTimeout       time.Duration  `mapstructure:"default_timeout"`
+	MaxConcurrent        int            `mapstructure:"max_concurrent"`
+	HealthCheckInterval  time.Duration  `mapstructure:"health_check_interval"`
+	LogRetentionDays     int            `mapstructure:"log_retention_days"`
 	ResourceLimits       ResourceLimits `mapstructure:"resource_limits"`
+	ClaudeBinaryPath     string         `mapstructure:"claude_binary_path"`
 }
 
 type ResourceLimits struct {
@@ -132,6 +133,7 @@ func setDefaults() {
 	viper.SetDefault("agents.log_retention_days", 7)
 	viper.SetDefault("agents.resource_limits.memory_mb", 1024)
 	viper.SetDefault("agents.resource_limits.cpu_percent", 50)
+	viper.SetDefault("agents.claude_binary_path", "claude")
 	
 	// Slack defaults
 	viper.SetDefault("slack.enabled", false)

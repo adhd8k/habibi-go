@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"sync"
 	"time"
@@ -25,6 +26,7 @@ type AgentService struct {
 	maxConcurrent    int
 	healthInterval   time.Duration
 	healthTimeout    time.Duration
+	claudeBinaryPath string
 }
 
 type AgentInstance struct {
@@ -56,7 +58,13 @@ func NewAgentService(
 		maxConcurrent:   10,
 		healthInterval:  30 * time.Second,
 		healthTimeout:   5 * time.Minute,
+		claudeBinaryPath: "claude", // Default to "claude" in PATH
 	}
+}
+
+// SetClaudeBinaryPath sets the path to the Claude binary
+func (s *AgentService) SetClaudeBinaryPath(path string) {
+	s.claudeBinaryPath = path
 }
 
 func (s *AgentService) StartAgent(req *models.CreateAgentRequest) (*models.Agent, error) {
@@ -381,9 +389,59 @@ func (s *AgentService) getActiveAgentCount() int {
 }
 
 func (s *AgentService) startAgentProcess(agent *models.Agent) (*AgentInstance, error) {
-	// Parse command and arguments
-	cmd := exec.Command("sh", "-c", agent.Command)
+	var cmd *exec.Cmd
+	
+	// Special handling for Claude
+	if agent.Command == "claude" {
+		var claudePath string
+		
+		// First check if we have a configured path
+		if s.claudeBinaryPath != "" && s.claudeBinaryPath != "claude" {
+			// Use the configured path directly
+			claudePath = s.claudeBinaryPath
+			fmt.Printf("Using configured Claude path: %s\n", claudePath)
+		} else {
+			// Try to find claude in PATH
+			var err error
+			claudePath, err = exec.LookPath("claude")
+			if err != nil {
+				// If not found, check common locations
+				possiblePaths := []string{
+					"/usr/local/bin/claude",
+					"/usr/bin/claude",
+					"/opt/claude/bin/claude",
+				}
+				
+				for _, path := range possiblePaths {
+					if _, err := os.Stat(path); err == nil {
+						claudePath = path
+						break
+					}
+				}
+				
+				if claudePath == "" {
+					return nil, fmt.Errorf("claude binary not found in PATH or common locations. Please install Claude Code CLI or specify the path in config")
+				}
+			}
+		}
+		
+		// Start claude in interactive mode with proper TTY setup
+		fmt.Printf("Starting Claude from: %s in directory: %s\n", claudePath, agent.WorkingDirectory)
+		
+		// Start Claude without any flags - let it run in its default mode
+		cmd = exec.Command(claudePath)
+	} else {
+		// For other commands, use shell
+		cmd = exec.Command("sh", "-c", agent.Command)
+	}
+	
 	cmd.Dir = agent.WorkingDirectory
+	
+	// Set environment variables that Claude might need
+	cmd.Env = append(os.Environ(),
+		"TERM=dumb", // Simple terminal for non-interactive mode
+		"NO_COLOR=1", // Disable color output
+	)
 	
 	// Create pipes for communication
 	stdin, err := cmd.StdinPipe()
@@ -402,8 +460,27 @@ func (s *AgentService) startAgentProcess(agent *models.Agent) (*AgentInstance, e
 	}
 	
 	// Start the process
+	fmt.Printf("Starting process: %v\n", cmd.Args)
 	if err := cmd.Start(); err != nil {
 		return nil, fmt.Errorf("failed to start process: %w", err)
+	}
+	fmt.Printf("Process started with PID: %d\n", cmd.Process.Pid)
+	
+	// For Claude, wait a brief moment to check if it exits immediately
+	if agent.Command == "claude" {
+		done := make(chan error, 1)
+		go func() {
+			done <- cmd.Wait()
+		}()
+		
+		select {
+		case err := <-done:
+			// Process exited immediately
+			return nil, fmt.Errorf("claude process exited immediately: %w", err)
+		case <-time.After(500 * time.Millisecond):
+			// Process is still running, continue
+			fmt.Println("Claude process appears to be running")
+		}
 	}
 	
 	// Create agent instance
@@ -420,6 +497,15 @@ func (s *AgentService) startAgentProcess(agent *models.Agent) (*AgentInstance, e
 	// Start output streaming goroutines
 	go s.processManager.StreamOutput(stdout, instance.OutputChan)
 	go s.processManager.StreamOutput(stderr, instance.ErrorChan)
+	
+	// For Claude, capture early stderr to debug startup issues
+	if agent.Command == "claude" {
+		go func() {
+			for err := range instance.ErrorChan {
+				fmt.Printf("Claude stderr: %s\n", err)
+			}
+		}()
+	}
 	
 	// Start input handling goroutine
 	go func() {
@@ -504,14 +590,16 @@ func (s *AgentService) monitorAgent(instance *AgentInstance) {
 		}
 		
 		// Check if process is still running
-		if instance.Process != nil {
-			select {
-			case <-time.After(100 * time.Millisecond):
-				// Non-blocking check
-			default:
-				if err := instance.Process.Process.Signal(nil); err != nil {
-					// Process is dead
-					fmt.Printf("Agent %d process died\n", instance.Agent.ID)
+		if instance.Process != nil && instance.Process.Process != nil {
+			// Check if process exists using the process manager
+			if !s.processManager.ProcessExists(instance.Process.Process.Pid) {
+				// Process is dead
+				fmt.Printf("Agent %d process died (PID %d no longer exists)\n", instance.Agent.ID, instance.Process.Process.Pid)
+					
+					// Try to get exit code if available
+					if instance.Process.ProcessState != nil {
+						fmt.Printf("Process exit code: %d\n", instance.Process.ProcessState.ExitCode())
+					}
 					
 					// Update status
 					instance.Agent.Fail()
@@ -530,7 +618,6 @@ func (s *AgentService) monitorAgent(instance *AgentInstance) {
 					}
 					
 					return
-				}
 			}
 		}
 	}

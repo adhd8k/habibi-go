@@ -88,6 +88,12 @@ func runServer(cmd *cobra.Command, args []string) {
 	projectService := services.NewProjectService(projectRepo, eventRepo)
 	sessionService := services.NewSessionService(sessionRepo, projectRepo, eventRepo, gitService)
 	agentService := services.NewAgentService(agentRepo, sessionRepo, eventRepo)
+	
+	// Configure agent service with Claude binary path
+	if cfg.Agents.ClaudeBinaryPath != "" {
+		agentService.SetClaudeBinaryPath(cfg.Agents.ClaudeBinaryPath)
+	}
+	
 	commService := services.NewAgentCommService(agentRepo, commandRepo, eventRepo, agentService)
 	
 	// Initialize handlers

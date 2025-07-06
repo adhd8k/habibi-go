@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 	"os"
+	"os/exec"
 
 	"habibi-go/internal/database/repositories"
 	"habibi-go/internal/models"
@@ -90,6 +91,15 @@ func (s *SessionService) CreateSession(req *models.CreateSessionRequest) (*model
 		// Clean up worktree if database creation fails
 		s.gitService.RemoveWorktree(project.Path, worktreePath)
 		return nil, fmt.Errorf("failed to create session: %w", err)
+	}
+	
+	// Run setup command if defined
+	if project.SetupCommand != "" {
+		fmt.Printf("Running setup command for session %s: %s\n", session.Name, project.SetupCommand)
+		if err := s.runSetupCommand(project.SetupCommand, worktreePath); err != nil {
+			// Log error but don't fail session creation
+			fmt.Printf("Warning: setup command failed: %v\n", err)
+		}
 	}
 	
 	// Create session event
@@ -419,6 +429,19 @@ func (s *SessionService) GetSessionStats() (map[string]interface{}, error) {
 	}
 	
 	return stats, nil
+}
+
+func (s *SessionService) runSetupCommand(command, workingDir string) error {
+	cmd := exec.Command("sh", "-c", command)
+	cmd.Dir = workingDir
+	
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("setup command failed: %w\nOutput: %s", err, string(output))
+	}
+	
+	fmt.Printf("Setup command output: %s\n", string(output))
+	return nil
 }
 
 // Helper function to determine what fields were updated

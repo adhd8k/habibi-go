@@ -1,10 +1,19 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
 import { projectsApi } from '../api/client'
 import { useAppStore } from '../store'
-import { Project } from '../types'
+import { Project, CreateProjectRequest } from '../types'
 
 export function ProjectList() {
+  const queryClient = useQueryClient()
   const { currentProject, setCurrentProject, setCurrentSession } = useAppStore()
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [newProject, setNewProject] = useState({
+    name: '',
+    path: '',
+    repository_url: '',
+    setup_command: '',
+  })
   
   const { data: projects, isLoading, error } = useQuery({
     queryKey: ['projects'],
@@ -20,9 +29,46 @@ export function ProjectList() {
     },
   })
 
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await projectsApi.delete(id)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
+      // Clear current project if it was deleted
+      if (currentProject?.id === deleteMutation.variables) {
+        setCurrentProject(null)
+        setCurrentSession(null)
+      }
+    },
+  })
+
+  const createMutation = useMutation({
+    mutationFn: async (data: CreateProjectRequest) => {
+      const response = await projectsApi.create(data)
+      return response.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
+      setShowCreateForm(false)
+      setNewProject({ name: '', path: '', repository_url: '', setup_command: '' })
+    },
+  })
+
   const handleSelectProject = (project: Project) => {
     setCurrentProject(project)
     setCurrentSession(null)
+  }
+
+  const handleCreateProject = () => {
+    if (!newProject.name || !newProject.path) return
+    
+    createMutation.mutate({
+      name: newProject.name,
+      path: newProject.path,
+      repository_url: newProject.repository_url || undefined,
+      setup_command: newProject.setup_command || undefined,
+    })
   }
 
   if (isLoading) {
@@ -46,26 +92,109 @@ export function ProjectList() {
 
   return (
     <div className="p-4">
-      <h2 className="text-lg font-semibold mb-4">Projects</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-semibold">Projects</h2>
+        <button
+          onClick={() => setShowCreateForm(!showCreateForm)}
+          className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+        >
+          New Project
+        </button>
+      </div>
+
+      {showCreateForm && (
+        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+          <input
+            type="text"
+            placeholder="Project name"
+            value={newProject.name}
+            onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
+            className="w-full p-2 border rounded mb-2"
+          />
+          <input
+            type="text"
+            placeholder="Project path (e.g., /home/user/myproject)"
+            value={newProject.path}
+            onChange={(e) => setNewProject({ ...newProject, path: e.target.value })}
+            className="w-full p-2 border rounded mb-2"
+          />
+          <input
+            type="text"
+            placeholder="Repository URL (optional)"
+            value={newProject.repository_url}
+            onChange={(e) => setNewProject({ ...newProject, repository_url: e.target.value })}
+            className="w-full p-2 border rounded mb-2"
+          />
+          <input
+            type="text"
+            placeholder="Setup command (e.g., cp .env.example .env)"
+            value={newProject.setup_command}
+            onChange={(e) => setNewProject({ ...newProject, setup_command: e.target.value })}
+            className="w-full p-2 border rounded mb-2"
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={handleCreateProject}
+              disabled={createMutation.isPending}
+              className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm disabled:opacity-50"
+            >
+              Create
+            </button>
+            <button
+              onClick={() => {
+                setShowCreateForm(false)
+                setNewProject({ name: '', path: '', repository_url: '', setup_command: '' })
+              }}
+              className="px-3 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 text-sm"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-2">
+        {projects?.length === 0 && (
+          <div className="text-center py-8 text-gray-500">
+            <p className="mb-2">No projects yet</p>
+            <p className="text-sm">Click "New Project" to get started</p>
+          </div>
+        )}
         {projects?.map((project: Project) => (
-          <button
-            key={project.id}
-            onClick={() => handleSelectProject(project)}
-            className={`w-full text-left p-3 rounded-lg transition-colors ${
-              currentProject?.id === project.id
-                ? 'bg-blue-100 border-blue-500 border'
-                : 'bg-gray-50 hover:bg-gray-100 border-gray-200 border'
-            }`}
-          >
-            <div className="font-medium">{project.name}</div>
-            <div className="text-sm text-gray-600">{project.path}</div>
-            {project.repository_url && (
-              <div className="text-xs text-gray-500 mt-1">
-                {project.repository_url}
+          <div key={project.id} className="relative group">
+            <button
+              onClick={() => handleSelectProject(project)}
+              className={`w-full text-left p-3 rounded-lg transition-colors ${
+                currentProject?.id === project.id
+                  ? 'bg-blue-100 border-blue-500 border'
+                  : 'bg-gray-50 hover:bg-gray-100 border-gray-200 border'
+              }`}
+            >
+              <div className="pr-8">
+                <div className="font-medium">{project.name}</div>
+                <div className="text-sm text-gray-600">{project.path}</div>
+                {project.repository_url && (
+                  <div className="text-xs text-gray-500 mt-1">
+                    {project.repository_url}
+                  </div>
+                )}
               </div>
-            )}
-          </button>
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                if (confirm(`Are you sure you want to delete project "${project.name}"? This will also delete all sessions.`)) {
+                  deleteMutation.mutate(project.id)
+                }
+              }}
+              className="absolute top-3 right-2 p-1 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 rounded"
+              title="Delete project"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          </div>
         ))}
       </div>
     </div>

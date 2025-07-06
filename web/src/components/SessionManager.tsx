@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { sessionsApi } from '../api/client'
+import { sessionsApi, agentsApi } from '../api/client'
 import { useAppStore } from '../store'
 import { Session, CreateSessionRequest } from '../types'
 
@@ -34,10 +34,38 @@ export function SessionManager() {
       const response = await sessionsApi.create(data)
       return response.data
     },
-    onSuccess: () => {
+    onSuccess: async (response) => {
       queryClient.invalidateQueries({ queryKey: ['sessions'] })
       setShowCreateForm(false)
       setNewSession({ session_name: '', branch_name: '' })
+      
+      // Extract session data from response
+      const session = (response as any).data || response
+      
+      // Automatically start a Claude agent for the new session
+      try {
+        const agentResponse = await agentsApi.create({
+          session_id: session.id,
+          agent_type: 'claude-code',
+          command: 'claude' // Will use the path from config
+        })
+        console.log('Claude agent started:', agentResponse.data)
+      } catch (error) {
+        console.error('Failed to start Claude agent:', error)
+      }
+    },
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await sessionsApi.delete(id)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sessions'] })
+      // Clear current session if it was deleted
+      if (currentSession?.id === deleteMutation.variables) {
+        setCurrentSession(null)
+      }
     },
   })
 
@@ -45,8 +73,8 @@ export function SessionManager() {
     if (!currentProject || !newSession.session_name || !newSession.branch_name) return
     
     createMutation.mutate({
-      project_name: currentProject.name,
-      session_name: newSession.session_name,
+      project_id: currentProject.id,
+      name: newSession.session_name,
       branch_name: newSession.branch_name,
     })
   }
@@ -116,29 +144,44 @@ export function SessionManager() {
       ) : (
         <div className="space-y-2">
           {sessions?.map((session: Session) => (
-            <button
-              key={session.id}
-              onClick={() => setCurrentSession(session)}
-              className={`w-full text-left p-3 rounded-lg transition-colors ${
-                currentSession?.id === session.id
-                  ? 'bg-green-100 border-green-500 border'
-                  : 'bg-gray-50 hover:bg-gray-100 border-gray-200 border'
-              }`}
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <div className="font-medium">{session.name}</div>
-                  <div className="text-sm text-gray-600">{session.branch_name}</div>
+            <div key={session.id} className="relative group">
+              <button
+                onClick={() => setCurrentSession(session)}
+                className={`w-full text-left p-3 rounded-lg transition-colors ${
+                  currentSession?.id === session.id
+                    ? 'bg-green-100 border-green-500 border'
+                    : 'bg-gray-50 hover:bg-gray-100 border-gray-200 border'
+                }`}
+              >
+                <div className="flex justify-between items-start pr-8">
+                  <div>
+                    <div className="font-medium">{session.name}</div>
+                    <div className="text-sm text-gray-600">{session.branch_name}</div>
+                  </div>
+                  <span className={`text-xs px-2 py-1 rounded ${
+                    session.status === 'active' ? 'bg-green-200 text-green-800' :
+                    session.status === 'paused' ? 'bg-yellow-200 text-yellow-800' :
+                    'bg-gray-200 text-gray-800'
+                  }`}>
+                    {session.status}
+                  </span>
                 </div>
-                <span className={`text-xs px-2 py-1 rounded ${
-                  session.status === 'active' ? 'bg-green-200 text-green-800' :
-                  session.status === 'paused' ? 'bg-yellow-200 text-yellow-800' :
-                  'bg-gray-200 text-gray-800'
-                }`}>
-                  {session.status}
-                </span>
-              </div>
-            </button>
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (confirm(`Are you sure you want to delete session "${session.name}"?`)) {
+                    deleteMutation.mutate(session.id)
+                  }
+                }}
+                className="absolute top-3 right-2 p-1 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 rounded"
+                title="Delete session"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
           ))}
         </div>
       )}

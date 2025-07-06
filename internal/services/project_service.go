@@ -58,6 +58,7 @@ func (s *ProjectService) CreateProject(req *models.CreateProjectRequest) (*model
 		Path:          expandedPath,
 		RepositoryURL: req.RepositoryURL,
 		DefaultBranch: req.DefaultBranch,
+		SetupCommand:  req.SetupCommand,
 		Config:        make(map[string]interface{}),
 	}
 	
@@ -150,6 +151,10 @@ func (s *ProjectService) UpdateProject(id int, req *models.UpdateProjectRequest)
 	
 	if req.DefaultBranch != "" {
 		project.DefaultBranch = req.DefaultBranch
+	}
+	
+	if req.SetupCommand != "" {
+		project.SetupCommand = req.SetupCommand
 	}
 	
 	if req.Config != nil {

@@ -40,7 +40,7 @@ export function Layout({ children, sidebar }: LayoutProps) {
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-hidden flex flex-col">
           {children}
         </main>
       </div>

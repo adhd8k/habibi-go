@@ -8,11 +8,11 @@ import { wsClient } from './api/websocket'
 
 function Dashboard() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
-      <div className="bg-white rounded-lg shadow-sm">
+    <div className="h-full flex gap-6 p-6">
+      <div className="w-96 bg-white rounded-lg shadow-sm flex-shrink-0">
         <SessionManager />
       </div>
-      <div className="bg-white rounded-lg shadow-sm">
+      <div className="flex-1 bg-white rounded-lg shadow-sm flex">
         <AgentControl />
       </div>
     </div>

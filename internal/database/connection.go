@@ -61,6 +61,7 @@ func (db *DB) RunMigrations() error {
 			path TEXT NOT NULL,
 			repository_url TEXT,
 			default_branch TEXT DEFAULT 'main',
+			setup_command TEXT,
 			config TEXT DEFAULT '{}',
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -132,11 +133,17 @@ func (db *DB) RunMigrations() error {
 		`CREATE INDEX IF NOT EXISTS idx_agent_files_agent_id ON agent_files(agent_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_events_created_at ON events(created_at)`,
 		`CREATE INDEX IF NOT EXISTS idx_events_entity ON events(entity_type, entity_id)`,
+		// Add setup_command column if it doesn't exist
+		`ALTER TABLE projects ADD COLUMN setup_command TEXT`,
 	}
 	
-	for _, migration := range migrations {
+	for i, migration := range migrations {
 		if _, err := db.Exec(migration); err != nil {
-			return fmt.Errorf("failed to execute migration: %w", err)
+			// Ignore error for ALTER TABLE if column already exists
+			if i == len(migrations)-1 && err.Error() == "duplicate column name: setup_command" {
+				continue
+			}
+			return fmt.Errorf("failed to execute migration %d: %w", i, err)
 		}
 	}
 	
