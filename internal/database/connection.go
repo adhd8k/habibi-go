@@ -34,6 +34,19 @@ func New(dbPath string) (*DB, error) {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 	
+	// Set SQLite pragmas to handle concurrency better
+	pragmas := []string{
+		"PRAGMA journal_mode=WAL",
+		"PRAGMA busy_timeout=5000",
+		"PRAGMA synchronous=NORMAL",
+	}
+	
+	for _, pragma := range pragmas {
+		if _, err := db.Exec(pragma); err != nil {
+			return nil, fmt.Errorf("failed to set pragma %s: %w", pragma, err)
+		}
+	}
+	
 	return &DB{db}, nil
 }
 

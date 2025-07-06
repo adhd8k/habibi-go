@@ -2,44 +2,65 @@
 
 A unified platform for managing AI coding agents across projects and sessions with multi-interface access (web UI, CLI, Slack bot).
 
-## ✅ Phase 1 Implementation Status
+## ✅ Implementation Status
 
-**Core Backend Foundation - COMPLETED**
+- **Phase 1: Core Backend Foundation** - ✅ COMPLETED
+- **Phase 2: Session Management & Git Integration** - ✅ COMPLETED  
+- **Phase 3: Agent Orchestration** - ✅ COMPLETED
+- **Phase 4: React Web UI** - ✅ COMPLETED
+- **Phase 5: Build System & Deployment** - 🔄 In Progress
 
 ### 🎯 Features Implemented
 
 - ✅ **SQLite Database** with modernc.org/sqlite (pure Go, no CGO)
 - ✅ **Project Management** - Full CRUD operations for projects
+- ✅ **Session Management** - Complete session lifecycle with Git worktrees
+- ✅ **Git Integration** - Worktree creation, branch switching, status monitoring
+- ✅ **Agent Orchestration** - Start, stop, and control AI coding agents
+- ✅ **Process Management** - Monitor and manage agent processes
+- ✅ **Real-time Communication** - WebSocket support for live agent output
+- ✅ **React Web UI** - Modern interface with TypeScript and Tailwind CSS
 - ✅ **Configuration System** - YAML config with environment variable support
-- ✅ **REST API** - Complete project management endpoints
+- ✅ **REST API** - Complete API for projects, sessions, and agents
 - ✅ **CLI Interface** - Cobra-based command-line tool
 - ✅ **Database Migrations** - Automated schema management
 - ✅ **Event System** - Audit trail for all operations
 
 ### 🚀 Quick Start
 
-1. **Build the application:**
+1. **Install dependencies:**
    ```bash
-   go build -o bin/habibi-go main.go
+   make deps
    ```
 
-2. **Create your first project:**
+2. **Build and run:**
    ```bash
-   ./bin/habibi-go project create myapp /path/to/your/project --repo https://github.com/user/repo
+   make build
+   make run
    ```
 
-3. **List all projects:**
-   ```bash
-   ./bin/habibi-go project list
-   ```
-
-4. **Start the web server:**
-   ```bash
-   ./bin/habibi-go server --port 8080
-   ```
-
-5. **Access the web interface:**
+3. **Access the web UI:**
    Open http://localhost:8080 in your browser
+
+### 💻 Development
+
+For development with hot-reload:
+```bash
+make dev
+```
+
+This starts:
+- Vite dev server on http://localhost:3000
+- Go server on http://localhost:8080
+
+### 📋 Testing
+
+For detailed testing instructions, see [TESTING.md](TESTING.md).
+
+Quick test all features:
+```bash
+make test-all
+```
 
 ### 🔧 CLI Commands
 
@@ -70,6 +91,33 @@ A unified platform for managing AI coding agents across projects and sessions wi
 ./habibi-go config show
 ```
 
+#### Session Management
+```bash
+# List all sessions
+./habibi-go session list
+
+# List sessions for a project
+./habibi-go session list myapp
+
+# Create new session
+./habibi-go session create <project-name> <session-name> <branch-name>
+
+# Show session details
+./habibi-go session show <session-id>
+
+# Activate session
+./habibi-go session activate <session-id>
+
+# Delete session
+./habibi-go session delete <session-id>
+
+# Sync session with remote
+./habibi-go session sync <session-id>
+
+# Clean up stopped sessions
+./habibi-go session cleanup [project-name]
+```
+
 ### 🌐 API Endpoints
 
 #### Projects
@@ -80,9 +128,22 @@ A unified platform for managing AI coding agents across projects and sessions wi
 - `DELETE /api/projects/{id}` - Delete project
 - `POST /api/projects/discover` - Auto-discover projects
 
+#### Sessions
+- `GET /api/sessions` - List all sessions
+- `POST /api/sessions` - Create new session
+- `GET /api/sessions/{id}` - Get session details
+- `PUT /api/sessions/{id}` - Update session
+- `DELETE /api/sessions/{id}` - Delete session
+- `POST /api/sessions/{id}/activate` - Activate session
+- `GET /api/sessions/{id}/status` - Get session status
+- `POST /api/sessions/{id}/sync` - Sync session with remote
+- `POST /api/sessions/cleanup` - Clean up stopped sessions
+- `GET /api/projects/{id}/sessions` - Get sessions for project
+
 #### System
 - `GET /api/health` - Health check
 - `GET /api/projects/stats` - Project statistics
+- `GET /api/sessions/stats` - Session statistics
 
 ### 📁 Project Structure
 
@@ -141,46 +202,37 @@ logging:
   format: "json"
 ```
 
-### 🔄 What's Next
-
-**Phase 2: Session Management & Git Integration** (Coming Next)
-- Git worktree integration
-- Session lifecycle management
-- Branch switching and synchronization
-
-**Phase 3: Agent Orchestration**
-- Process launching and monitoring
-- Agent communication protocols
-- Real-time status updates
-- WebSocket integration
-
-**Phase 4: React Web UI**
-- Real-time dashboard
-- Agent monitoring interface
-- Interactive project management
-- Live log streaming
-
-**Phase 5: Advanced Features**
-- Slack integration
-- Cross-platform builds
-- Docker deployment
-- Documentation
-
-### 🧪 Testing
-
-Test the implementation:
+### 🔧 Agent Management
 
 ```bash
-# Test CLI
-./bin/habibi-go --help
-./bin/habibi-go project create test-project .
-./bin/habibi-go project list
+# List agents
+./habibi-go agent list [session-id]
 
-# Test API
-./bin/habibi-go server --port 8081 &
-curl http://localhost:8081/api/health
-curl http://localhost:8081/api/projects
+# Start agent
+./habibi-go agent start <session-id> <agent-type> <command>
+
+# Stop agent
+./habibi-go agent stop <agent-id>
+
+# Execute command
+./habibi-go agent exec <agent-id> <command>
+
+# View agent status
+./habibi-go agent status <agent-id>
+
+# View agent logs
+./habibi-go agent logs <agent-id> [--follow]
 ```
+
+### 🌐 API Endpoints
+
+#### API v1 (Frontend Compatible)
+- Projects: `/api/v1/projects`
+- Sessions: `/api/v1/sessions`
+- Agents: `/api/v1/agents`
+- WebSocket: `/ws`
+
+See [TESTING.md](TESTING.md) for detailed API examples.
 
 ### 📊 Database Schema
 
@@ -206,10 +258,44 @@ go run main.go server --dev
 GOOS=linux GOARCH=amd64 go build -o bin/habibi-go-linux main.go
 ```
 
----
+### 🛠️ Development
 
-**Phase 1 Complete! ✅**
+```bash
+# Install dependencies
+make deps
 
-The core backend foundation is now fully implemented and functional. The application provides a solid base for project management with a complete CLI interface, REST API, and database persistence.
+# Development mode with hot reload
+make dev
 
-Ready to proceed to Phase 2: Session Management & Git Integration!
+# Build for production
+make build
+
+# Cross-compile for all platforms
+make cross-compile
+
+# Clean build artifacts
+make clean
+
+# Reset database
+make db-reset
+```
+
+### 📦 Deployment
+
+The application builds into a single binary with embedded web assets:
+
+```bash
+# Build production binary
+make build
+
+# Run in production
+./bin/habibi-go server --port 8080
+```
+
+### 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+### 📄 License
+
+MIT License - see LICENSE file for details.

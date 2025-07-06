@@ -3,7 +3,11 @@
 # Development
 dev:
 	@echo "Starting development environment..."
-	cd web && npm run dev &
+	@echo "Starting Vite dev server on http://localhost:3000"
+	@echo "Starting Go server on http://localhost:8080"
+	@echo "Press Ctrl+C to stop"
+	@trap 'kill %1' INT; \
+	cd web && npm run dev & \
 	go run main.go server --dev
 
 # Dependencies
@@ -11,11 +15,10 @@ deps:
 	go mod download
 	cd web && npm install
 
-# Build frontend (placeholder for now)
+# Build frontend
 build-ui:
-	@echo "Building UI... (React implementation in Phase 4)"
-	mkdir -p web/dist
-	cp web/dist/index.html web/dist/index.html || true
+	@echo "Building React UI..."
+	cd web && npm run build
 
 # Embed assets and build
 build: build-ui
@@ -57,3 +60,38 @@ demo: build
 	@echo ""
 	@echo "3. Available commands:"
 	./bin/habibi-go --help
+
+# Run full stack locally
+run: build
+	@echo "=== Starting Habibi-Go ==="
+	@echo "Server running on http://localhost:8080"
+	@echo "Press Ctrl+C to stop"
+	./bin/habibi-go server
+
+# Quick test of all phases
+test-all: build
+	@echo "=== Testing All Phases ==="
+	@echo "Creating test project..."
+	@mkdir -p /tmp/test-project && cd /tmp/test-project && git init
+	./bin/habibi-go project create "Test Project" "/tmp/test-project"
+	@echo ""
+	@echo "Creating session..."
+	./bin/habibi-go session create "Test Project" "test-session" "feature-test"
+	@echo ""
+	@echo "Starting agent..."
+	./bin/habibi-go agent start 1 "test-agent" "echo 'Hello from agent'"
+	@echo ""
+	@echo "Server is ready at http://localhost:8080"
+	./bin/habibi-go server
+
+# Database management
+db-reset:
+	@echo "Resetting database..."
+	rm -f habibi.db habibi.db-wal habibi.db-shm
+	@echo "Database reset complete"
+
+# Development with auto-reload
+watch:
+	@which air > /dev/null || (echo "Installing air..." && go install github.com/cosmtrek/air@latest)
+	@echo "Starting with auto-reload..."
+	air

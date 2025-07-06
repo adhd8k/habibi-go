@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"embed"
 	"fmt"
 	"log"
 	"net/http"
@@ -30,7 +31,12 @@ var (
 	serverPort int
 	serverHost string
 	devMode    bool
+	webAssets  embed.FS
 )
+
+func SetWebAssets(assets embed.FS) {
+	webAssets = assets
+}
 
 func init() {
 	serverCmd.Flags().IntVarP(&serverPort, "port", "p", 8080, "server port")
@@ -73,19 +79,33 @@ func runServer(cmd *cobra.Command, args []string) {
 	// Initialize repositories
 	projectRepo := repositories.NewProjectRepository(db.DB)
 	sessionRepo := repositories.NewSessionRepository(db.DB)
+	agentRepo := repositories.NewAgentRepository(db.DB)
+	commandRepo := repositories.NewAgentCommandRepository(db.DB)
 	eventRepo := repositories.NewEventRepository(db.DB)
 	
 	// Initialize services
 	gitService := services.NewGitService()
 	projectService := services.NewProjectService(projectRepo, eventRepo)
 	sessionService := services.NewSessionService(sessionRepo, projectRepo, eventRepo, gitService)
+	agentService := services.NewAgentService(agentRepo, sessionRepo, eventRepo)
+	commService := services.NewAgentCommService(agentRepo, commandRepo, eventRepo, agentService)
 	
 	// Initialize handlers
 	projectHandler := handlers.NewProjectHandler(projectService)
 	sessionHandler := handlers.NewSessionHandler(sessionService)
+	agentHandler := handlers.NewAgentHandler(agentService, commService)
+	websocketHandler := handlers.NewWebSocketHandler(agentService, commService)
+	
+	// Start WebSocket hub
+	websocketHandler.StartHub()
 	
 	// Initialize router
-	router := api.NewRouter(projectHandler, sessionHandler)
+	router := api.NewRouter(projectHandler, sessionHandler, agentHandler, websocketHandler)
+	
+	// Set web assets if available
+	if webAssets != (embed.FS{}) {
+		router.SetWebAssets(webAssets)
+	}
 	
 	// Setup Gin
 	if !devMode {
