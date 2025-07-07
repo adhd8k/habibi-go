@@ -5,6 +5,9 @@
 *.so
 *.dylib
 
+# Main binary
+habibi-go
+
 # Test binary, built with `go test -c`
 *.test
 
