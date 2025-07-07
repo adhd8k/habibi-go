@@ -51,7 +51,7 @@ func (s *ClaudeAgentService) SendClaudeMessage(agent *models.Agent, message stri
 	}
 	
 	// Prepare Claude command
-	args := []string{"--print"} // Use print mode for single response
+	args := []string{"--dangerously-skip-permissions", "--print"} // Use print mode for single response
 	
 	// If this agent has a Claude session ID, use --resume
 	if agent.ClaudeSessionID != "" {

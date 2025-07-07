@@ -2,10 +2,6 @@
 # Claude Code CLI Simulator
 # This simulates Claude Code CLI for testing purposes
 
-echo "Claude Code v0.1.0"
-echo "Type 'help' for available commands or start typing to chat."
-echo ""
-
 # Function to simulate Claude thinking and responding
 respond() {
     local input="$1"
@@ -25,6 +21,47 @@ respond() {
     echo ""
     echo "The chat interface is working correctly!"
 }
+
+# Process command line arguments
+SKIP_PERMS=false
+PRINT_MODE=false
+RESUME_SESSION=""
+MESSAGE=""
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --dangerously-skip-permissions)
+            SKIP_PERMS=true
+            shift
+            ;;
+        --print)
+            PRINT_MODE=true
+            shift
+            ;;
+        --resume)
+            shift
+            RESUME_SESSION="$1"
+            shift
+            ;;
+        *)
+            MESSAGE="$*"
+            break
+            ;;
+    esac
+done
+
+# If in print mode with a message, just respond and exit
+if [ "$PRINT_MODE" = true ] && [ -n "$MESSAGE" ]; then
+    if [ -n "$RESUME_SESSION" ]; then
+        echo "Resuming session: $RESUME_SESSION" >&2
+    fi
+    respond "$MESSAGE"
+    exit 0
+fi
+
+echo "Claude Code v0.1.0"
+echo "Type 'help' for available commands or start typing to chat."
+echo ""
 
 # Main loop
 while IFS= read -r line; do
