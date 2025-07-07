@@ -17,16 +17,18 @@ type Router struct {
 	agentHandler     *handlers.AgentHandler
 	websocketHandler *handlers.WebSocketHandler
 	chatHandler      *handlers.ChatHandler
+	terminalHandler  *handlers.TerminalHandler
 	webAssets        embed.FS
 }
 
-func NewRouter(projectHandler *handlers.ProjectHandler, sessionHandler *handlers.SessionHandler, agentHandler *handlers.AgentHandler, websocketHandler *handlers.WebSocketHandler, chatHandler *handlers.ChatHandler) *Router {
+func NewRouter(projectHandler *handlers.ProjectHandler, sessionHandler *handlers.SessionHandler, agentHandler *handlers.AgentHandler, websocketHandler *handlers.WebSocketHandler, chatHandler *handlers.ChatHandler, terminalHandler *handlers.TerminalHandler) *Router {
 	return &Router{
 		projectHandler:   projectHandler,
 		sessionHandler:   sessionHandler,
 		agentHandler:     agentHandler,
 		websocketHandler: websocketHandler,
 		chatHandler:      chatHandler,
+		terminalHandler:  terminalHandler,
 	}
 }
 
@@ -97,6 +99,9 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 	
 	// WebSocket endpoint
 	api.GET("/ws", r.websocketHandler.HandleWebSocket)
+	
+	// Terminal WebSocket endpoint
+	api.GET("/terminal/:sessionId", r.terminalHandler.HandleTerminalWebSocket)
 	
 	// Health check
 	api.GET("/health", func(c *gin.Context) {

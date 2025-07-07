@@ -5,6 +5,7 @@ import { wsClient } from '../api/websocket'
 import { Agent } from '../types'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { playNotificationSound, getNotificationsEnabled } from '../utils/notifications'
 
 interface Message {
   id: string
@@ -61,16 +62,43 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
     wsClient.on('agent_output', (message) => {
       if (message.agent_id === agent.id && message.data) {
         const output = message.data.output
+        const isChunk = message.data.is_chunk
+        const messageId = message.data.message_id
         
-        // Skip empty lines
-        if (!output || output.trim() === '') {
+        // Skip empty output
+        if (!output) {
           return
         }
         
         setMessages(prev => {
           const lastMessage = prev[prev.length - 1]
           
-          // If there's already an assistant message being built, append to it
+          // If this is a chunk and we have an assistant message being built, append seamlessly
+          if (isChunk && lastMessage && lastMessage.role === 'assistant') {
+            return [
+              ...prev.slice(0, -1),
+              {
+                ...lastMessage,
+                content: lastMessage.content + output,
+                id: messageId || lastMessage.id
+              }
+            ]
+          }
+          
+          // If this is a chunk but no assistant message exists, start a new one
+          if (isChunk) {
+            return [
+              ...prev,
+              {
+                id: messageId || Date.now().toString(),
+                role: 'assistant',
+                content: output,
+                timestamp: new Date()
+              }
+            ]
+          }
+          
+          // For non-chunk messages (legacy), append with newlines
           if (lastMessage && lastMessage.role === 'assistant') {
             return [
               ...prev.slice(0, -1),
@@ -99,6 +127,11 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
     wsClient.on('agent_response_complete', (message) => {
       if (message.agent_id === agent.id) {
         setIsProcessing(false)
+        
+        // Play notification sound when Claude responds
+        if (getNotificationsEnabled()) {
+          playNotificationSound()
+        }
       }
     })
 

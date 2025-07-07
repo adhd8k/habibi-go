@@ -111,6 +111,7 @@ func runServer(cmd *cobra.Command, args []string) {
 	agentHandler := handlers.NewAgentHandler(agentService, commService)
 	websocketHandler := handlers.NewWebSocketHandler(agentService, commService)
 	chatHandler := handlers.NewChatHandler(chatRepo)
+	terminalHandler := handlers.NewTerminalHandler(sessionService)
 	
 	// Wire up WebSocket event broadcasting
 	agentService.SetEventBroadcaster(websocketHandler)
@@ -125,7 +126,7 @@ func runServer(cmd *cobra.Command, args []string) {
 	websocketHandler.StartHub()
 	
 	// Initialize router
-	router := api.NewRouter(projectHandler, sessionHandler, agentHandler, websocketHandler, chatHandler)
+	router := api.NewRouter(projectHandler, sessionHandler, agentHandler, websocketHandler, chatHandler, terminalHandler)
 	
 	// Set web assets if available
 	if webAssets != (embed.FS{}) {

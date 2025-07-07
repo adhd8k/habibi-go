@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"time"
 
 	"habibi-go/internal/database/repositories"
 	"habibi-go/internal/models"
@@ -477,19 +476,19 @@ func (s *SessionService) GetSessionDiffs(id int) (map[string]interface{}, error)
 		return nil, fmt.Errorf("failed to get project: %w", err)
 	}
 	
-	// Get git diff against the project's default branch
-	fmt.Printf("Getting diffs for session %s, project default branch: '%s'\n", session.Name, project.DefaultBranch)
-	
-	// Check if this is a very new session (created in last minute) and might not have any changes
-	if time.Since(session.CreatedAt) < time.Minute {
-		fmt.Printf("Session is very new (created %v ago), checking if branch is identical to base\n", time.Since(session.CreatedAt))
+	// Try to determine the actual base branch this session was created from
+	// First try the current branch in the main project directory
+	baseBranch := project.DefaultBranch
+	if currentBranch, err := s.gitService.GetCurrentBranch(project.Path); err == nil && currentBranch != "" {
+		baseBranch = currentBranch
+	} else {
 	}
 	
-	diffs, err := s.gitService.GetWorkingTreeDiff(session.WorktreePath, project.DefaultBranch)
+	// Get git diff against the determined base branch
+	diffs, err := s.gitService.GetWorkingTreeDiff(session.WorktreePath, baseBranch)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get diffs: %w", err)
 	}
-	fmt.Printf("Found %d diff files\n", len(diffs))
 	
 	return map[string]interface{}{
 		"files": diffs,

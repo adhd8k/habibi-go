@@ -1,5 +1,6 @@
 import { ReactNode } from 'react'
 import { useAppStore } from '../store'
+import { NotificationSettings } from './NotificationSettings'
 
 interface LayoutProps {
   children: ReactNode
@@ -35,6 +36,10 @@ export function Layout({ children, sidebar }: LayoutProps) {
                 </svg>
               </button>
               <h1 className="text-xl font-semibold">Habibi-Go</h1>
+            </div>
+            
+            <div className="flex items-center">
+              <NotificationSettings />
             </div>
           </div>
         </header>

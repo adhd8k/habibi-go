@@ -2,6 +2,7 @@ package services
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"os/exec"
 	"regexp"
@@ -50,8 +51,8 @@ func (s *ClaudeAgentService) SendClaudeMessage(agent *models.Agent, message stri
 		fmt.Printf("Failed to save user message: %v\n", err)
 	}
 	
-	// Prepare Claude command
-	args := []string{"--dangerously-skip-permissions", "--print"} // Use print mode for single response
+	// Prepare Claude command with streaming
+	args := []string{"--verbose", "-c", "-p", "--dangerously-skip-permissions", "--output-format", "stream-json"}
 	
 	// If this agent has a Claude session ID, use --resume
 	if agent.ClaudeSessionID != "" {
@@ -118,33 +119,84 @@ func (s *ClaudeAgentService) SendClaudeMessage(agent *models.Agent, message stri
 	return nil
 }
 
-// streamClaudeOutput streams Claude's stdout to WebSocket
+// streamClaudeOutput streams Claude's stdout JSON to WebSocket and database
 func (s *ClaudeAgentService) streamClaudeOutput(agent *models.Agent, stdout interface{}, responseBuffer *strings.Builder) {
 	scanner := bufio.NewScanner(stdout.(interface{ Read([]byte) (int, error) }))
 	
 	for scanner.Scan() {
 		line := scanner.Text()
 		
-		// Append to response buffer
-		if responseBuffer.Len() > 0 {
-			responseBuffer.WriteString("\n")
+		// Skip empty lines
+		if strings.TrimSpace(line) == "" {
+			continue
 		}
-		responseBuffer.WriteString(line)
 		
-		// Broadcast the output line
-		s.eventBroadcaster.BroadcastEvent("agent_output", agent.ID, map[string]interface{}{
-			"output":    line,
-			"timestamp": time.Now(),
-		})
+		// Parse JSON line
+		var streamMsg ClaudeStreamMessage
+		if err := json.Unmarshal([]byte(line), &streamMsg); err != nil {
+			// If it's not JSON, treat as plain text (fallback)
+			fmt.Printf("Non-JSON output: %s\n", line)
+			continue
+		}
 		
-		// Also create event in database
-		event := models.NewAgentEvent("agent_output", agent.ID, map[string]interface{}{
-			"output":    line,
-			"timestamp": time.Now(),
-		})
+		// Extract session ID for future use
+		if streamMsg.SessionID != "" && agent.ClaudeSessionID != streamMsg.SessionID {
+			agent.ClaudeSessionID = streamMsg.SessionID
+			if err := s.agentRepo.UpdateClaudeSessionID(agent.ID, streamMsg.SessionID); err != nil {
+				fmt.Printf("Failed to update Claude session ID: %v\n", err)
+			}
+		}
 		
-		if err := s.eventRepo.Create(event); err != nil {
-			fmt.Printf("Failed to create output event: %v\n", err)
+		// Handle different message types
+		if streamMsg.Type == "assistant" && streamMsg.Message != nil {
+			// Parse the message as ClaudeMessage
+			msgBytes, err := json.Marshal(streamMsg.Message)
+			if err != nil {
+				continue
+			}
+			
+			var claudeMsg ClaudeMessage
+			if err := json.Unmarshal(msgBytes, &claudeMsg); err != nil {
+				continue
+			}
+			
+			// Extract text content from the message
+			for _, content := range claudeMsg.Content {
+				if content.Type == "text" && content.Text != "" {
+					// Append to response buffer
+					responseBuffer.WriteString(content.Text)
+					
+					// Broadcast the content chunk
+					s.eventBroadcaster.BroadcastEvent("agent_output", agent.ID, map[string]interface{}{
+						"output":     content.Text,
+						"message_id": claudeMsg.ID,
+						"timestamp":  time.Now(),
+						"is_chunk":   true,
+					})
+					
+					// Save chunk to database
+					event := models.NewAgentEvent("agent_output", agent.ID, map[string]interface{}{
+						"output":     content.Text,
+						"message_id": claudeMsg.ID,
+						"timestamp":  time.Now(),
+						"is_chunk":   true,
+					})
+					
+					if err := s.eventRepo.Create(event); err != nil {
+						fmt.Printf("Failed to create output event: %v\n", err)
+					}
+				}
+			}
+		}
+		
+		// Handle system messages (like init, tool use, etc.)
+		if streamMsg.Type == "system" {
+			s.eventBroadcaster.BroadcastEvent("agent_system", agent.ID, map[string]interface{}{
+				"type":      streamMsg.Type,
+				"subtype":   streamMsg.Subtype,
+				"message":   streamMsg.Message,
+				"timestamp": time.Now(),
+			})
 		}
 	}
 }
@@ -221,9 +273,26 @@ func (s *ClaudeAgentService) StartClaudeAgent(sessionID int, workingDirectory st
 	return agent, nil
 }
 
-// ClaudeResponse represents a Claude response (for JSON parsing if needed)
-type ClaudeResponse struct {
-	SessionID string `json:"session_id,omitempty"`
-	Content   string `json:"content"`
-	Error     string `json:"error,omitempty"`
+// ClaudeStreamMessage represents a single JSON message from Claude's stream-json output
+type ClaudeStreamMessage struct {
+	Type    string      `json:"type"`
+	Subtype string      `json:"subtype,omitempty"`
+	Message interface{} `json:"message,omitempty"`
+	SessionID string    `json:"session_id,omitempty"`
+}
+
+// ClaudeMessage represents the message part of Claude stream
+type ClaudeMessage struct {
+	ID      string                 `json:"id"`
+	Type    string                 `json:"type"`
+	Role    string                 `json:"role"`
+	Model   string                 `json:"model"`
+	Content []ClaudeContentBlock   `json:"content"`
+	Usage   map[string]interface{} `json:"usage,omitempty"`
+}
+
+// ClaudeContentBlock represents a content block in Claude's response
+type ClaudeContentBlock struct {
+	Type string `json:"type"`
+	Text string `json:"text,omitempty"`
 }

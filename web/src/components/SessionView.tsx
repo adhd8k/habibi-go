@@ -3,9 +3,10 @@ import { useAppStore } from '../store'
 import { AgentControl } from './AgentControl'
 import { FileDiffs } from './FileDiffs'
 import { ManageSession } from './ManageSession'
+import { Terminal } from './Terminal'
 import { useDiffStats } from '../hooks/useDiffStats'
 
-type TabType = 'assistant' | 'diffs' | 'manage'
+type TabType = 'assistant' | 'diffs' | 'terminal' | 'manage'
 
 export function SessionView() {
   const [activeTab, setActiveTab] = useState<TabType>('assistant')
@@ -47,6 +48,7 @@ export function SessionView() {
       icon: '📝',
       hasChanges: diffStats && diffStats.filesChanged > 0
     },
+    { id: 'terminal' as TabType, label: 'Terminal', icon: '🖥️' },
     { id: 'manage' as TabType, label: 'Manage Session', icon: '⚙️' },
   ]
 
@@ -78,6 +80,7 @@ export function SessionView() {
       <div className="flex-1 overflow-hidden">
         {activeTab === 'assistant' && <AgentControl />}
         {activeTab === 'diffs' && <FileDiffs />}
+        {activeTab === 'terminal' && <Terminal />}
         {activeTab === 'manage' && <ManageSession />}
       </div>
     </div>
