@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	_ "modernc.org/sqlite"
 )
@@ -51,6 +50,24 @@ func New(dbPath string) (*DB, error) {
 	return &DB{db}, nil
 }
 
+// Helper function to check if a column exists
+func (db *DB) columnExists(table, column string) bool {
+	query := fmt.Sprintf(`SELECT COUNT(*) FROM pragma_table_info('%s') WHERE name = ?`, table)
+	var count int
+	err := db.QueryRow(query, column).Scan(&count)
+	return err == nil && count > 0
+}
+
+// Helper function to add column if it doesn't exist
+func (db *DB) addColumnIfNotExists(table, column, columnDef string) error {
+	if !db.columnExists(table, column) {
+		query := fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s", table, column, columnDef)
+		_, err := db.Exec(query)
+		return err
+	}
+	return nil
+}
+
 func (db *DB) RunMigrations() error {
 	// For now, let's run migrations manually instead of using the migrate library
 	// This will avoid file path issues during development
@@ -62,7 +79,6 @@ func (db *DB) RunMigrations() error {
 			path TEXT NOT NULL,
 			repository_url TEXT,
 			default_branch TEXT DEFAULT 'main',
-			setup_command TEXT,
 			config TEXT DEFAULT '{}',
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -96,7 +112,6 @@ func (db *DB) RunMigrations() error {
 			resource_usage TEXT DEFAULT '{}',
 			started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			stopped_at DATETIME,
-			claude_session_id TEXT,
 			FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
 		)`,
 		`CREATE TABLE IF NOT EXISTS agent_commands (
@@ -135,10 +150,6 @@ func (db *DB) RunMigrations() error {
 		`CREATE INDEX IF NOT EXISTS idx_agent_files_agent_id ON agent_files(agent_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_events_created_at ON events(created_at)`,
 		`CREATE INDEX IF NOT EXISTS idx_events_entity ON events(entity_type, entity_id)`,
-		// Add setup_command column if it doesn't exist
-		`ALTER TABLE projects ADD COLUMN setup_command TEXT`,
-		// Add claude_session_id column if it doesn't exist
-		`ALTER TABLE agents ADD COLUMN claude_session_id TEXT`,
 		// Add chat messages table
 		`CREATE TABLE IF NOT EXISTS chat_messages (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -153,13 +164,17 @@ func (db *DB) RunMigrations() error {
 	
 	for i, migration := range migrations {
 		if _, err := db.Exec(migration); err != nil {
-			// Ignore error for ALTER TABLE if column already exists
-			if i >= len(migrations)-2 && (strings.Contains(err.Error(), "duplicate column name: setup_command") || 
-				strings.Contains(err.Error(), "duplicate column name: claude_session_id")) {
-				continue
-			}
 			return fmt.Errorf("failed to execute migration %d: %w", i, err)
 		}
+	}
+	
+	// Add columns if they don't exist (for existing databases)
+	if err := db.addColumnIfNotExists("projects", "setup_command", "TEXT"); err != nil {
+		return fmt.Errorf("failed to add setup_command column: %w", err)
+	}
+	
+	if err := db.addColumnIfNotExists("agents", "claude_session_id", "TEXT"); err != nil {
+		return fmt.Errorf("failed to add claude_session_id column: %w", err)
 	}
 	
 	return nil
