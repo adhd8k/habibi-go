@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"time"
 
 	"habibi-go/internal/database/repositories"
 	"habibi-go/internal/models"
@@ -142,6 +143,22 @@ func (s *SessionService) GetSessionsByProject(projectID int) ([]*models.Session,
 		return nil, fmt.Errorf("failed to get sessions: %w", err)
 	}
 	
+	// Add branch information to each session
+	for _, session := range sessions {
+		// Get the project to find the base branch
+		if project, err := s.projectRepo.GetByID(session.ProjectID); err == nil {
+			if session.Config == nil {
+				session.Config = make(map[string]interface{})
+			}
+			session.Config["base_branch"] = project.DefaultBranch
+			
+			// Also add current branch of the session
+			if currentBranch, err := s.gitService.GetCurrentBranch(session.WorktreePath); err == nil {
+				session.Config["current_branch"] = currentBranch
+			}
+		}
+	}
+	
 	return sessions, nil
 }
 
@@ -149,6 +166,22 @@ func (s *SessionService) GetAllSessions() ([]*models.Session, error) {
 	sessions, err := s.sessionRepo.GetAll()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get sessions: %w", err)
+	}
+	
+	// Add branch information to each session
+	for _, session := range sessions {
+		// Get the project to find the base branch
+		if project, err := s.projectRepo.GetByID(session.ProjectID); err == nil {
+			if session.Config == nil {
+				session.Config = make(map[string]interface{})
+			}
+			session.Config["base_branch"] = project.DefaultBranch
+			
+			// Also add current branch of the session
+			if currentBranch, err := s.gitService.GetCurrentBranch(session.WorktreePath); err == nil {
+				session.Config["current_branch"] = currentBranch
+			}
+		}
 	}
 	
 	return sessions, nil
@@ -429,6 +462,136 @@ func (s *SessionService) GetSessionStats() (map[string]interface{}, error) {
 	}
 	
 	return stats, nil
+}
+
+// GetSessionDiffs returns git diffs for the session's worktree
+func (s *SessionService) GetSessionDiffs(id int) (map[string]interface{}, error) {
+	session, err := s.sessionRepo.GetByID(id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get session: %w", err)
+	}
+	
+	// Get project to find the base branch
+	project, err := s.projectRepo.GetByID(session.ProjectID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get project: %w", err)
+	}
+	
+	// Get git diff against the project's default branch
+	fmt.Printf("Getting diffs for session %s, project default branch: '%s'\n", session.Name, project.DefaultBranch)
+	
+	// Check if this is a very new session (created in last minute) and might not have any changes
+	if time.Since(session.CreatedAt) < time.Minute {
+		fmt.Printf("Session is very new (created %v ago), checking if branch is identical to base\n", time.Since(session.CreatedAt))
+	}
+	
+	diffs, err := s.gitService.GetWorkingTreeDiff(session.WorktreePath, project.DefaultBranch)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get diffs: %w", err)
+	}
+	fmt.Printf("Found %d diff files\n", len(diffs))
+	
+	return map[string]interface{}{
+		"files": diffs,
+	}, nil
+}
+
+// RebaseSession rebases the session branch from the original branch
+func (s *SessionService) RebaseSession(id int) error {
+	session, err := s.sessionRepo.GetByID(id)
+	if err != nil {
+		return fmt.Errorf("failed to get session: %w", err)
+	}
+	
+	// Get project to find the original branch
+	project, err := s.projectRepo.GetByID(session.ProjectID)
+	if err != nil {
+		return fmt.Errorf("failed to get project: %w", err)
+	}
+	
+	// Perform rebase
+	if err := s.gitService.RebaseWorktree(session.WorktreePath, project.DefaultBranch); err != nil {
+		return fmt.Errorf("failed to rebase: %w", err)
+	}
+	
+	// Create rebase event
+	event := models.NewSessionEvent("session_rebased", session.ID, map[string]interface{}{
+		"from_branch": project.DefaultBranch,
+		"to_branch":   session.BranchName,
+	})
+	
+	if err := s.eventRepo.Create(event); err != nil {
+		fmt.Printf("Failed to create rebase event: %v\n", err)
+	}
+	
+	return nil
+}
+
+// PushSession pushes the session branch to remote
+func (s *SessionService) PushSession(id int, remoteBranch string) error {
+	session, err := s.sessionRepo.GetByID(id)
+	if err != nil {
+		return fmt.Errorf("failed to get session: %w", err)
+	}
+	
+	// Use session branch name if remote branch not specified
+	if remoteBranch == "" {
+		remoteBranch = session.BranchName
+	}
+	
+	// Push to remote
+	if err := s.gitService.PushBranch(session.WorktreePath, session.BranchName, remoteBranch); err != nil {
+		return fmt.Errorf("failed to push: %w", err)
+	}
+	
+	// Create push event
+	event := models.NewSessionEvent("session_pushed", session.ID, map[string]interface{}{
+		"local_branch":  session.BranchName,
+		"remote_branch": remoteBranch,
+	})
+	
+	if err := s.eventRepo.Create(event); err != nil {
+		fmt.Printf("Failed to create push event: %v\n", err)
+	}
+	
+	return nil
+}
+
+// CloseSession closes the session and removes the worktree
+func (s *SessionService) CloseSession(id int) error {
+	session, err := s.sessionRepo.GetByID(id)
+	if err != nil {
+		return fmt.Errorf("failed to get session: %w", err)
+	}
+	
+	// Get project for worktree removal
+	project, err := s.projectRepo.GetByID(session.ProjectID)
+	if err != nil {
+		return fmt.Errorf("failed to get project: %w", err)
+	}
+	
+	// Remove worktree
+	if err := s.gitService.RemoveWorktree(project.Path, session.WorktreePath); err != nil {
+		fmt.Printf("Warning: failed to remove worktree: %v\n", err)
+	}
+	
+	// Update session status
+	session.Status = "closed"
+	if err := s.sessionRepo.Update(session); err != nil {
+		return fmt.Errorf("failed to update session: %w", err)
+	}
+	
+	// Create close event
+	event := models.NewSessionEvent("session_closed", session.ID, map[string]interface{}{
+		"name":        session.Name,
+		"branch_name": session.BranchName,
+	})
+	
+	if err := s.eventRepo.Create(event); err != nil {
+		fmt.Printf("Failed to create close event: %v\n", err)
+	}
+	
+	return nil
 }
 
 func (s *SessionService) runSetupCommand(command, workingDir string) error {

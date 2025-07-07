@@ -86,7 +86,7 @@ func runServer(cmd *cobra.Command, args []string) {
 	
 	// Initialize services
 	gitService := services.NewGitService()
-	projectService := services.NewProjectService(projectRepo, eventRepo)
+	projectService := services.NewProjectService(projectRepo, eventRepo, gitService)
 	sessionService := services.NewSessionService(sessionRepo, projectRepo, eventRepo, gitService)
 	agentService := services.NewAgentService(agentRepo, sessionRepo, eventRepo)
 	

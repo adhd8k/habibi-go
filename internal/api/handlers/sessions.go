@@ -300,6 +300,119 @@ func (h *SessionHandler) GetSessionStats(c *gin.Context) {
 	})
 }
 
+// GetSessionDiffs returns git diffs for the session's worktree
+func (h *SessionHandler) GetSessionDiffs(c *gin.Context) {
+	sessionID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "Invalid session ID",
+		})
+		return
+	}
+	
+	diffs, err := h.sessionService.GetSessionDiffs(sessionID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    diffs,
+	})
+}
+
+// RebaseSession rebases the session branch from the original branch
+func (h *SessionHandler) RebaseSession(c *gin.Context) {
+	sessionID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "Invalid session ID",
+		})
+		return
+	}
+	
+	if err := h.sessionService.RebaseSession(sessionID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Session rebased successfully",
+	})
+}
+
+// PushSession pushes the session branch to remote
+func (h *SessionHandler) PushSession(c *gin.Context) {
+	sessionID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "Invalid session ID",
+		})
+		return
+	}
+	
+	var req struct {
+		RemoteBranch string `json:"remote_branch"`
+	}
+	
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+	
+	if err := h.sessionService.PushSession(sessionID, req.RemoteBranch); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Session pushed successfully",
+	})
+}
+
+// CloseSession closes the session and removes the worktree
+func (h *SessionHandler) CloseSession(c *gin.Context) {
+	sessionID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "Invalid session ID",
+		})
+		return
+	}
+	
+	if err := h.sessionService.CloseSession(sessionID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Session closed successfully",
+	})
+}
+
 func (h *SessionHandler) GetProjectSessions(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)

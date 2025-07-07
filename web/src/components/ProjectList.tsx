@@ -173,6 +173,12 @@ export function ProjectList() {
               <div className="pr-8">
                 <div className="font-medium">{project.name}</div>
                 <div className="text-sm text-gray-600">{project.path}</div>
+                {project.config?.current_branch && (
+                  <div className="text-xs text-blue-600 mt-1 flex items-center">
+                    <span className="mr-1">🌿</span>
+                    {project.config.current_branch}
+                  </div>
+                )}
                 {project.repository_url && (
                   <div className="text-xs text-gray-500 mt-1">
                     {project.repository_url}

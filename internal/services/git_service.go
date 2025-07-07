@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"habibi-go/internal/util"
@@ -285,4 +286,324 @@ func (s *GitService) CleanupStaleWorktrees(projectPath string) error {
 	}
 	
 	return nil
+}
+
+// GetWorkingTreeDiff returns the diff of the working tree and commits not in base branch
+func (s *GitService) GetWorkingTreeDiff(worktreePath, baseBranch string) ([]DiffFile, error) {
+	if _, err := os.Stat(worktreePath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("worktree does not exist: %s", worktreePath)
+	}
+	
+	var diffFiles []DiffFile
+	files := make(map[string]*DiffFile)
+	
+	// First, get uncommitted changes (working tree + staged)
+	cmd := exec.Command("git", "status", "--porcelain")
+	cmd.Dir = worktreePath
+	statusOutput, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get status: %w", err)
+	}
+	
+	// Parse status output for uncommitted changes
+	lines := strings.Split(string(statusOutput), "\n")
+	for _, line := range lines {
+		if len(line) < 3 {
+			continue
+		}
+		
+		status := line[:2]
+		path := strings.TrimSpace(line[3:])
+		
+		var fileStatus string
+		isUntracked := false
+		switch {
+		case status == "??":
+			fileStatus = "added"
+			isUntracked = true
+		case strings.Contains(status, "A"):
+			fileStatus = "added"
+		case strings.Contains(status, "D"):
+			fileStatus = "deleted"
+		case strings.Contains(status, "M"):
+			fileStatus = "modified"
+		default:
+			fileStatus = "modified"
+		}
+		
+		files[path] = &DiffFile{
+			Path:   path,
+			Status: fileStatus,
+			isUntracked: isUntracked,
+		}
+	}
+	
+	// Process uncommitted files
+	for path, file := range files {
+		if file.isUntracked {
+			// For untracked files, get the file content as "added" diff
+			cmd := exec.Command("git", "diff", "--no-index", "/dev/null", path)
+			cmd.Dir = worktreePath
+			diffOutput, _ := cmd.Output()
+			file.Diff = string(diffOutput)
+			
+			// Count lines for untracked files
+			content, err := os.ReadFile(filepath.Join(worktreePath, path))
+			if err == nil {
+				lines := strings.Split(string(content), "\n")
+				file.Additions = len(lines)
+				file.Deletions = 0
+			}
+		} else {
+			// Get diff for tracked files
+			cmd := exec.Command("git", "diff", "HEAD", "--", path)
+			cmd.Dir = worktreePath
+			diffOutput, _ := cmd.Output()
+			file.Diff = string(diffOutput)
+			
+			// Get stats
+			cmd = exec.Command("git", "diff", "--numstat", "HEAD", "--", path)
+			cmd.Dir = worktreePath
+			numstatOutput, _ := cmd.Output()
+			
+			if len(numstatOutput) > 0 {
+				parts := strings.Fields(string(numstatOutput))
+				if len(parts) >= 3 {
+					file.Additions, _ = strconv.Atoi(parts[0])
+					file.Deletions, _ = strconv.Atoi(parts[1])
+				}
+			}
+		}
+		
+		if file.Diff != "" || file.Status == "deleted" {
+			diffFiles = append(diffFiles, *file)
+		}
+	}
+	
+	// Now get commits that are in the local branch but not in the base branch
+	// First, fetch to ensure we have latest info
+	cmd = exec.Command("git", "fetch", "origin")
+	cmd.Dir = worktreePath
+	cmd.Run() // Ignore errors, might not have network
+	
+	// Get current HEAD commit
+	cmd = exec.Command("git", "rev-parse", "HEAD")
+	cmd.Dir = worktreePath
+	headOutput, err := cmd.Output()
+	if err != nil {
+		return diffFiles, nil
+	}
+	currentHead := strings.TrimSpace(string(headOutput))
+	
+	// Find which branches contain this exact commit (to detect if this is a new branch)
+	cmd = exec.Command("git", "branch", "-a", "--contains", currentHead)
+	cmd.Dir = worktreePath
+	branchesOutput, err := cmd.Output()
+	branches := []string{}
+	if err == nil {
+		for _, line := range strings.Split(string(branchesOutput), "\n") {
+			line = strings.TrimSpace(line)
+			if line != "" && !strings.HasPrefix(line, "*") {
+				// Clean up branch names
+				line = strings.TrimPrefix(line, "remotes/")
+				line = strings.TrimPrefix(line, "origin/")
+				branches = append(branches, line)
+			}
+		}
+	}
+	
+	// Get the merge base with the specified base branch
+	var mergeBase string
+	if baseBranch != "" {
+		fmt.Printf("Looking for merge base with base branch: %s\n", baseBranch)
+		// Try with origin prefix first
+		for _, branchVariant := range []string{"origin/" + baseBranch, baseBranch} {
+			cmd = exec.Command("git", "merge-base", "HEAD", branchVariant)
+			cmd.Dir = worktreePath
+			mergeBaseOutput, err := cmd.Output()
+			if err == nil {
+				mergeBase = strings.TrimSpace(string(mergeBaseOutput))
+				fmt.Printf("Found merge base %s using branch variant %s\n", mergeBase, branchVariant)
+				
+				// Check if HEAD is the same as merge base (no commits ahead)
+				if currentHead == mergeBase {
+					fmt.Printf("HEAD is same as merge base - no commits ahead, returning empty diff\n")
+					return diffFiles, nil
+				}
+				break
+			}
+		}
+	}
+	
+	// If we couldn't find merge base with specified branch, try to find any branch that this was created from
+	if mergeBase == "" {
+		fmt.Printf("No merge base found with %s, checking other branches\n", baseBranch)
+		for _, branch := range branches {
+			if branch != "" && branch != "HEAD" {
+				cmd = exec.Command("git", "merge-base", "HEAD", "origin/"+branch)
+				cmd.Dir = worktreePath
+				mergeBaseOutput, err := cmd.Output()
+				if err == nil {
+					testBase := strings.TrimSpace(string(mergeBaseOutput))
+					if currentHead == testBase {
+						fmt.Printf("Found that HEAD is same as branch %s - no commits ahead\n", branch)
+						return diffFiles, nil
+					}
+				}
+			}
+		}
+	}
+	
+	// Fallback to common base branches if no specific base branch provided or found  
+	if mergeBase == "" {
+		for _, defaultBranch := range []string{"origin/main", "origin/master", "main", "master"} {
+			cmd = exec.Command("git", "merge-base", "HEAD", defaultBranch)
+			cmd.Dir = worktreePath
+			mergeBaseOutput, err := cmd.Output()
+			if err == nil {
+				mergeBase = strings.TrimSpace(string(mergeBaseOutput))
+				break
+			}
+		}
+	}
+	
+	if mergeBase != "" {
+		// Get diff between merge base and HEAD
+		cmd = exec.Command("git", "diff", "--name-status", mergeBase, "HEAD")
+		cmd.Dir = worktreePath
+		commitDiffOutput, err := cmd.Output()
+		if err == nil && len(commitDiffOutput) > 0 {
+			// Parse committed changes
+			lines := strings.Split(string(commitDiffOutput), "\n")
+			for _, line := range lines {
+				if line == "" {
+					continue
+				}
+				
+				parts := strings.Fields(line)
+				if len(parts) < 2 {
+					continue
+				}
+				
+				status := parts[0]
+				path := parts[1]
+				
+				// Skip if already in uncommitted files
+				if _, exists := files[path]; exists {
+					continue
+				}
+				
+				var fileStatus string
+				switch status {
+				case "A":
+					fileStatus = "added"
+				case "D":
+					fileStatus = "deleted"
+				case "M":
+					fileStatus = "modified"
+				default:
+					fileStatus = "modified"
+				}
+				
+				// Get the full diff for this file
+				cmd = exec.Command("git", "diff", mergeBase, "HEAD", "--", path)
+				cmd.Dir = worktreePath
+				diffOutput, err := cmd.Output()
+				if err != nil {
+					continue
+				}
+				
+				// Get stats
+				cmd = exec.Command("git", "diff", "--numstat", mergeBase, "HEAD", "--", path)
+				cmd.Dir = worktreePath
+				numstatOutput, _ := cmd.Output()
+				
+				var additions, deletions int
+				if len(numstatOutput) > 0 {
+					statParts := strings.Fields(string(numstatOutput))
+					if len(statParts) >= 3 {
+						additions, _ = strconv.Atoi(statParts[0])
+						deletions, _ = strconv.Atoi(statParts[1])
+					}
+				}
+				
+				diffFiles = append(diffFiles, DiffFile{
+					Path:      path,
+					Status:    fileStatus,
+					Additions: additions,
+					Deletions: deletions,
+					Diff:      string(diffOutput),
+				})
+			}
+		}
+	}
+	
+	return diffFiles, nil
+}
+
+// GetCurrentBranch returns the current branch for a project
+func (s *GitService) GetCurrentBranch(projectPath string) (string, error) {
+	cmd := exec.Command("git", "branch", "--show-current")
+	cmd.Dir = projectPath
+	output, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("failed to get current branch: %w", err)
+	}
+	return strings.TrimSpace(string(output)), nil
+}
+
+// RebaseWorktree rebases the current branch onto another branch
+func (s *GitService) RebaseWorktree(worktreePath, targetBranch string) error {
+	if _, err := os.Stat(worktreePath); os.IsNotExist(err) {
+		return fmt.Errorf("worktree does not exist: %s", worktreePath)
+	}
+	
+	// Fetch latest changes
+	cmd := exec.Command("git", "fetch", "origin")
+	cmd.Dir = worktreePath
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to fetch: %w", err)
+	}
+	
+	// Perform rebase
+	cmd = exec.Command("git", "rebase", fmt.Sprintf("origin/%s", targetBranch))
+	cmd.Dir = worktreePath
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		// Check if it's a conflict
+		if strings.Contains(string(output), "conflict") {
+			return fmt.Errorf("rebase conflict: %s", string(output))
+		}
+		return fmt.Errorf("failed to rebase: %w", err)
+	}
+	
+	return nil
+}
+
+// PushBranch pushes a branch to remote
+func (s *GitService) PushBranch(worktreePath, localBranch, remoteBranch string) error {
+	if _, err := os.Stat(worktreePath); os.IsNotExist(err) {
+		return fmt.Errorf("worktree does not exist: %s", worktreePath)
+	}
+	
+	// Push to remote
+	cmd := exec.Command("git", "push", "origin", fmt.Sprintf("%s:%s", localBranch, remoteBranch))
+	cmd.Dir = worktreePath
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to push: %s", string(output))
+	}
+	
+	return nil
+}
+
+
+// DiffFile represents a file in a git diff
+type DiffFile struct {
+	Path      string `json:"path"`
+	Status    string `json:"status"`
+	Additions int    `json:"additions"`
+	Deletions int    `json:"deletions"`
+	Diff      string `json:"diff"`
+	isUntracked bool // internal field, not exported to JSON
 }

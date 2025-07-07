@@ -47,6 +47,19 @@ export const sessionsApi = {
   create: (data: CreateSessionRequest) => api.post<Session>('/sessions', data),
   update: (id: number, data: Partial<Session>) => api.put<Session>(`/sessions/${id}`, data),
   delete: (id: number) => api.delete(`/sessions/${id}`),
+  getDiffs: (id: number) => api.get<any>(`/sessions/${id}/diffs`),
+  rebase: (id: number) => api.post(`/sessions/${id}/rebase`),
+  push: (id: number, remoteBranch?: string) => 
+    api.post(`/sessions/${id}/push`, { remote_branch: remoteBranch }),
+  close: (id: number) => api.post(`/sessions/${id}/close`),
+}
+
+export interface DiffFile {
+  path: string
+  status: 'added' | 'modified' | 'deleted'
+  additions: number
+  deletions: number
+  diff: string
 }
 
 // Agents API

@@ -3,7 +3,7 @@ import { Routes, Route } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { ProjectList } from './components/ProjectList'
 import { SessionManager } from './components/SessionManager'
-import { AgentControl } from './components/AgentControl'
+import { SessionView } from './components/SessionView'
 import { wsClient } from './api/websocket'
 
 function Dashboard() {
@@ -13,7 +13,7 @@ function Dashboard() {
         <SessionManager />
       </div>
       <div className="flex-1 bg-white rounded-lg shadow-sm flex">
-        <AgentControl />
+        <SessionView />
       </div>
     </div>
   )

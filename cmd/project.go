@@ -98,8 +98,9 @@ func getProjectService() *services.ProjectService {
 	
 	projectRepo := repositories.NewProjectRepository(db.DB)
 	eventRepo := repositories.NewEventRepository(db.DB)
+	gitService := services.NewGitService()
 	
-	return services.NewProjectService(projectRepo, eventRepo)
+	return services.NewProjectService(projectRepo, eventRepo, gitService)
 }
 
 func runProjectList(cmd *cobra.Command, args []string) {

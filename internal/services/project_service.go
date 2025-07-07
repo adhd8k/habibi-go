@@ -12,12 +12,14 @@ import (
 type ProjectService struct {
 	projectRepo *repositories.ProjectRepository
 	eventRepo   *repositories.EventRepository
+	gitService  *GitService
 }
 
-func NewProjectService(projectRepo *repositories.ProjectRepository, eventRepo *repositories.EventRepository) *ProjectService {
+func NewProjectService(projectRepo *repositories.ProjectRepository, eventRepo *repositories.EventRepository, gitService *GitService) *ProjectService {
 	return &ProjectService{
 		projectRepo: projectRepo,
 		eventRepo:   eventRepo,
+		gitService:  gitService,
 	}
 }
 
@@ -106,6 +108,17 @@ func (s *ProjectService) GetAllProjects() ([]*models.Project, error) {
 	projects, err := s.projectRepo.GetAll()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get projects: %w", err)
+	}
+	
+	// Add current branch information to each project
+	for _, project := range projects {
+		if currentBranch, err := s.gitService.GetCurrentBranch(project.Path); err == nil {
+			// Store in a temporary field for display - we can't modify the struct without migration
+			if project.Config == nil {
+				project.Config = make(map[string]interface{})
+			}
+			project.Config["current_branch"] = currentBranch
+		}
 	}
 	
 	return projects, nil

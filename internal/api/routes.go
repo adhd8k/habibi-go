@@ -68,6 +68,10 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 		sessions.POST("/:id/sync", r.sessionHandler.SyncSession)
 		sessions.POST("/cleanup", r.sessionHandler.CleanupSessions)
 		sessions.GET("/stats", r.sessionHandler.GetSessionStats)
+		sessions.GET("/:id/diffs", r.sessionHandler.GetSessionDiffs)
+		sessions.POST("/:id/rebase", r.sessionHandler.RebaseSession)
+		sessions.POST("/:id/push", r.sessionHandler.PushSession)
+		sessions.POST("/:id/close", r.sessionHandler.CloseSession)
 	}
 	
 	// Agents routes
@@ -123,6 +127,10 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 			v1Sessions.GET("/:id", r.sessionHandler.GetSession)
 			v1Sessions.PUT("/:id", r.sessionHandler.UpdateSession)
 			v1Sessions.DELETE("/:id", r.sessionHandler.DeleteSession)
+			v1Sessions.GET("/:id/diffs", r.sessionHandler.GetSessionDiffs)
+			v1Sessions.POST("/:id/rebase", r.sessionHandler.RebaseSession)
+			v1Sessions.POST("/:id/push", r.sessionHandler.PushSession)
+			v1Sessions.POST("/:id/close", r.sessionHandler.CloseSession)
 		}
 		
 		// Agents routes
