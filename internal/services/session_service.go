@@ -65,6 +65,12 @@ func (s *SessionService) CreateSession(req *models.CreateSessionRequest) (*model
 		return nil, fmt.Errorf("project is not a valid Git repository: %w", err)
 	}
 	
+	// Get the current branch to track as the original branch
+	originalBranch, err := s.gitService.GetCurrentBranch(project.Path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get current branch: %w", err)
+	}
+	
 	// Create worktree
 	worktreePath, err := s.gitService.CreateWorktree(project.Path, req.Name, req.BranchName)
 	if err != nil {
@@ -73,12 +79,13 @@ func (s *SessionService) CreateSession(req *models.CreateSessionRequest) (*model
 	
 	// Create session
 	session := &models.Session{
-		ProjectID:    req.ProjectID,
-		Name:         req.Name,
-		BranchName:   req.BranchName,
-		WorktreePath: worktreePath,
-		Status:       string(models.SessionStatusActive),
-		Config:       make(map[string]interface{}),
+		ProjectID:      req.ProjectID,
+		Name:           req.Name,
+		BranchName:     req.BranchName,
+		OriginalBranch: originalBranch,
+		WorktreePath:   worktreePath,
+		Status:         string(models.SessionStatusActive),
+		Config:         make(map[string]interface{}),
 	}
 	
 	if err := session.Validate(); err != nil {
@@ -104,10 +111,11 @@ func (s *SessionService) CreateSession(req *models.CreateSessionRequest) (*model
 	
 	// Create session event
 	event := models.NewSessionEvent(models.EventTypeSessionCreated, session.ID, map[string]interface{}{
-		"name":          session.Name,
-		"branch_name":   session.BranchName,
-		"worktree_path": session.WorktreePath,
-		"project_id":    session.ProjectID,
+		"name":            session.Name,
+		"branch_name":     session.BranchName,
+		"original_branch": session.OriginalBranch,
+		"worktree_path":   session.WorktreePath,
+		"project_id":      session.ProjectID,
 	})
 	
 	if err := s.eventRepo.Create(event); err != nil {
@@ -551,6 +559,79 @@ func (s *SessionService) PushSession(id int, remoteBranch string) error {
 	
 	if err := s.eventRepo.Create(event); err != nil {
 		fmt.Printf("Failed to create push event: %v\n", err)
+	}
+	
+	return nil
+}
+
+// MergeSession merges the session branch into the original branch
+func (s *SessionService) MergeSession(id int, targetBranch string) error {
+	session, err := s.sessionRepo.GetByID(id)
+	if err != nil {
+		return fmt.Errorf("failed to get session: %w", err)
+	}
+	
+	// Get project to find the original branch
+	project, err := s.projectRepo.GetByID(session.ProjectID)
+	if err != nil {
+		return fmt.Errorf("failed to get project: %w", err)
+	}
+	
+	// Use default branch if target branch not specified
+	if targetBranch == "" {
+		targetBranch = project.DefaultBranch
+	}
+	
+	// Perform merge
+	if err := s.gitService.MergeBranch(project.Path, session.BranchName, targetBranch); err != nil {
+		return fmt.Errorf("failed to merge: %w", err)
+	}
+	
+	// Create merge event
+	event := models.NewSessionEvent("session_merged", session.ID, map[string]interface{}{
+		"from_branch": session.BranchName,
+		"to_branch":   targetBranch,
+	})
+	
+	if err := s.eventRepo.Create(event); err != nil {
+		fmt.Printf("Failed to create merge event: %v\n", err)
+	}
+	
+	return nil
+}
+
+// MergeSessionToOriginal merges the session branch into its original branch
+func (s *SessionService) MergeSessionToOriginal(id int) error {
+	session, err := s.sessionRepo.GetByID(id)
+	if err != nil {
+		return fmt.Errorf("failed to get session: %w", err)
+	}
+	
+	// Check if we have an original branch recorded
+	if session.OriginalBranch == "" {
+		return fmt.Errorf("no original branch recorded for this session")
+	}
+	
+	// Get project to find the original branch
+	project, err := s.projectRepo.GetByID(session.ProjectID)
+	if err != nil {
+		return fmt.Errorf("failed to get project: %w", err)
+	}
+	
+	// Perform merge
+	if err := s.gitService.MergeBranch(project.Path, session.BranchName, session.OriginalBranch); err != nil {
+		return fmt.Errorf("failed to merge into original branch: %w", err)
+	}
+	
+	// Create merge event
+	event := models.NewSessionEvent("session_merged_to_original", session.ID, map[string]interface{}{
+		"from_branch":     session.BranchName,
+		"to_branch":       session.OriginalBranch,
+		"original_branch": session.OriginalBranch,
+	})
+	
+	if err := s.eventRepo.Create(event); err != nil {
+		fmt.Printf("Failed to create merge to original event: %v\n", err)
 	}
 	
 	return nil

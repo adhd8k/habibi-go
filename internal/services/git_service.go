@@ -533,6 +533,48 @@ func (s *GitService) PushBranch(worktreePath, localBranch, remoteBranch string) 
 	return nil
 }
 
+// MergeBranch merges a session branch into the target branch
+func (s *GitService) MergeBranch(projectPath, sessionBranch, targetBranch string) error {
+	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
+		return fmt.Errorf("project path does not exist: %s", projectPath)
+	}
+	
+	// Fetch latest changes
+	cmd := exec.Command("git", "fetch", "origin")
+	cmd.Dir = projectPath
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to fetch: %w", err)
+	}
+	
+	// Switch to target branch
+	cmd = exec.Command("git", "checkout", targetBranch)
+	cmd.Dir = projectPath
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to checkout target branch %s: %w", targetBranch, err)
+	}
+	
+	// Pull latest changes for target branch
+	cmd = exec.Command("git", "pull", "origin", targetBranch)
+	cmd.Dir = projectPath
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to pull latest changes for %s: %w", targetBranch, err)
+	}
+	
+	// Merge the session branch
+	cmd = exec.Command("git", "merge", sessionBranch, "--no-ff")
+	cmd.Dir = projectPath
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		// Check if it's a conflict
+		if strings.Contains(string(output), "conflict") {
+			return fmt.Errorf("merge conflict: %s", string(output))
+		}
+		return fmt.Errorf("failed to merge: %s", string(output))
+	}
+	
+	return nil
+}
+
 
 // DiffFile represents a file in a git diff
 type DiffFile struct {

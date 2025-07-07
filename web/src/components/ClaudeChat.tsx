@@ -254,7 +254,7 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
   )
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full w-full max-w-full overflow-hidden" style={{ width: '100%', maxWidth: '100vw' }}>
       <div className="border-b p-2 flex justify-between items-center bg-gray-50">
         <h3 className="font-medium">Claude Chat</h3>
         <button
@@ -269,7 +269,7 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
         </button>
       </div>
       
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4 w-full max-w-full" style={{ width: '100%', maxWidth: '100%' }}>
         {filteredMessages.length === 0 && (
           <div className="text-center text-gray-500 mt-8">
             <p className="text-lg mb-2">Start a conversation with Claude</p>
@@ -280,14 +280,14 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
         {filteredMessages.map((message) => (
           <div
             key={message.id}
-            className={`flex ${
+            className={`flex min-w-0 w-full max-w-full ${
               message.role === 'user' ? 'justify-end' : 
               message.role === 'tool_use' || message.role === 'tool_result' ? 'justify-center' :
               'justify-start'
             }`}
           >
             <div
-              className={`max-w-[70%] rounded-lg p-3 ${
+              className={`max-w-lg min-w-0 w-auto rounded-lg p-3 overflow-hidden word-wrap break-words ${
                 message.role === 'user'
                   ? 'bg-blue-500 text-white'
                   : message.role === 'tool_use'
@@ -296,6 +296,13 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
                   ? 'bg-green-50 border border-green-200 text-green-900'
                   : 'bg-gray-100 text-gray-900'
               }`}
+              style={{ 
+                maxWidth: '28rem', 
+                width: 'auto', 
+                wordBreak: 'break-word', 
+                overflowWrap: 'anywhere',
+                tableLayout: 'fixed' 
+              }}
             >
               {message.role === 'user' ? (
                 <div className="whitespace-pre-wrap break-words">{message.content}</div>
@@ -306,9 +313,11 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
                     <span className="font-medium">{message.toolName}</span>
                   </div>
                   {message.toolInput && (
-                    <pre className="text-xs bg-amber-100 p-2 rounded overflow-x-auto">
-                      {JSON.stringify(message.toolInput, null, 2)}
-                    </pre>
+                    <div className="text-xs bg-amber-100 p-2 rounded overflow-hidden">
+                      <pre className="whitespace-pre-wrap break-words overflow-wrap-anywhere">
+                        {JSON.stringify(message.toolInput, null, 2)}
+                      </pre>
+                    </div>
                   )}
                 </div>
               ) : message.role === 'tool_result' ? (
@@ -320,29 +329,33 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
                     )}
                   </div>
                   {message.toolContent && (
-                    <pre className="text-xs bg-green-100 p-2 rounded overflow-x-auto max-h-48">
-                      {typeof message.toolContent === 'string' 
-                        ? message.toolContent 
-                        : JSON.stringify(message.toolContent, null, 2)}
-                    </pre>
+                    <div className="text-xs bg-green-100 p-2 rounded overflow-hidden max-h-48">
+                      <pre className="whitespace-pre-wrap break-words overflow-wrap-anywhere overflow-y-auto">
+                        {typeof message.toolContent === 'string' 
+                          ? message.toolContent 
+                          : JSON.stringify(message.toolContent, null, 2)}
+                      </pre>
+                    </div>
                   )}
                 </div>
               ) : (
-                <div className="prose prose-sm max-w-none dark:prose-invert">
+                <div className="prose prose-sm max-w-none dark:prose-invert overflow-hidden" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                   <ReactMarkdown 
                     remarkPlugins={[remarkGfm]}
                     components={{
                       pre: ({ ...props }) => (
-                        <pre className="bg-gray-800 text-gray-100 p-2 rounded overflow-x-auto" {...props} />
+                        <div className="bg-gray-800 text-gray-100 p-2 rounded overflow-hidden text-sm">
+                          <pre className="whitespace-pre-wrap text-xs" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }} {...props} />
+                        </div>
                       ),
                       code: ({ className, children, ...props }) => {
                         const match = /language-(\w+)/.exec(className || '')
                         return match ? (
-                          <code className="bg-gray-800 text-gray-100" {...props}>
+                          <code className="bg-gray-800 text-gray-100 text-xs" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }} {...props}>
                             {children}
                           </code>
                         ) : (
-                          <code className="bg-gray-200 px-1 rounded" {...props}>
+                          <code className="bg-gray-200 px-1 rounded text-xs" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }} {...props}>
                             {children}
                           </code>
                         )

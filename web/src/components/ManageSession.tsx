@@ -9,8 +9,11 @@ export function ManageSession() {
   const queryClient = useQueryClient()
   const { currentSession, setCurrentSession } = useAppStore()
   const [pushBranchName, setPushBranchName] = useState('')
+  const [targetBranchName, setTargetBranchName] = useState('')
   const [isRebasing, setIsRebasing] = useState(false)
   const [isPushing, setIsPushing] = useState(false)
+  const [isMerging, setIsMerging] = useState(false)
+  const [isMergingToOriginal, setIsMergingToOriginal] = useState(false)
 
   const rebaseMutation = useMutation({
     mutationFn: async () => {
@@ -42,6 +45,39 @@ export function ManageSession() {
     },
     onError: () => {
       setIsPushing(false)
+    },
+  })
+
+  const mergeMutation = useMutation({
+    mutationFn: async (targetBranch?: string) => {
+      if (!currentSession) return
+      setIsMerging(true)
+      const response = await sessionsApi.merge(currentSession.id, targetBranch)
+      return response.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sessions'] })
+      setIsMerging(false)
+      setTargetBranchName('')
+    },
+    onError: () => {
+      setIsMerging(false)
+    },
+  })
+
+  const mergeToOriginalMutation = useMutation({
+    mutationFn: async () => {
+      if (!currentSession) return
+      setIsMergingToOriginal(true)
+      const response = await sessionsApi.mergeToOriginal(currentSession.id)
+      return response.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sessions'] })
+      setIsMergingToOriginal(false)
+    },
+    onError: () => {
+      setIsMergingToOriginal(false)
     },
   })
 
@@ -79,6 +115,12 @@ export function ManageSession() {
             <span className="text-gray-600">Branch:</span>{' '}
             <span className="font-mono">{currentSession.branch_name}</span>
           </div>
+          {currentSession.original_branch && (
+            <div>
+              <span className="text-gray-600">Original Branch:</span>{' '}
+              <span className="font-mono">{currentSession.original_branch}</span>
+            </div>
+          )}
           <div>
             <span className="text-gray-600">Status:</span>{' '}
             <span className={`
@@ -155,6 +197,83 @@ export function ManageSession() {
         {pushMutation.isSuccess && (
           <p className="mt-2 text-sm text-green-600">
             Successfully pushed to remote!
+          </p>
+        )}
+      </div>
+
+      {/* Merge to Original Branch Section */}
+      {currentSession.original_branch && (
+        <div className="border border-blue-200 bg-blue-50 rounded-lg p-4 mb-4">
+          <h3 className="font-medium mb-2 text-blue-900">Merge to Original Branch</h3>
+          <p className="text-sm text-blue-700 mb-3">
+            Merge this session's changes back into the original branch: <span className="font-mono">{currentSession.original_branch}</span>
+          </p>
+          <button
+            onClick={() => {
+              if (confirm(`Are you sure you want to merge this session into ${currentSession.original_branch}? This will merge changes into the original branch.`)) {
+                mergeToOriginalMutation.mutate()
+              }
+            }}
+            disabled={isMergingToOriginal}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+          >
+            {isMergingToOriginal ? 'Merging...' : `Merge to ${currentSession.original_branch}`}
+          </button>
+          {mergeToOriginalMutation.isError && (
+            <p className="mt-2 text-sm text-red-600">
+              Failed to merge to original branch. Check for conflicts or ensure the branch exists.
+            </p>
+          )}
+          {mergeToOriginalMutation.isSuccess && (
+            <p className="mt-2 text-sm text-green-600">
+              Successfully merged into {currentSession.original_branch}!
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Merge Section */}
+      <div className="border rounded-lg p-4 mb-4">
+        <h3 className="font-medium mb-2">Merge into Branch</h3>
+        <p className="text-sm text-gray-600 mb-3">
+          Merge this session's changes into the original branch or a different target branch.
+        </p>
+        <div className="space-y-3">
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Target Branch (optional)
+            </label>
+            <input
+              type="text"
+              value={targetBranchName}
+              onChange={(e) => setTargetBranchName(e.target.value)}
+              placeholder="main (default)"
+              className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Leave empty to merge into the project's default branch
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              if (confirm('Are you sure you want to merge this session? This will merge changes into the target branch.')) {
+                mergeMutation.mutate(targetBranchName || undefined)
+              }
+            }}
+            disabled={isMerging}
+            className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 disabled:opacity-50"
+          >
+            {isMerging ? 'Merging...' : 'Merge Session'}
+          </button>
+        </div>
+        {mergeMutation.isError && (
+          <p className="mt-2 text-sm text-red-600">
+            Failed to merge. Check for conflicts or ensure the target branch exists.
+          </p>
+        )}
+        {mergeMutation.isSuccess && (
+          <p className="mt-2 text-sm text-green-600">
+            Successfully merged into target branch!
           </p>
         )}
       </div>

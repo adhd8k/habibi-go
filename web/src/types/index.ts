@@ -15,6 +15,7 @@ export interface Session {
   project_id: number
   name: string
   branch_name: string
+  original_branch?: string
   worktree_path: string
   status: 'active' | 'paused' | 'stopped'
   config: Record<string, any>

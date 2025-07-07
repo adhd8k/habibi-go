@@ -73,6 +73,8 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 		sessions.GET("/:id/diffs", r.sessionHandler.GetSessionDiffs)
 		sessions.POST("/:id/rebase", r.sessionHandler.RebaseSession)
 		sessions.POST("/:id/push", r.sessionHandler.PushSession)
+		sessions.POST("/:id/merge", r.sessionHandler.MergeSession)
+		sessions.POST("/:id/merge-to-original", r.sessionHandler.MergeSessionToOriginal)
 		sessions.POST("/:id/close", r.sessionHandler.CloseSession)
 	}
 	
@@ -135,6 +137,8 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 			v1Sessions.GET("/:id/diffs", r.sessionHandler.GetSessionDiffs)
 			v1Sessions.POST("/:id/rebase", r.sessionHandler.RebaseSession)
 			v1Sessions.POST("/:id/push", r.sessionHandler.PushSession)
+			v1Sessions.POST("/:id/merge", r.sessionHandler.MergeSession)
+			v1Sessions.POST("/:id/merge-to-original", r.sessionHandler.MergeSessionToOriginal)
 			v1Sessions.POST("/:id/close", r.sessionHandler.CloseSession)
 		}
 		

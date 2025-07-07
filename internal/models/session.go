@@ -11,6 +11,7 @@ type Session struct {
 	ProjectID        int                    `json:"project_id" db:"project_id"`
 	Name             string                 `json:"name" db:"name" binding:"required"`
 	BranchName       string                 `json:"branch_name" db:"branch_name" binding:"required"`
+	OriginalBranch   string                 `json:"original_branch" db:"original_branch"`
 	WorktreePath     string                 `json:"worktree_path" db:"worktree_path"`
 	Status           string                 `json:"status" db:"status"`
 	Config           map[string]interface{} `json:"config" db:"config"`

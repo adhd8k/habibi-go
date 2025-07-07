@@ -51,6 +51,9 @@ export const sessionsApi = {
   rebase: (id: number) => api.post(`/sessions/${id}/rebase`),
   push: (id: number, remoteBranch?: string) => 
     api.post(`/sessions/${id}/push`, { remote_branch: remoteBranch }),
+  merge: (id: number, targetBranch?: string) => 
+    api.post(`/sessions/${id}/merge`, { target_branch: targetBranch }),
+  mergeToOriginal: (id: number) => api.post(`/sessions/${id}/merge-to-original`),
   close: (id: number) => api.post(`/sessions/${id}/close`),
 }
 

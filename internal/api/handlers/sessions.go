@@ -388,6 +388,68 @@ func (h *SessionHandler) PushSession(c *gin.Context) {
 	})
 }
 
+// MergeSession merges the session branch into the target branch
+func (h *SessionHandler) MergeSession(c *gin.Context) {
+	sessionID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "Invalid session ID",
+		})
+		return
+	}
+	
+	var req struct {
+		TargetBranch string `json:"target_branch"`
+	}
+	
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+	
+	if err := h.sessionService.MergeSession(sessionID, req.TargetBranch); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Session merged successfully",
+	})
+}
+
+// MergeSessionToOriginal merges the session branch into its original branch
+func (h *SessionHandler) MergeSessionToOriginal(c *gin.Context) {
+	sessionID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "Invalid session ID",
+		})
+		return
+	}
+	
+	if err := h.sessionService.MergeSessionToOriginal(sessionID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Session merged to original branch successfully",
+	})
+}
+
 // CloseSession closes the session and removes the worktree
 func (h *SessionHandler) CloseSession(c *gin.Context) {
 	sessionID, err := strconv.Atoi(c.Param("id"))
