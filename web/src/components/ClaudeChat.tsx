@@ -33,9 +33,9 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
     // Subscribe to agent output
     wsClient.subscribe(agent.id)
     
-    wsClient.on('agent_output', (data) => {
-      if (data.agent_id === agent.id) {
-        const output = data.output
+    wsClient.on('agent_output', (message) => {
+      if (message.agent_id === agent.id && message.data) {
+        const output = message.data.output
         
         // Skip empty lines
         if (!output || output.trim() === '') {
@@ -45,25 +45,8 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
         setMessages(prev => {
           const lastMessage = prev[prev.length - 1]
           
-          // If we're processing and this is Claude's response
-          if (isProcessing && output.trim()) {
-            setIsProcessing(false)
-            
-            // Start a new assistant message
-            return [
-              ...prev,
-              {
-                id: Date.now().toString(),
-                role: 'assistant',
-                content: output,
-                timestamp: new Date()
-              }
-            ]
-          }
-          
           // If there's already an assistant message being built, append to it
-          if (lastMessage && lastMessage.role === 'assistant' && 
-              prev[prev.length - 2]?.role === 'user') {
+          if (lastMessage && lastMessage.role === 'assistant') {
             return [
               ...prev.slice(0, -1),
               {
@@ -73,14 +56,31 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
             ]
           }
           
-          return prev
+          // Otherwise start a new assistant message
+          return [
+            ...prev,
+            {
+              id: Date.now().toString(),
+              role: 'assistant',
+              content: output,
+              timestamp: new Date()
+            }
+          ]
         })
+      }
+    })
+    
+    // Listen for response completion
+    wsClient.on('agent_response_complete', (message) => {
+      if (message.agent_id === agent.id) {
+        setIsProcessing(false)
       }
     })
 
     return () => {
       wsClient.unsubscribe(agent.id)
       wsClient.off('agent_output')
+      wsClient.off('agent_response_complete')
     }
   }, [agent.id])
 

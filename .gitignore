@@ -79,4 +79,4 @@ coverage.txt
 *.out
 
 # Vendor directory
-vendor/
+vendor/habibi-go

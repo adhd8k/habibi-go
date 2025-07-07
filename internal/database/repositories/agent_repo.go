@@ -32,14 +32,14 @@ func (r *AgentRepository) Create(agent *models.Agent) error {
 	query := `
 		INSERT INTO agents (session_id, agent_type, pid, status, config, command, working_directory, 
 						   communication_method, input_pipe_path, output_pipe_path, last_heartbeat, 
-						   resource_usage, started_at, stopped_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+						   resource_usage, started_at, stopped_at, claude_session_id)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 	
 	result, err := r.db.Exec(query, agent.SessionID, agent.AgentType, agent.PID, agent.Status,
 		configStr, agent.Command, agent.WorkingDirectory, agent.CommunicationMethod,
 		agent.InputPipePath, agent.OutputPipePath, agent.LastHeartbeat, resourceUsageStr,
-		agent.StartedAt, agent.StoppedAt)
+		agent.StartedAt, agent.StoppedAt, agent.ClaudeSessionID)
 	if err != nil {
 		return fmt.Errorf("failed to create agent: %w", err)
 	}
@@ -57,7 +57,7 @@ func (r *AgentRepository) GetByID(id int) (*models.Agent, error) {
 	query := `
 		SELECT id, session_id, agent_type, pid, status, config, command, working_directory,
 			   communication_method, input_pipe_path, output_pipe_path, last_heartbeat,
-			   resource_usage, started_at, stopped_at
+			   resource_usage, started_at, stopped_at, claude_session_id
 		FROM agents
 		WHERE id = ?
 	`
@@ -70,7 +70,7 @@ func (r *AgentRepository) GetByID(id int) (*models.Agent, error) {
 		&agent.ID, &agent.SessionID, &agent.AgentType, &agent.PID, &agent.Status,
 		&configStr, &agent.Command, &agent.WorkingDirectory, &agent.CommunicationMethod,
 		&agent.InputPipePath, &agent.OutputPipePath, &lastHeartbeat, &resourceUsageStr,
-		&agent.StartedAt, &stoppedAt,
+		&agent.StartedAt, &stoppedAt, &agent.ClaudeSessionID,
 	)
 	
 	if err != nil {
@@ -103,7 +103,7 @@ func (r *AgentRepository) GetBySessionID(sessionID int) ([]*models.Agent, error)
 	query := `
 		SELECT id, session_id, agent_type, pid, status, config, command, working_directory,
 			   communication_method, input_pipe_path, output_pipe_path, last_heartbeat,
-			   resource_usage, started_at, stopped_at
+			   resource_usage, started_at, stopped_at, claude_session_id
 		FROM agents
 		WHERE session_id = ?
 		ORDER BY started_at DESC
@@ -126,7 +126,7 @@ func (r *AgentRepository) GetBySessionID(sessionID int) ([]*models.Agent, error)
 			&agent.ID, &agent.SessionID, &agent.AgentType, &agent.PID, &agent.Status,
 			&configStr, &agent.Command, &agent.WorkingDirectory, &agent.CommunicationMethod,
 			&agent.InputPipePath, &agent.OutputPipePath, &lastHeartbeat, &resourceUsageStr,
-			&agent.StartedAt, &stoppedAt,
+			&agent.StartedAt, &stoppedAt, &agent.ClaudeSessionID,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan agent: %w", err)
@@ -158,7 +158,7 @@ func (r *AgentRepository) GetAll() ([]*models.Agent, error) {
 	query := `
 		SELECT id, session_id, agent_type, pid, status, config, command, working_directory,
 			   communication_method, input_pipe_path, output_pipe_path, last_heartbeat,
-			   resource_usage, started_at, stopped_at
+			   resource_usage, started_at, stopped_at, claude_session_id
 		FROM agents
 		ORDER BY started_at DESC
 	`
@@ -180,7 +180,7 @@ func (r *AgentRepository) GetAll() ([]*models.Agent, error) {
 			&agent.ID, &agent.SessionID, &agent.AgentType, &agent.PID, &agent.Status,
 			&configStr, &agent.Command, &agent.WorkingDirectory, &agent.CommunicationMethod,
 			&agent.InputPipePath, &agent.OutputPipePath, &lastHeartbeat, &resourceUsageStr,
-			&agent.StartedAt, &stoppedAt,
+			&agent.StartedAt, &stoppedAt, &agent.ClaudeSessionID,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan agent: %w", err)
@@ -223,14 +223,15 @@ func (r *AgentRepository) Update(agent *models.Agent) error {
 		UPDATE agents
 		SET session_id = ?, agent_type = ?, pid = ?, status = ?, config = ?, command = ?,
 			working_directory = ?, communication_method = ?, input_pipe_path = ?, 
-			output_pipe_path = ?, last_heartbeat = ?, resource_usage = ?, stopped_at = ?
+			output_pipe_path = ?, last_heartbeat = ?, resource_usage = ?, stopped_at = ?,
+			claude_session_id = ?
 		WHERE id = ?
 	`
 	
 	result, err := r.db.Exec(query, agent.SessionID, agent.AgentType, agent.PID, agent.Status,
 		configStr, agent.Command, agent.WorkingDirectory, agent.CommunicationMethod,
 		agent.InputPipePath, agent.OutputPipePath, agent.LastHeartbeat, resourceUsageStr,
-		agent.StoppedAt, agent.ID)
+		agent.StoppedAt, agent.ClaudeSessionID, agent.ID)
 	if err != nil {
 		return fmt.Errorf("failed to update agent: %w", err)
 	}
@@ -271,7 +272,7 @@ func (r *AgentRepository) GetByStatus(status string) ([]*models.Agent, error) {
 	query := `
 		SELECT id, session_id, agent_type, pid, status, config, command, working_directory,
 			   communication_method, input_pipe_path, output_pipe_path, last_heartbeat,
-			   resource_usage, started_at, stopped_at
+			   resource_usage, started_at, stopped_at, claude_session_id
 		FROM agents
 		WHERE status = ?
 		ORDER BY started_at DESC
@@ -294,7 +295,7 @@ func (r *AgentRepository) GetByStatus(status string) ([]*models.Agent, error) {
 			&agent.ID, &agent.SessionID, &agent.AgentType, &agent.PID, &agent.Status,
 			&configStr, &agent.Command, &agent.WorkingDirectory, &agent.CommunicationMethod,
 			&agent.InputPipePath, &agent.OutputPipePath, &lastHeartbeat, &resourceUsageStr,
-			&agent.StartedAt, &stoppedAt,
+			&agent.StartedAt, &stoppedAt, &agent.ClaudeSessionID,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan agent: %w", err)
@@ -380,7 +381,7 @@ func (r *AgentRepository) GetStaleAgents(timeout time.Duration) ([]*models.Agent
 	query := `
 		SELECT id, session_id, agent_type, pid, status, config, command, working_directory,
 			   communication_method, input_pipe_path, output_pipe_path, last_heartbeat,
-			   resource_usage, started_at, stopped_at
+			   resource_usage, started_at, stopped_at, claude_session_id
 		FROM agents
 		WHERE status = ? AND (last_heartbeat IS NULL OR last_heartbeat < datetime('now', '-' || ? || ' seconds'))
 		ORDER BY started_at DESC
@@ -403,7 +404,7 @@ func (r *AgentRepository) GetStaleAgents(timeout time.Duration) ([]*models.Agent
 			&agent.ID, &agent.SessionID, &agent.AgentType, &agent.PID, &agent.Status,
 			&configStr, &agent.Command, &agent.WorkingDirectory, &agent.CommunicationMethod,
 			&agent.InputPipePath, &agent.OutputPipePath, &lastHeartbeat, &resourceUsageStr,
-			&agent.StartedAt, &stoppedAt,
+			&agent.StartedAt, &stoppedAt, &agent.ClaudeSessionID,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan agent: %w", err)
@@ -507,4 +508,24 @@ func (r *AgentRepository) GetStats() (map[string]interface{}, error) {
 	stats["type_counts"] = typeCounts
 	
 	return stats, nil
+}
+
+func (r *AgentRepository) UpdateClaudeSessionID(id int, sessionID string) error {
+	query := `UPDATE agents SET claude_session_id = ? WHERE id = ?`
+	
+	result, err := r.db.Exec(query, sessionID, id)
+	if err != nil {
+		return fmt.Errorf("failed to update claude session ID: %w", err)
+	}
+	
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	
+	if rowsAffected == 0 {
+		return fmt.Errorf("agent not found")
+	}
+	
+	return nil
 }

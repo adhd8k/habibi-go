@@ -22,6 +22,7 @@ type Agent struct {
 	ResourceUsage       map[string]interface{} `json:"resource_usage" db:"resource_usage"`
 	StartedAt           time.Time              `json:"started_at" db:"started_at"`
 	StoppedAt           *time.Time             `json:"stopped_at" db:"stopped_at"`
+	ClaudeSessionID     string                 `json:"claude_session_id" db:"claude_session_id"`
 	
 	// Relationships
 	Session  *Session       `json:"session,omitempty"`

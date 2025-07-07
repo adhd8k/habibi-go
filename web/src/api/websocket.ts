@@ -21,7 +21,8 @@ export class WebSocketClient {
         const message = JSON.parse(event.data)
         const handler = this.messageHandlers.get(message.type)
         if (handler) {
-          handler(message.data)
+          // Pass the full message to handlers, not just data
+          handler(message)
         }
       } catch (error) {
         console.error('Failed to parse WebSocket message:', error)
@@ -49,13 +50,13 @@ export class WebSocketClient {
 
   subscribe(agentId: number) {
     if (this.ws?.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify({ type: 'subscribe', agent_id: agentId }))
+      this.ws.send(JSON.stringify({ type: 'agent_logs_subscribe', agent_id: agentId }))
     }
   }
 
   unsubscribe(agentId: number) {
     if (this.ws?.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify({ type: 'unsubscribe', agent_id: agentId }))
+      this.ws.send(JSON.stringify({ type: 'agent_logs_unsubscribe', agent_id: agentId }))
     }
   }
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	_ "modernc.org/sqlite"
 )
@@ -95,6 +96,7 @@ func (db *DB) RunMigrations() error {
 			resource_usage TEXT DEFAULT '{}',
 			started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			stopped_at DATETIME,
+			claude_session_id TEXT,
 			FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
 		)`,
 		`CREATE TABLE IF NOT EXISTS agent_commands (
@@ -135,12 +137,15 @@ func (db *DB) RunMigrations() error {
 		`CREATE INDEX IF NOT EXISTS idx_events_entity ON events(entity_type, entity_id)`,
 		// Add setup_command column if it doesn't exist
 		`ALTER TABLE projects ADD COLUMN setup_command TEXT`,
+		// Add claude_session_id column if it doesn't exist
+		`ALTER TABLE agents ADD COLUMN claude_session_id TEXT`,
 	}
 	
 	for i, migration := range migrations {
 		if _, err := db.Exec(migration); err != nil {
 			// Ignore error for ALTER TABLE if column already exists
-			if i == len(migrations)-1 && err.Error() == "duplicate column name: setup_command" {
+			if i >= len(migrations)-2 && (strings.Contains(err.Error(), "duplicate column name: setup_command") || 
+				strings.Contains(err.Error(), "duplicate column name: claude_session_id")) {
 				continue
 			}
 			return fmt.Errorf("failed to execute migration %d: %w", i, err)

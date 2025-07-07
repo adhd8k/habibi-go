@@ -133,7 +133,16 @@ func getAgentServices() (*services.AgentService, *services.AgentCommService, *se
 	// Initialize services
 	gitService := services.NewGitService()
 	agentService := services.NewAgentService(agentRepo, sessionRepo, eventRepo)
-	commService := services.NewAgentCommService(agentRepo, commandRepo, eventRepo, agentService)
+	
+	// Initialize Claude service
+	claudeBinaryPath := "claude"
+	if cfg.Agents.ClaudeBinaryPath != "" {
+		claudeBinaryPath = cfg.Agents.ClaudeBinaryPath
+	}
+	claudeService := services.NewClaudeAgentService(agentRepo, eventRepo, claudeBinaryPath)
+	agentService.SetClaudeService(claudeService)
+	
+	commService := services.NewAgentCommService(agentRepo, commandRepo, eventRepo, agentService, claudeService)
 	sessionService := services.NewSessionService(sessionRepo, projectRepo, eventRepo, gitService)
 	
 	return agentService, commService, sessionService

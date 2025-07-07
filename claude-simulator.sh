@@ -6,14 +6,24 @@ echo "Claude Code v0.1.0"
 echo "Type 'help' for available commands or start typing to chat."
 echo ""
 
-# Function to simulate Claude thinking
-think() {
-    echo -n "Thinking"
-    for i in {1..3}; do
-        sleep 0.3
-        echo -n "."
-    done
+# Function to simulate Claude thinking and responding
+respond() {
+    local input="$1"
+    
+    # Simulate thinking delay
+    sleep 0.5
+    
+    # Generate a multi-line response
+    echo "I understand you're asking about: \"$input\""
     echo ""
+    echo "Here's my response:"
+    echo "- This is line 1 of the response"
+    echo "- This is line 2 showing streaming works"
+    sleep 0.2
+    echo "- Each line appears separately"
+    echo "- Demonstrating real-time output"
+    echo ""
+    echo "The chat interface is working correctly!"
 }
 
 # Main loop
@@ -22,6 +32,9 @@ while IFS= read -r line; do
     if [ -z "$line" ]; then
         continue
     fi
+    
+    # Log received input for debugging
+    # echo "[Received: $line]" >&2
     
     # Simulate different responses based on input
     case "$line" in
@@ -43,18 +56,8 @@ while IFS= read -r line; do
             echo ""
             ;;
         *)
-            # Simulate a thoughtful response
-            think
-            echo "I understand you're asking about: \"$line\""
-            echo ""
-            echo "As a simulated Claude, I would help you with:"
-            echo "- Code analysis and understanding"
-            echo "- Writing and refactoring code"
-            echo "- Debugging and problem solving"
-            echo "- Best practices and recommendations"
-            echo ""
-            echo "This is a test response to demonstrate the chat interface is working."
-            echo ""
+            # Simulate a response with streaming
+            respond "$line"
             ;;
     esac
 done

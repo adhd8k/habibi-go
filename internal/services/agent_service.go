@@ -27,6 +27,12 @@ type AgentService struct {
 	healthInterval   time.Duration
 	healthTimeout    time.Duration
 	claudeBinaryPath string
+	
+	// Event broadcasting
+	eventBroadcaster EventBroadcaster
+	
+	// Claude-specific service
+	claudeService    *ClaudeAgentService
 }
 
 type AgentInstance struct {
@@ -59,12 +65,23 @@ func NewAgentService(
 		healthInterval:  30 * time.Second,
 		healthTimeout:   5 * time.Minute,
 		claudeBinaryPath: "claude", // Default to "claude" in PATH
+		eventBroadcaster: &NoOpBroadcaster{}, // Default no-op broadcaster
 	}
 }
 
 // SetClaudeBinaryPath sets the path to the Claude binary
 func (s *AgentService) SetClaudeBinaryPath(path string) {
 	s.claudeBinaryPath = path
+}
+
+// SetEventBroadcaster sets the event broadcaster
+func (s *AgentService) SetEventBroadcaster(broadcaster EventBroadcaster) {
+	s.eventBroadcaster = broadcaster
+}
+
+// SetClaudeService sets the Claude-specific service
+func (s *AgentService) SetClaudeService(claudeService *ClaudeAgentService) {
+	s.claudeService = claudeService
 }
 
 func (s *AgentService) StartAgent(req *models.CreateAgentRequest) (*models.Agent, error) {
@@ -90,7 +107,38 @@ func (s *AgentService) StartAgent(req *models.CreateAgentRequest) (*models.Agent
 		workingDir = session.WorktreePath
 	}
 	
-	// Create agent record
+	// Handle Claude agents differently
+	if req.AgentType == "claude-code" {
+		if s.claudeService == nil {
+			return nil, fmt.Errorf("Claude service not initialized")
+		}
+		
+		// Use Claude service to create the agent
+		agent, err := s.claudeService.StartClaudeAgent(req.SessionID, workingDir)
+		if err != nil {
+			return nil, fmt.Errorf("failed to start Claude agent: %w", err)
+		}
+		
+		// Create a virtual instance for tracking
+		instance := &AgentInstance{
+			Agent:       agent,
+			Process:     nil, // No actual process for Claude
+			OutputChan:  make(chan string, 100),
+			ErrorChan:   make(chan string, 100),
+			StopChan:    make(chan struct{}),
+			InputWriter: make(chan string, 10),
+			LastSeen:    time.Now(),
+		}
+		
+		// Store in active agents
+		s.activeAgentsMux.Lock()
+		s.activeAgents[agent.ID] = instance
+		s.activeAgentsMux.Unlock()
+		
+		return agent, nil
+	}
+	
+	// For non-Claude agents, use the original logic
 	agent := &models.Agent{
 		SessionID:           req.SessionID,
 		AgentType:           req.AgentType,
@@ -428,8 +476,11 @@ func (s *AgentService) startAgentProcess(agent *models.Agent) (*AgentInstance, e
 		// Start claude in interactive mode with proper TTY setup
 		fmt.Printf("Starting Claude from: %s in directory: %s\n", claudePath, agent.WorkingDirectory)
 		
-		// Start Claude without any flags - let it run in its default mode
+		// Start Claude in interactive mode (default)
 		cmd = exec.Command(claudePath)
+		
+		// Real Claude might need specific environment variables
+		cmd.Env = append(cmd.Env, os.Environ()...)
 	} else {
 		// For other commands, use shell
 		cmd = exec.Command("sh", "-c", agent.Command)
@@ -476,8 +527,14 @@ func (s *AgentService) startAgentProcess(agent *models.Agent) (*AgentInstance, e
 		select {
 		case err := <-done:
 			// Process exited immediately
-			return nil, fmt.Errorf("claude process exited immediately: %w", err)
-		case <-time.After(500 * time.Millisecond):
+			exitCode := -1
+			if exitErr, ok := err.(*exec.ExitError); ok {
+				if status, ok := exitErr.Sys().(interface{ ExitStatus() int }); ok {
+					exitCode = status.ExitStatus()
+				}
+			}
+			return nil, fmt.Errorf("claude process exited immediately with code %d: %w", exitCode, err)
+		case <-time.After(2 * time.Second):
 			// Process is still running, continue
 			fmt.Println("Claude process appears to be running")
 		}
@@ -503,6 +560,13 @@ func (s *AgentService) startAgentProcess(agent *models.Agent) (*AgentInstance, e
 		go func() {
 			for err := range instance.ErrorChan {
 				fmt.Printf("Claude stderr: %s\n", err)
+			}
+		}()
+		
+		// Also capture stdout to see what Claude outputs
+		go func() {
+			for output := range instance.OutputChan {
+				fmt.Printf("Claude stdout: %s\n", output)
 			}
 		}()
 	}
@@ -567,7 +631,13 @@ func (s *AgentService) monitorAgent(instance *AgentInstance) {
 			}
 			
 		case output := <-instance.OutputChan:
-			// Broadcast output event
+			// Broadcast output event through WebSocket
+			s.eventBroadcaster.BroadcastEvent("agent_output", instance.Agent.ID, map[string]interface{}{
+				"output":    output,
+				"timestamp": time.Now(),
+			})
+			
+			// Also create event in database
 			event := models.NewAgentEvent("agent_output", instance.Agent.ID, map[string]interface{}{
 				"output":    output,
 				"timestamp": time.Now(),
@@ -578,7 +648,13 @@ func (s *AgentService) monitorAgent(instance *AgentInstance) {
 			}
 			
 		case errorOutput := <-instance.ErrorChan:
-			// Broadcast error output event
+			// Broadcast error output event through WebSocket
+			s.eventBroadcaster.BroadcastEvent("agent_error", instance.Agent.ID, map[string]interface{}{
+				"error":     errorOutput,
+				"timestamp": time.Now(),
+			})
+			
+			// Also create event in database
 			event := models.NewAgentEvent("agent_error", instance.Agent.ID, map[string]interface{}{
 				"error":     errorOutput,
 				"timestamp": time.Now(),

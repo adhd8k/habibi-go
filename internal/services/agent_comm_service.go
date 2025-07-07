@@ -13,6 +13,7 @@ type AgentCommService struct {
 	commandRepo      *repositories.AgentCommandRepository
 	eventRepo        *repositories.EventRepository
 	agentService     *AgentService
+	claudeService    *ClaudeAgentService
 }
 
 func NewAgentCommService(
@@ -20,12 +21,14 @@ func NewAgentCommService(
 	commandRepo *repositories.AgentCommandRepository,
 	eventRepo *repositories.EventRepository,
 	agentService *AgentService,
+	claudeService *ClaudeAgentService,
 ) *AgentCommService {
 	return &AgentCommService{
-		agentRepo:    agentRepo,
-		commandRepo:  commandRepo,
-		eventRepo:    eventRepo,
-		agentService: agentService,
+		agentRepo:     agentRepo,
+		commandRepo:   commandRepo,
+		eventRepo:     eventRepo,
+		agentService:  agentService,
+		claudeService: claudeService,
 	}
 }
 
@@ -52,15 +55,65 @@ func (s *AgentCommService) SendCommand(agentID int, commandText string) (*models
 		return nil, fmt.Errorf("failed to create command record: %w", err)
 	}
 	
+	// Handle Claude agents differently
+	if agent.AgentType == "claude-code" {
+		// Use Claude-specific service for command execution
+		startTime := time.Now()
+		
+		// Send command through Claude service
+		if err := s.claudeService.SendClaudeMessage(agent, commandText); err != nil {
+			s.commandRepo.MarkFailed(command.ID, fmt.Sprintf("failed to send Claude message: %v", err))
+			return nil, fmt.Errorf("failed to send Claude message: %w", err)
+		}
+		
+		// Create command event
+		event := models.NewAgentEvent(models.EventTypeAgentCommand, agentID, map[string]interface{}{
+			"command_id": command.ID,
+			"command":    commandText,
+			"timestamp":  startTime,
+		})
+		
+		if err := s.eventRepo.Create(event); err != nil {
+			fmt.Printf("Failed to create command event: %v\n", err)
+		}
+		
+		// Mark command as completed since Claude responds immediately
+		executionTime := time.Since(startTime)
+		if err := s.commandRepo.MarkCompleted(command.ID, "Command sent to Claude", int(executionTime.Milliseconds())); err != nil {
+			fmt.Printf("Failed to mark command as completed: %v\n", err)
+		}
+		
+		return command, nil
+	}
+	
+	// For non-Claude agents, use the original logic
 	// Get agent instance from agent service
 	s.agentService.activeAgentsMux.RLock()
 	instance, exists := s.agentService.activeAgents[agentID]
 	s.agentService.activeAgentsMux.RUnlock()
 	
 	if !exists {
-		// Mark command as failed
-		s.commandRepo.MarkFailed(command.ID, "agent instance not found")
-		return nil, fmt.Errorf("agent instance not found")
+		// Try to restart the agent
+		fmt.Printf("Agent %d not in active agents, attempting to restart...\n", agentID)
+		
+		restartedAgent, err := s.agentService.GetOrRestartAgent(agentID)
+		if err != nil {
+			s.commandRepo.MarkFailed(command.ID, fmt.Sprintf("failed to restart agent: %v", err))
+			return nil, fmt.Errorf("agent instance not found and failed to restart: %w", err)
+		}
+		
+		// Wait a moment for the agent to fully start
+		time.Sleep(1 * time.Second)
+		
+		// Try to get the instance again
+		s.agentService.activeAgentsMux.RLock()
+		instance, exists = s.agentService.activeAgents[restartedAgent.ID]
+		s.agentService.activeAgentsMux.RUnlock()
+		
+		if !exists {
+			s.commandRepo.MarkFailed(command.ID, "agent instance not found after restart")
+			return nil, fmt.Errorf("agent instance not found even after restart")
+		}
 	}
 	
 	// Send command to agent

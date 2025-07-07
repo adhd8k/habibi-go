@@ -223,8 +223,15 @@ func (c *Client) handleAgentCommand(msg WSMessage) {
 		return
 	}
 	
+	// First ensure the agent is running
+	agent, err := c.handler.agentService.GetOrRestartAgent(msg.AgentID)
+	if err != nil {
+		c.sendError(fmt.Sprintf("Failed to ensure agent is running: %v", err))
+		return
+	}
+	
 	// Send command to agent
-	command, err := c.handler.commService.SendCommand(msg.AgentID, msg.Command)
+	command, err := c.handler.commService.SendCommand(agent.ID, msg.Command)
 	if err != nil {
 		c.sendError(fmt.Sprintf("Failed to send command: %v", err))
 		return

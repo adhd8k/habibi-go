@@ -90,17 +90,34 @@ func runServer(cmd *cobra.Command, args []string) {
 	agentService := services.NewAgentService(agentRepo, sessionRepo, eventRepo)
 	
 	// Configure agent service with Claude binary path
+	claudeBinaryPath := "claude"
 	if cfg.Agents.ClaudeBinaryPath != "" {
+		claudeBinaryPath = cfg.Agents.ClaudeBinaryPath
 		agentService.SetClaudeBinaryPath(cfg.Agents.ClaudeBinaryPath)
 	}
 	
-	commService := services.NewAgentCommService(agentRepo, commandRepo, eventRepo, agentService)
+	// Initialize Claude-specific service
+	claudeService := services.NewClaudeAgentService(agentRepo, eventRepo, claudeBinaryPath)
+	
+	// Set Claude service on agent service
+	agentService.SetClaudeService(claudeService)
+	
+	commService := services.NewAgentCommService(agentRepo, commandRepo, eventRepo, agentService, claudeService)
 	
 	// Initialize handlers
 	projectHandler := handlers.NewProjectHandler(projectService)
 	sessionHandler := handlers.NewSessionHandler(sessionService)
 	agentHandler := handlers.NewAgentHandler(agentService, commService)
 	websocketHandler := handlers.NewWebSocketHandler(agentService, commService)
+	
+	// Wire up WebSocket event broadcasting
+	agentService.SetEventBroadcaster(websocketHandler)
+	claudeService.SetEventBroadcaster(websocketHandler)
+	
+	// Recover agents from previous run
+	if err := agentService.RecoverActiveAgents(); err != nil {
+		log.Printf("Warning: failed to recover agents: %v", err)
+	}
 	
 	// Start WebSocket hub
 	websocketHandler.StartHub()
