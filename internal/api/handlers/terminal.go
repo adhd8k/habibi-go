@@ -86,11 +86,28 @@ func (h *TerminalHandler) HandleTerminalWebSocket(c *gin.Context) {
 	// Create new terminal session
 	terminal, err := h.createTerminalSession(sessionID, session.WorktreePath, conn)
 	if err != nil {
-		log.Printf("Failed to create terminal session: %v", err)
+		log.Printf("Failed to create terminal session for session %d: %v", sessionID, err)
+		// Send error message to frontend
 		conn.WriteJSON(map[string]interface{}{
 			"type":    "error",
 			"message": fmt.Sprintf("Failed to create terminal: %v", err),
 		})
+		// Don't return immediately - let the connection stay open for retry
+		
+		// Send a message suggesting reconnection
+		conn.WriteJSON(map[string]interface{}{
+			"type":    "info",
+			"message": "Terminal session failed to start. You can try refreshing to reconnect.",
+		})
+		
+		// Keep connection alive for potential retry
+		for {
+			_, _, err := conn.ReadMessage()
+			if err != nil {
+				log.Printf("Terminal WebSocket connection closed for session %d: %v", sessionID, err)
+				break
+			}
+		}
 		return
 	}
 

@@ -140,7 +140,7 @@ func getAgentServices() (*services.AgentService, *services.AgentCommService, *se
 		claudeBinaryPath = cfg.Agents.ClaudeBinaryPath
 	}
 	chatRepo := repositories.NewChatMessageRepository(db.DB)
-	claudeService := services.NewClaudeAgentService(agentRepo, eventRepo, chatRepo, claudeBinaryPath)
+	claudeService := services.NewClaudeAgentService(agentRepo, eventRepo, chatRepo, sessionRepo, claudeBinaryPath)
 	agentService.SetClaudeService(claudeService)
 	
 	commService := services.NewAgentCommService(agentRepo, commandRepo, eventRepo, agentService, claudeService)

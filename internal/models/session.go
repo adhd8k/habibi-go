@@ -7,15 +7,18 @@ import (
 )
 
 type Session struct {
-	ID           int                    `json:"id" db:"id"`
-	ProjectID    int                    `json:"project_id" db:"project_id"`
-	Name         string                 `json:"name" db:"name" binding:"required"`
-	BranchName   string                 `json:"branch_name" db:"branch_name" binding:"required"`
-	WorktreePath string                 `json:"worktree_path" db:"worktree_path"`
-	Status       string                 `json:"status" db:"status"`
-	Config       map[string]interface{} `json:"config" db:"config"`
-	CreatedAt    time.Time              `json:"created_at" db:"created_at"`
-	LastUsedAt   time.Time              `json:"last_used_at" db:"last_used_at"`
+	ID               int                    `json:"id" db:"id"`
+	ProjectID        int                    `json:"project_id" db:"project_id"`
+	Name             string                 `json:"name" db:"name" binding:"required"`
+	BranchName       string                 `json:"branch_name" db:"branch_name" binding:"required"`
+	WorktreePath     string                 `json:"worktree_path" db:"worktree_path"`
+	Status           string                 `json:"status" db:"status"`
+	Config           map[string]interface{} `json:"config" db:"config"`
+	CreatedAt        time.Time              `json:"created_at" db:"created_at"`
+	LastUsedAt       time.Time              `json:"last_used_at" db:"last_used_at"`
+	LastActivityAt   *time.Time             `json:"last_activity_at" db:"last_activity_at"`
+	ActivityStatus   string                 `json:"activity_status" db:"activity_status"`
+	LastViewedAt     *time.Time             `json:"last_viewed_at" db:"last_viewed_at"`
 	
 	// Relationships
 	Project *Project `json:"project,omitempty"`
@@ -28,6 +31,15 @@ const (
 	SessionStatusActive  SessionStatus = "active"
 	SessionStatusPaused  SessionStatus = "paused"
 	SessionStatusStopped SessionStatus = "stopped"
+)
+
+type SessionActivityStatus string
+
+const (
+	ActivityStatusIdle       SessionActivityStatus = "idle"       // No recent activity
+	ActivityStatusStreaming  SessionActivityStatus = "streaming"  // Currently receiving Claude response  
+	ActivityStatusNewResponse SessionActivityStatus = "new"       // New response since last view
+	ActivityStatusViewed     SessionActivityStatus = "viewed"     // Response has been viewed
 )
 
 type CreateSessionRequest struct {

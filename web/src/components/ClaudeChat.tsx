@@ -9,9 +9,13 @@ import { playNotificationSound, getNotificationsEnabled } from '../utils/notific
 
 interface Message {
   id: string
-  role: 'user' | 'assistant'
+  role: 'user' | 'assistant' | 'tool_use' | 'tool_result'
   content: string
   timestamp: Date
+  toolName?: string
+  toolInput?: any
+  toolUseId?: string
+  toolContent?: any
 }
 
 interface ClaudeChatProps {
@@ -22,7 +26,10 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
+  const [showToolMessages, setShowToolMessages] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const lastMessageRef = useRef<string>('')
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -44,16 +51,35 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
   
   // Initialize messages from history
   useEffect(() => {
-    if (historyData?.messages) {
+    if (historyData?.messages && !isInitialized) {
       const historicalMessages: Message[] = historyData.messages.map(msg => ({
         id: msg.id.toString(),
-        role: msg.role as 'user' | 'assistant',
+        role: msg.role as 'user' | 'assistant' | 'tool_use' | 'tool_result',
         content: msg.content,
-        timestamp: new Date(msg.created_at)
+        timestamp: new Date(msg.created_at),
+        toolName: msg.tool_name,
+        toolInput: msg.tool_input ? (() => {
+          try { return JSON.parse(msg.tool_input) } 
+          catch { return msg.tool_input }
+        })() : undefined,
+        toolUseId: msg.tool_use_id,
+        toolContent: msg.tool_content ? (() => {
+          try { return JSON.parse(msg.tool_content) }
+          catch { return msg.tool_content }
+        })() : undefined
       }))
       setMessages(historicalMessages)
+      setIsInitialized(true)
+      
+      // Store the last message to prevent duplicates
+      if (historicalMessages.length > 0) {
+        const lastMessage = historicalMessages[historicalMessages.length - 1]
+        if (lastMessage.role === 'user') {
+          lastMessageRef.current = lastMessage.content
+        }
+      }
     }
-  }, [historyData])
+  }, [historyData, isInitialized])
 
   useEffect(() => {
     // Subscribe to agent output
@@ -61,64 +87,102 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
     
     wsClient.on('agent_output', (message) => {
       if (message.agent_id === agent.id && message.data) {
-        const output = message.data.output
-        const isChunk = message.data.is_chunk
-        const messageId = message.data.message_id
-        
-        // Skip empty output
-        if (!output) {
-          return
-        }
+        const data = message.data
+        const contentType = data.content_type || 'text'
+        const dbMessageId = data.db_message_id
         
         setMessages(prev => {
-          const lastMessage = prev[prev.length - 1]
-          
-          // If this is a chunk and we have an assistant message being built, append seamlessly
-          if (isChunk && lastMessage && lastMessage.role === 'assistant') {
-            return [
-              ...prev.slice(0, -1),
-              {
-                ...lastMessage,
-                content: lastMessage.content + output,
-                id: messageId || lastMessage.id
+          switch (contentType) {
+            case 'text': {
+              const output = data.output
+              const isChunk = data.is_chunk
+              
+              // Skip empty output
+              if (!output) {
+                return prev
               }
-            ]
-          }
-          
-          // If this is a chunk but no assistant message exists, start a new one
-          if (isChunk) {
-            return [
-              ...prev,
-              {
-                id: messageId || Date.now().toString(),
-                role: 'assistant',
-                content: output,
-                timestamp: new Date()
+              
+              // If this is a chunk, find the message by db_message_id or append to last assistant message
+              if (isChunk) {
+                // Try to find existing message by db_message_id
+                if (dbMessageId) {
+                  const existingIndex = prev.findIndex(msg => 
+                    msg.role === 'assistant' && msg.id === dbMessageId.toString()
+                  )
+                  
+                  if (existingIndex >= 0) {
+                    // Update existing message
+                    const updatedMessages = [...prev]
+                    updatedMessages[existingIndex] = {
+                      ...updatedMessages[existingIndex],
+                      content: updatedMessages[existingIndex].content + output
+                    }
+                    return updatedMessages
+                  }
+                }
+                
+                const lastMessage = prev[prev.length - 1]
+                
+                // If we have an assistant message being built, append seamlessly
+                if (lastMessage && lastMessage.role === 'assistant') {
+                  return [
+                    ...prev.slice(0, -1),
+                    {
+                      ...lastMessage,
+                      content: lastMessage.content + output,
+                      id: dbMessageId?.toString() || lastMessage.id
+                    }
+                  ]
+                }
+                
+                // Start a new assistant message
+                return [
+                  ...prev,
+                  {
+                    id: dbMessageId?.toString() || Date.now().toString(),
+                    role: 'assistant',
+                    content: output,
+                    timestamp: new Date()
+                  }
+                ]
               }
-            ]
-          }
-          
-          // For non-chunk messages (legacy), append with newlines
-          if (lastMessage && lastMessage.role === 'assistant') {
-            return [
-              ...prev.slice(0, -1),
-              {
-                ...lastMessage,
-                content: lastMessage.content + '\n' + output
-              }
-            ]
-          }
-          
-          // Otherwise start a new assistant message
-          return [
-            ...prev,
-            {
-              id: Date.now().toString(),
-              role: 'assistant',
-              content: output,
-              timestamp: new Date()
+              return prev
             }
-          ]
+            
+            case 'tool_use': {
+              // Add tool use message
+              return [
+                ...prev,
+                {
+                  id: dbMessageId?.toString() || Date.now().toString(),
+                  role: 'tool_use',
+                  content: '',
+                  timestamp: new Date(),
+                  toolName: data.tool_name,
+                  toolInput: data.tool_input,
+                  toolUseId: data.tool_use_id
+                }
+              ]
+            }
+            
+            case 'tool_result': {
+              // Add tool result message
+              return [
+                ...prev,
+                {
+                  id: dbMessageId?.toString() || Date.now().toString(),
+                  role: 'tool_result',
+                  content: '',
+                  timestamp: new Date(),
+                  toolUseId: data.tool_use_id,
+                  toolContent: data.tool_content
+                }
+              ]
+            }
+            
+            default:
+              return prev
+          }
         })
       }
     })
@@ -171,34 +235,98 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
   const handleSend = () => {
     if (!input.trim() || isProcessing) return
     
-    sendMessage.mutate(input.trim())
+    const messageToSend = input.trim()
+    
+    // Prevent sending the same message twice
+    if (messageToSend === lastMessageRef.current) {
+      console.log('Preventing duplicate message send')
+      return
+    }
+    
+    lastMessageRef.current = messageToSend
+    sendMessage.mutate(messageToSend)
     setInput('')
   }
 
+  // Filter messages based on show/hide tool messages setting
+  const filteredMessages = messages.filter(msg => 
+    showToolMessages || (msg.role !== 'tool_use' && msg.role !== 'tool_result')
+  )
+
   return (
     <div className="flex flex-col h-full">
+      <div className="border-b p-2 flex justify-between items-center bg-gray-50">
+        <h3 className="font-medium">Claude Chat</h3>
+        <button
+          onClick={() => setShowToolMessages(!showToolMessages)}
+          className={`text-xs px-2 py-1 rounded ${
+            showToolMessages 
+              ? 'bg-blue-100 text-blue-700' 
+              : 'bg-gray-100 text-gray-600'
+          }`}
+        >
+          {showToolMessages ? 'Hide Tools' : 'Show Tools'}
+        </button>
+      </div>
+      
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.length === 0 && (
+        {filteredMessages.length === 0 && (
           <div className="text-center text-gray-500 mt-8">
             <p className="text-lg mb-2">Start a conversation with Claude</p>
             <p className="text-sm">Type a message below to begin</p>
           </div>
         )}
         
-        {messages.map((message) => (
+        {filteredMessages.map((message) => (
           <div
             key={message.id}
-            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            className={`flex ${
+              message.role === 'user' ? 'justify-end' : 
+              message.role === 'tool_use' || message.role === 'tool_result' ? 'justify-center' :
+              'justify-start'
+            }`}
           >
             <div
               className={`max-w-[70%] rounded-lg p-3 ${
                 message.role === 'user'
                   ? 'bg-blue-500 text-white'
+                  : message.role === 'tool_use'
+                  ? 'bg-amber-50 border border-amber-200 text-amber-900'
+                  : message.role === 'tool_result'  
+                  ? 'bg-green-50 border border-green-200 text-green-900'
                   : 'bg-gray-100 text-gray-900'
               }`}
             >
               {message.role === 'user' ? (
                 <div className="whitespace-pre-wrap break-words">{message.content}</div>
+              ) : message.role === 'tool_use' ? (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs font-medium bg-amber-200 px-2 py-1 rounded">🔧 Tool Use</span>
+                    <span className="font-medium">{message.toolName}</span>
+                  </div>
+                  {message.toolInput && (
+                    <pre className="text-xs bg-amber-100 p-2 rounded overflow-x-auto">
+                      {JSON.stringify(message.toolInput, null, 2)}
+                    </pre>
+                  )}
+                </div>
+              ) : message.role === 'tool_result' ? (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs font-medium bg-green-200 px-2 py-1 rounded">✅ Tool Result</span>
+                    {message.toolUseId && (
+                      <span className="text-xs text-green-600">ID: {message.toolUseId}</span>
+                    )}
+                  </div>
+                  {message.toolContent && (
+                    <pre className="text-xs bg-green-100 p-2 rounded overflow-x-auto max-h-48">
+                      {typeof message.toolContent === 'string' 
+                        ? message.toolContent 
+                        : JSON.stringify(message.toolContent, null, 2)}
+                    </pre>
+                  )}
+                </div>
               ) : (
                 <div className="prose prose-sm max-w-none dark:prose-invert">
                   <ReactMarkdown 
@@ -226,7 +354,10 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
                 </div>
               )}
               <div className={`text-xs mt-1 ${
-                message.role === 'user' ? 'text-blue-100' : 'text-gray-500'
+                message.role === 'user' ? 'text-blue-100' : 
+                message.role === 'tool_use' ? 'text-amber-600' :
+                message.role === 'tool_result' ? 'text-green-600' :
+                'text-gray-500'
               }`}>
                 {message.timestamp.toLocaleTimeString()}
               </div>

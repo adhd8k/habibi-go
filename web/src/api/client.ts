@@ -84,9 +84,13 @@ export const agentsApi = {
 export interface ChatMessage {
   id: number
   agent_id: number
-  role: 'user' | 'assistant' | 'system'
+  role: 'user' | 'assistant' | 'system' | 'tool_use' | 'tool_result'
   content: string
   created_at: string
+  tool_name?: string
+  tool_input?: string
+  tool_use_id?: string
+  tool_content?: string
 }
 
 export default api

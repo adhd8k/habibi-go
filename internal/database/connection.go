@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	_ "modernc.org/sqlite"
 )
@@ -154,7 +155,7 @@ func (db *DB) RunMigrations() error {
 		`CREATE TABLE IF NOT EXISTS chat_messages (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			agent_id INTEGER NOT NULL,
-			role TEXT NOT NULL CHECK(role IN ('user', 'assistant', 'system')),
+			role TEXT NOT NULL CHECK(role IN ('user', 'assistant', 'system', 'tool_use', 'tool_result')),
 			content TEXT NOT NULL,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			FOREIGN KEY (agent_id) REFERENCES agents(id) ON DELETE CASCADE
@@ -177,6 +178,42 @@ func (db *DB) RunMigrations() error {
 		return fmt.Errorf("failed to add claude_session_id column: %w", err)
 	}
 	
+	// Add session activity tracking columns
+	if err := db.addColumnIfNotExists("sessions", "last_activity_at", "DATETIME"); err != nil {
+		return fmt.Errorf("failed to add last_activity_at column: %w", err)
+	}
+	
+	if err := db.addColumnIfNotExists("sessions", "activity_status", "TEXT DEFAULT 'idle' CHECK(activity_status IN ('idle', 'streaming', 'new', 'viewed'))"); err != nil {
+		return fmt.Errorf("failed to add activity_status column: %w", err)
+	}
+	
+	if err := db.addColumnIfNotExists("sessions", "last_viewed_at", "DATETIME"); err != nil {
+		return fmt.Errorf("failed to add last_viewed_at column: %w", err)
+	}
+	
+	// Add tool metadata columns for chat messages
+	if err := db.addColumnIfNotExists("chat_messages", "tool_name", "TEXT"); err != nil {
+		return fmt.Errorf("failed to add tool_name column: %w", err)
+	}
+	
+	if err := db.addColumnIfNotExists("chat_messages", "tool_input", "TEXT"); err != nil {
+		return fmt.Errorf("failed to add tool_input column: %w", err)
+	}
+	
+	if err := db.addColumnIfNotExists("chat_messages", "tool_use_id", "TEXT"); err != nil {
+		return fmt.Errorf("failed to add tool_use_id column: %w", err)
+	}
+	
+	if err := db.addColumnIfNotExists("chat_messages", "tool_content", "TEXT"); err != nil {
+		return fmt.Errorf("failed to add tool_content column: %w", err)
+	}
+	
+	// Fix the role constraint for existing databases
+	// SQLite doesn't support ALTER TABLE to modify constraints, so we need to recreate the table
+	if err := db.fixChatMessagesRoleConstraint(); err != nil {
+		return fmt.Errorf("failed to fix chat messages role constraint: %w", err)
+	}
+	
 	return nil
 }
 
@@ -187,4 +224,79 @@ func (db *DB) Close() error {
 func createDatabaseDir(dbPath string) error {
 	dir := filepath.Dir(dbPath)
 	return os.MkdirAll(dir, 0755)
+}
+
+// fixChatMessagesRoleConstraint fixes the role constraint to include tool_use and tool_result
+func (db *DB) fixChatMessagesRoleConstraint() error {
+	// Check if the constraint already includes tool_use
+	var constraintCheck string
+	err := db.QueryRow(`
+		SELECT sql FROM sqlite_master 
+		WHERE type='table' AND name='chat_messages'
+	`).Scan(&constraintCheck)
+	
+	if err != nil {
+		return fmt.Errorf("failed to check chat_messages table: %w", err)
+	}
+	
+	// If the constraint already includes tool_use, we're good
+	if strings.Contains(constraintCheck, "tool_use") {
+		return nil
+	}
+	
+	// Otherwise, we need to recreate the table with the updated constraint
+	tx, err := db.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+	
+	// Create new table with updated constraint
+	_, err = tx.Exec(`
+		CREATE TABLE chat_messages_new (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			agent_id INTEGER NOT NULL,
+			role TEXT NOT NULL CHECK(role IN ('user', 'assistant', 'system', 'tool_use', 'tool_result')),
+			content TEXT NOT NULL,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			tool_name TEXT,
+			tool_input TEXT,
+			tool_use_id TEXT,
+			tool_content TEXT,
+			FOREIGN KEY (agent_id) REFERENCES agents(id) ON DELETE CASCADE
+		)
+	`)
+	if err != nil {
+		return fmt.Errorf("failed to create new chat_messages table: %w", err)
+	}
+	
+	// Copy data from old table
+	_, err = tx.Exec(`
+		INSERT INTO chat_messages_new (id, agent_id, role, content, created_at, tool_name, tool_input, tool_use_id, tool_content)
+		SELECT id, agent_id, role, content, created_at, tool_name, tool_input, tool_use_id, tool_content
+		FROM chat_messages
+	`)
+	if err != nil {
+		return fmt.Errorf("failed to copy chat messages: %w", err)
+	}
+	
+	// Drop old table
+	_, err = tx.Exec(`DROP TABLE chat_messages`)
+	if err != nil {
+		return fmt.Errorf("failed to drop old chat_messages table: %w", err)
+	}
+	
+	// Rename new table
+	_, err = tx.Exec(`ALTER TABLE chat_messages_new RENAME TO chat_messages`)
+	if err != nil {
+		return fmt.Errorf("failed to rename chat_messages table: %w", err)
+	}
+	
+	// Recreate index
+	_, err = tx.Exec(`CREATE INDEX IF NOT EXISTS idx_chat_messages_agent_id ON chat_messages(agent_id)`)
+	if err != nil {
+		return fmt.Errorf("failed to recreate index: %w", err)
+	}
+	
+	return tx.Commit()
 }

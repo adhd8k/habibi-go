@@ -18,6 +18,7 @@ type ClaudeAgentService struct {
 	agentRepo        *repositories.AgentRepository
 	eventRepo        *repositories.EventRepository
 	chatRepo         *repositories.ChatMessageRepository
+	sessionRepo      *repositories.SessionRepository
 	claudeBinaryPath string
 	eventBroadcaster EventBroadcaster
 }
@@ -27,12 +28,14 @@ func NewClaudeAgentService(
 	agentRepo *repositories.AgentRepository,
 	eventRepo *repositories.EventRepository,
 	chatRepo *repositories.ChatMessageRepository,
+	sessionRepo *repositories.SessionRepository,
 	claudeBinaryPath string,
 ) *ClaudeAgentService {
 	return &ClaudeAgentService{
 		agentRepo:        agentRepo,
 		eventRepo:        eventRepo,
 		chatRepo:         chatRepo,
+		sessionRepo:      sessionRepo,
 		claudeBinaryPath: claudeBinaryPath,
 		eventBroadcaster: &NoOpBroadcaster{},
 	}
@@ -49,6 +52,11 @@ func (s *ClaudeAgentService) SendClaudeMessage(agent *models.Agent, message stri
 	userMsg := models.NewChatMessage(agent.ID, "user", message)
 	if err := s.chatRepo.Create(userMsg); err != nil {
 		fmt.Printf("Failed to save user message: %v\n", err)
+	}
+	
+	// Set session to streaming status
+	if err := s.sessionRepo.UpdateActivityStatus(agent.SessionID, string(models.ActivityStatusStreaming)); err != nil {
+		fmt.Printf("Failed to update session activity status to streaming: %v\n", err)
 	}
 	
 	// Prepare Claude command with streaming
@@ -83,11 +91,8 @@ func (s *ClaudeAgentService) SendClaudeMessage(agent *models.Agent, message stri
 		return fmt.Errorf("failed to start Claude: %w", err)
 	}
 	
-	// Create a buffer to collect the full response
-	responseBuffer := &strings.Builder{}
-	
-	// Stream output line by line
-	go s.streamClaudeOutput(agent, stdout, responseBuffer)
+	// Stream output line by line - no buffer needed, save chunks directly
+	go s.streamClaudeOutput(agent, stdout)
 	
 	// Capture stderr for error handling and session ID extraction
 	go s.processClaudeStderr(agent, stderr)
@@ -103,12 +108,11 @@ func (s *ClaudeAgentService) SendClaudeMessage(agent *models.Agent, message stri
 		}
 	}
 	
-	// Save assistant response
-	if responseBuffer.Len() > 0 {
-		assistantMsg := models.NewChatMessage(agent.ID, "assistant", responseBuffer.String())
-		if err := s.chatRepo.Create(assistantMsg); err != nil {
-			fmt.Printf("Failed to save assistant message: %v\n", err)
-		}
+	// Assistant response is saved incrementally during streaming, no need to save here
+	
+	// Set session to new response status
+	if err := s.sessionRepo.UpdateActivityStatus(agent.SessionID, string(models.ActivityStatusNewResponse)); err != nil {
+		fmt.Printf("Failed to update session activity status to new response: %v\n", err)
 	}
 	
 	// Send completion event
@@ -120,8 +124,12 @@ func (s *ClaudeAgentService) SendClaudeMessage(agent *models.Agent, message stri
 }
 
 // streamClaudeOutput streams Claude's stdout JSON to WebSocket and database
-func (s *ClaudeAgentService) streamClaudeOutput(agent *models.Agent, stdout interface{}, responseBuffer *strings.Builder) {
+func (s *ClaudeAgentService) streamClaudeOutput(agent *models.Agent, stdout interface{}) {
 	scanner := bufio.NewScanner(stdout.(interface{ Read([]byte) (int, error) }))
+	
+	// Track the current assistant message being built for this streaming session
+	var currentAssistantMessage *models.ChatMessage
+	var currentClaudeMessageID string
 	
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -148,7 +156,7 @@ func (s *ClaudeAgentService) streamClaudeOutput(agent *models.Agent, stdout inte
 		}
 		
 		// Handle different message types
-		if streamMsg.Type == "assistant" && streamMsg.Message != nil {
+		if (streamMsg.Type == "assistant" || streamMsg.Type == "user") && streamMsg.Message != nil {
 			// Parse the message as ClaudeMessage
 			msgBytes, err := json.Marshal(streamMsg.Message)
 			if err != nil {
@@ -160,31 +168,77 @@ func (s *ClaudeAgentService) streamClaudeOutput(agent *models.Agent, stdout inte
 				continue
 			}
 			
-			// Extract text content from the message
+			// Process each content block in the message
 			for _, content := range claudeMsg.Content {
-				if content.Type == "text" && content.Text != "" {
-					// Append to response buffer
-					responseBuffer.WriteString(content.Text)
-					
-					// Broadcast the content chunk
-					s.eventBroadcaster.BroadcastEvent("agent_output", agent.ID, map[string]interface{}{
-						"output":     content.Text,
-						"message_id": claudeMsg.ID,
-						"timestamp":  time.Now(),
-						"is_chunk":   true,
-					})
-					
-					// Save chunk to database
-					event := models.NewAgentEvent("agent_output", agent.ID, map[string]interface{}{
-						"output":     content.Text,
-						"message_id": claudeMsg.ID,
-						"timestamp":  time.Now(),
-						"is_chunk":   true,
-					})
-					
-					if err := s.eventRepo.Create(event); err != nil {
-						fmt.Printf("Failed to create output event: %v\n", err)
+				switch content.Type {
+				case "text":
+					if content.Text != "" {
+						// Get or create the assistant message in database for this Claude message ID
+						if currentAssistantMessage == nil || currentClaudeMessageID != claudeMsg.ID {
+							// Starting a new Claude message - create new DB message
+							currentClaudeMessageID = claudeMsg.ID
+							currentAssistantMessage = models.NewChatMessage(agent.ID, "assistant", "")
+							if err := s.chatRepo.Create(currentAssistantMessage); err != nil {
+								fmt.Printf("Failed to create assistant message: %v\n", err)
+								continue
+							}
+						}
+						
+						// Append the new content to the message
+						currentAssistantMessage.Content += content.Text
+						
+						// Update the message in database
+						if err := s.chatRepo.Update(currentAssistantMessage); err != nil {
+							fmt.Printf("Failed to update assistant message: %v\n", err)
+						}
+						
+						// Broadcast the content chunk
+						s.eventBroadcaster.BroadcastEvent("agent_output", agent.ID, map[string]interface{}{
+							"output":        content.Text,
+							"message_id":    claudeMsg.ID,
+							"db_message_id": currentAssistantMessage.ID,
+							"timestamp":     time.Now(),
+							"is_chunk":      true,
+							"content_type":  "text",
+						})
 					}
+					
+				case "tool_use":
+					// Create a separate message for tool use
+					toolUseMsg := models.NewToolUseMessage(agent.ID, content.Name, content.ID, content.Input)
+					if err := s.chatRepo.Create(toolUseMsg); err != nil {
+						fmt.Printf("Failed to create tool use message: %v\n", err)
+						continue
+					}
+					
+					// Broadcast tool use event
+					s.eventBroadcaster.BroadcastEvent("agent_output", agent.ID, map[string]interface{}{
+						"tool_use_id":   content.ID,
+						"tool_name":     content.Name,
+						"tool_input":    content.Input,
+						"message_id":    claudeMsg.ID,
+						"db_message_id": toolUseMsg.ID,
+						"timestamp":     time.Now(),
+						"content_type":  "tool_use",
+					})
+					
+				case "tool_result":
+					// Create a separate message for tool result
+					toolResultMsg := models.NewToolResultMessage(agent.ID, content.ID, content.Content)
+					if err := s.chatRepo.Create(toolResultMsg); err != nil {
+						fmt.Printf("Failed to create tool result message: %v\n", err)
+						continue
+					}
+					
+					// Broadcast tool result event
+					s.eventBroadcaster.BroadcastEvent("agent_output", agent.ID, map[string]interface{}{
+						"tool_use_id":   content.ID,
+						"tool_content":  content.Content,
+						"message_id":    claudeMsg.ID,
+						"db_message_id": toolResultMsg.ID,
+						"timestamp":     time.Now(),
+						"content_type":  "tool_result",
+					})
 				}
 			}
 		}
@@ -293,6 +347,10 @@ type ClaudeMessage struct {
 
 // ClaudeContentBlock represents a content block in Claude's response
 type ClaudeContentBlock struct {
-	Type string `json:"type"`
-	Text string `json:"text,omitempty"`
+	Type    string                 `json:"type"`
+	Text    string                 `json:"text,omitempty"`
+	ID      string                 `json:"id,omitempty"`
+	Name    string                 `json:"name,omitempty"`
+	Input   map[string]interface{} `json:"input,omitempty"`
+	Content interface{}            `json:"content,omitempty"`
 }

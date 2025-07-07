@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Terminal as XTerm } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebLinksAddon } from '@xterm/addon-web-links'
@@ -10,6 +10,8 @@ export function Terminal() {
   const xtermRef = useRef<XTerm | null>(null)
   const fitAddonRef = useRef<FitAddon | null>(null)
   const wsRef = useRef<WebSocket | null>(null)
+  const reconnectFuncRef = useRef<(() => void) | null>(null)
+  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('connecting')
   const { currentSession } = useAppStore()
 
   useEffect(() => {
@@ -63,42 +65,99 @@ export function Terminal() {
     const ws = new WebSocket(wsUrl)
     wsRef.current = ws
 
-    ws.onopen = () => {
-      console.log('Terminal WebSocket connected')
-      terminal.writeln('Welcome to Habibi-Go Terminal')
-      terminal.writeln(`Session: ${currentSession.name}`)
-      terminal.writeln(`Working Directory: ${currentSession.worktree_path}`)
-      terminal.writeln('')
+    let reconnectAttempt = 0
+    const maxReconnectAttempts = 5
+    
+    const connectWebSocket = () => {
+      setConnectionStatus('connecting')
+      const newWs = new WebSocket(wsUrl)
+      wsRef.current = newWs
+      setupWebSocket(newWs)
+      return newWs
     }
+    
+    const manualReconnect = () => {
+      reconnectAttempt = 0 // Reset attempts for manual reconnect
+      if (wsRef.current) {
+        wsRef.current.close(1000)
+      }
+      if (xtermRef.current) {
+        xtermRef.current.write('\r\n\x1b[36mReconnecting...\x1b[0m\r\n')
+      }
+      connectWebSocket()
+    }
+    
+    reconnectFuncRef.current = manualReconnect
+    
+    const setupWebSocket = (wsInstance: WebSocket) => {
+      wsInstance.onopen = () => {
+        console.log('Terminal WebSocket connected')
+        setConnectionStatus('connected')
+        reconnectAttempt = 0 // Reset on successful connection
+        terminal.writeln('Welcome to Habibi-Go Terminal')
+        terminal.writeln(`Session: ${currentSession.name}`)
+        terminal.writeln(`Working Directory: ${currentSession.worktree_path}`)
+        terminal.writeln('')
+      }
 
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data)
-        if (data.type === 'output') {
-          terminal.write(data.data)
-        } else if (data.type === 'error') {
-          terminal.write(`\r\n\x1b[31mError: ${data.message}\x1b[0m\r\n`)
+      wsInstance.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data)
+          if (data.type === 'output') {
+            terminal.write(data.data)
+          } else if (data.type === 'error') {
+            terminal.write(`\r\n\x1b[31mError: ${data.message}\x1b[0m\r\n`)
+          } else if (data.type === 'info') {
+            terminal.write(`\r\n\x1b[33m${data.message}\x1b[0m\r\n`)
+          }
+        } catch (error) {
+          // If not JSON, treat as raw output
+          terminal.write(event.data)
         }
-      } catch (error) {
-        // If not JSON, treat as raw output
-        terminal.write(event.data)
+      }
+
+      wsInstance.onerror = (error) => {
+        console.error('Terminal WebSocket error:', error)
+        setConnectionStatus('error')
+        terminal.write('\r\n\x1b[31mConnection error\x1b[0m\r\n')
+      }
+
+      wsInstance.onclose = (event) => {
+        console.log('Terminal WebSocket disconnected, code:', event.code)
+        
+        // If this was not a clean close and we haven't exceeded retry attempts
+        if (event.code !== 1000 && reconnectAttempt < maxReconnectAttempts) {
+          setConnectionStatus('connecting')
+          reconnectAttempt++
+          const delay = Math.min(1000 * Math.pow(2, reconnectAttempt - 1), 5000) // Exponential backoff, max 5s
+          
+          terminal.write(`\r\n\x1b[33mConnection lost. Reconnecting in ${delay/1000}s... (attempt ${reconnectAttempt}/${maxReconnectAttempts})\x1b[0m\r\n`)
+          
+          setTimeout(() => {
+            try {
+              connectWebSocket()
+            } catch (error) {
+              console.error('Failed to reconnect:', error)
+              setConnectionStatus('error')
+              terminal.write('\r\n\x1b[31mReconnection failed\x1b[0m\r\n')
+            }
+          }, delay)
+        } else {
+          setConnectionStatus('disconnected')
+          terminal.write('\r\n\x1b[33mConnection closed\x1b[0m\r\n')
+          if (reconnectAttempt >= maxReconnectAttempts) {
+            terminal.write('\r\n\x1b[31mMax reconnection attempts reached. Use the reconnect button to retry.\x1b[0m\r\n')
+          }
+        }
       }
     }
 
-    ws.onerror = (error) => {
-      console.error('Terminal WebSocket error:', error)
-      terminal.write('\r\n\x1b[31mConnection error\x1b[0m\r\n')
-    }
-
-    ws.onclose = () => {
-      console.log('Terminal WebSocket disconnected')
-      terminal.write('\r\n\x1b[33mConnection closed\x1b[0m\r\n')
-    }
+    setupWebSocket(ws)
 
     // Handle terminal input
     terminal.onData((data) => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({
           type: 'input',
           data: data
         }))
@@ -114,8 +173,8 @@ export function Terminal() {
     // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize)
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.close()
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.close(1000) // Clean close
       }
       terminal.dispose()
       xtermRef.current = null
@@ -166,6 +225,30 @@ export function Terminal() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${
+                connectionStatus === 'connected' ? 'bg-green-500' :
+                connectionStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' :
+                connectionStatus === 'error' ? 'bg-red-500' :
+                'bg-gray-500'
+              }`} />
+              <span className="text-xs text-gray-600">
+                {connectionStatus === 'connected' ? 'Connected' :
+                 connectionStatus === 'connecting' ? 'Connecting...' :
+                 connectionStatus === 'error' ? 'Error' :
+                 'Disconnected'}
+              </span>
+            </div>
+            
+            {(connectionStatus === 'disconnected' || connectionStatus === 'error') && (
+              <button
+                onClick={() => reconnectFuncRef.current?.()}
+                className="text-sm px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                Reconnect
+              </button>
+            )}
+            
             <button
               onClick={() => {
                 if (xtermRef.current) {

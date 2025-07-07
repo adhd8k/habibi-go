@@ -98,7 +98,7 @@ func runServer(cmd *cobra.Command, args []string) {
 	}
 	
 	// Initialize Claude-specific service
-	claudeService := services.NewClaudeAgentService(agentRepo, eventRepo, chatRepo, claudeBinaryPath)
+	claudeService := services.NewClaudeAgentService(agentRepo, eventRepo, chatRepo, sessionRepo, claudeBinaryPath)
 	
 	// Set Claude service on agent service
 	agentService.SetClaudeService(claudeService)

@@ -146,7 +146,15 @@ export function SessionManager() {
           {sessions?.map((session: Session) => (
             <div key={session.id} className="relative group">
               <button
-                onClick={() => setCurrentSession(session)}
+                onClick={() => {
+                  setCurrentSession(session)
+                  // Mark session as viewed when selected
+                  if (session.activity_status === 'new') {
+                    // Update the session activity status to viewed
+                    // This would typically be done via an API call
+                    queryClient.invalidateQueries({ queryKey: ['sessions'] })
+                  }
+                }}
                 className={`w-full text-left p-3 rounded-lg transition-colors ${
                   currentSession?.id === session.id
                     ? 'bg-green-100 border-green-500 border'
@@ -154,9 +162,20 @@ export function SessionManager() {
                 }`}
               >
                 <div className="flex justify-between items-start pr-8">
-                  <div>
-                    <div className="font-medium">{session.name}</div>
-                    <div className="text-sm text-gray-600">{session.branch_name}</div>
+                  <div className="flex items-center gap-2">
+                    <div>
+                      <div className="font-medium">{session.name}</div>
+                      <div className="text-sm text-gray-600">{session.branch_name}</div>
+                    </div>
+                    {/* Activity indicator */}
+                    {session.activity_status && session.activity_status !== 'idle' && (
+                      <div className={`w-2 h-2 rounded-full ${
+                        session.activity_status === 'streaming' ? 'bg-yellow-500 animate-pulse' :
+                        session.activity_status === 'new' ? 'bg-green-500' :
+                        session.activity_status === 'viewed' ? 'bg-blue-500' :
+                        'bg-gray-400'
+                      }`} title={`Activity: ${session.activity_status}`} />
+                    )}
                   </div>
                   <span className={`text-xs px-2 py-1 rounded ${
                     session.status === 'active' ? 'bg-green-200 text-green-800' :

@@ -24,12 +24,12 @@ func (r *SessionRepository) Create(session *models.Session) error {
 	}
 	
 	query := `
-		INSERT INTO sessions (project_id, name, branch_name, worktree_path, status, config, created_at, last_used_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO sessions (project_id, name, branch_name, worktree_path, status, config, created_at, last_used_at, activity_status)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 	
 	result, err := r.db.Exec(query, session.ProjectID, session.Name, session.BranchName,
-		session.WorktreePath, session.Status, configStr, session.CreatedAt, session.LastUsedAt)
+		session.WorktreePath, session.Status, configStr, session.CreatedAt, session.LastUsedAt, "idle")
 	if err != nil {
 		return fmt.Errorf("failed to create session: %w", err)
 	}
@@ -45,7 +45,8 @@ func (r *SessionRepository) Create(session *models.Session) error {
 
 func (r *SessionRepository) GetByID(id int) (*models.Session, error) {
 	query := `
-		SELECT id, project_id, name, branch_name, worktree_path, status, config, created_at, last_used_at
+		SELECT id, project_id, name, branch_name, worktree_path, status, config, created_at, last_used_at,
+		       last_activity_at, activity_status, last_viewed_at
 		FROM sessions
 		WHERE id = ?
 	`
@@ -56,7 +57,7 @@ func (r *SessionRepository) GetByID(id int) (*models.Session, error) {
 	err := r.db.QueryRow(query, id).Scan(
 		&session.ID, &session.ProjectID, &session.Name, &session.BranchName,
 		&session.WorktreePath, &session.Status, &configStr, &session.CreatedAt,
-		&session.LastUsedAt,
+		&session.LastUsedAt, &session.LastActivityAt, &session.ActivityStatus, &session.LastViewedAt,
 	)
 	
 	if err != nil {
@@ -75,7 +76,8 @@ func (r *SessionRepository) GetByID(id int) (*models.Session, error) {
 
 func (r *SessionRepository) GetByProjectAndName(projectID int, name string) (*models.Session, error) {
 	query := `
-		SELECT id, project_id, name, branch_name, worktree_path, status, config, created_at, last_used_at
+		SELECT id, project_id, name, branch_name, worktree_path, status, config, created_at, last_used_at,
+		       last_activity_at, activity_status, last_viewed_at
 		FROM sessions
 		WHERE project_id = ? AND name = ?
 	`
@@ -86,7 +88,7 @@ func (r *SessionRepository) GetByProjectAndName(projectID int, name string) (*mo
 	err := r.db.QueryRow(query, projectID, name).Scan(
 		&session.ID, &session.ProjectID, &session.Name, &session.BranchName,
 		&session.WorktreePath, &session.Status, &configStr, &session.CreatedAt,
-		&session.LastUsedAt,
+		&session.LastUsedAt, &session.LastActivityAt, &session.ActivityStatus, &session.LastViewedAt,
 	)
 	
 	if err != nil {
@@ -105,7 +107,8 @@ func (r *SessionRepository) GetByProjectAndName(projectID int, name string) (*mo
 
 func (r *SessionRepository) GetByProjectID(projectID int) ([]*models.Session, error) {
 	query := `
-		SELECT id, project_id, name, branch_name, worktree_path, status, config, created_at, last_used_at
+		SELECT id, project_id, name, branch_name, worktree_path, status, config, created_at, last_used_at,
+		       last_activity_at, activity_status, last_viewed_at
 		FROM sessions
 		WHERE project_id = ?
 		ORDER BY last_used_at DESC
@@ -126,7 +129,7 @@ func (r *SessionRepository) GetByProjectID(projectID int) ([]*models.Session, er
 		err := rows.Scan(
 			&session.ID, &session.ProjectID, &session.Name, &session.BranchName,
 			&session.WorktreePath, &session.Status, &configStr, &session.CreatedAt,
-			&session.LastUsedAt,
+			&session.LastUsedAt, &session.LastActivityAt, &session.ActivityStatus, &session.LastViewedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan session: %w", err)
@@ -144,7 +147,8 @@ func (r *SessionRepository) GetByProjectID(projectID int) ([]*models.Session, er
 
 func (r *SessionRepository) GetAll() ([]*models.Session, error) {
 	query := `
-		SELECT id, project_id, name, branch_name, worktree_path, status, config, created_at, last_used_at
+		SELECT id, project_id, name, branch_name, worktree_path, status, config, created_at, last_used_at,
+		       last_activity_at, activity_status, last_viewed_at
 		FROM sessions
 		ORDER BY last_used_at DESC
 	`
@@ -164,7 +168,7 @@ func (r *SessionRepository) GetAll() ([]*models.Session, error) {
 		err := rows.Scan(
 			&session.ID, &session.ProjectID, &session.Name, &session.BranchName,
 			&session.WorktreePath, &session.Status, &configStr, &session.CreatedAt,
-			&session.LastUsedAt,
+			&session.LastUsedAt, &session.LastActivityAt, &session.ActivityStatus, &session.LastViewedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan session: %w", err)
@@ -287,7 +291,7 @@ func (r *SessionRepository) GetActiveByProject(projectID int) ([]*models.Session
 		err := rows.Scan(
 			&session.ID, &session.ProjectID, &session.Name, &session.BranchName,
 			&session.WorktreePath, &session.Status, &configStr, &session.CreatedAt,
-			&session.LastUsedAt,
+			&session.LastUsedAt, &session.LastActivityAt, &session.ActivityStatus, &session.LastViewedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan session: %w", err)
@@ -326,7 +330,7 @@ func (r *SessionRepository) GetByStatus(status string) ([]*models.Session, error
 		err := rows.Scan(
 			&session.ID, &session.ProjectID, &session.Name, &session.BranchName,
 			&session.WorktreePath, &session.Status, &configStr, &session.CreatedAt,
-			&session.LastUsedAt,
+			&session.LastUsedAt, &session.LastActivityAt, &session.ActivityStatus, &session.LastViewedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan session: %w", err)
@@ -390,4 +394,26 @@ func (r *SessionRepository) GetStats() (map[string]interface{}, error) {
 	stats["active_sessions"] = activeSessions
 	
 	return stats, nil
+}
+
+func (r *SessionRepository) UpdateActivityStatus(id int, status string) error {
+	query := `UPDATE sessions SET activity_status = ?, last_activity_at = CURRENT_TIMESTAMP WHERE id = ?`
+	
+	_, err := r.db.Exec(query, status, id)
+	if err != nil {
+		return fmt.Errorf("failed to update activity status: %w", err)
+	}
+	
+	return nil
+}
+
+func (r *SessionRepository) UpdateLastViewed(id int) error {
+	query := `UPDATE sessions SET last_viewed_at = CURRENT_TIMESTAMP, activity_status = 'viewed' WHERE id = ?`
+	
+	_, err := r.db.Exec(query, id)
+	if err != nil {
+		return fmt.Errorf("failed to update last viewed time: %w", err)
+	}
+	
+	return nil
 }

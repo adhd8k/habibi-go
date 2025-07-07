@@ -20,6 +20,9 @@ export interface Session {
   config: Record<string, any>
   created_at: string
   last_used_at: string
+  last_activity_at?: string
+  activity_status?: 'idle' | 'streaming' | 'new' | 'viewed'
+  last_viewed_at?: string
 }
 
 export interface Agent {
