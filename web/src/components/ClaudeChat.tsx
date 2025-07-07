@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { agentsApi } from '../api/client'
 import { wsClient } from '../api/websocket'
 import { Agent } from '../types'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 interface Message {
   id: string
@@ -28,6 +30,29 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+  
+  // Load chat history
+  const { data: historyData } = useQuery({
+    queryKey: ['chat-history', agent.id],
+    queryFn: async () => {
+      const response = await agentsApi.chatHistory(agent.id, 100)
+      return response.data
+    },
+    enabled: agent.status === 'running'
+  })
+  
+  // Initialize messages from history
+  useEffect(() => {
+    if (historyData?.messages) {
+      const historicalMessages: Message[] = historyData.messages.map(msg => ({
+        id: msg.id.toString(),
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content,
+        timestamp: new Date(msg.created_at)
+      }))
+      setMessages(historicalMessages)
+    }
+  }, [historyData])
 
   useEffect(() => {
     // Subscribe to agent output
@@ -139,7 +164,34 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
                   : 'bg-gray-100 text-gray-900'
               }`}
             >
-              <div className="whitespace-pre-wrap break-words">{message.content}</div>
+              {message.role === 'user' ? (
+                <div className="whitespace-pre-wrap break-words">{message.content}</div>
+              ) : (
+                <div className="prose prose-sm max-w-none dark:prose-invert">
+                  <ReactMarkdown 
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      pre: ({ ...props }) => (
+                        <pre className="bg-gray-800 text-gray-100 p-2 rounded overflow-x-auto" {...props} />
+                      ),
+                      code: ({ className, children, ...props }) => {
+                        const match = /language-(\w+)/.exec(className || '')
+                        return match ? (
+                          <code className="bg-gray-800 text-gray-100" {...props}>
+                            {children}
+                          </code>
+                        ) : (
+                          <code className="bg-gray-200 px-1 rounded" {...props}>
+                            {children}
+                          </code>
+                        )
+                      },
+                    }}
+                  >
+                    {message.content}
+                  </ReactMarkdown>
+                </div>
+              )}
               <div className={`text-xs mt-1 ${
                 message.role === 'user' ? 'text-blue-100' : 'text-gray-500'
               }`}>

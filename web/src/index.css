@@ -1,3 +1,28 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom prose styles for markdown in chat */
+.prose pre {
+  @apply bg-gray-800 text-gray-100 p-4 rounded-lg overflow-x-auto;
+}
+
+.prose code {
+  @apply text-sm;
+}
+
+.prose p {
+  @apply my-2;
+}
+
+.prose ul, .prose ol {
+  @apply my-2;
+}
+
+.prose h1, .prose h2, .prose h3 {
+  @apply font-semibold mt-4 mb-2;
+}
+
+.prose blockquote {
+  @apply border-l-4 border-gray-300 pl-4 italic;
+}

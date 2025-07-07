@@ -62,6 +62,18 @@ export const agentsApi = {
     api.post<AgentCommand>(`/agents/${data.agent_id}/execute`, { command: data.command }),
   logs: (id: number, since?: string) => 
     api.get<string[]>(`/agents/${id}/logs`, { params: { since } }),
+  chatHistory: (id: number, limit?: number) =>
+    api.get<{ messages: ChatMessage[] }>(`/agents/${id}/chat`, { params: { limit } }),
+  deleteChatHistory: (id: number) =>
+    api.delete(`/agents/${id}/chat`),
+}
+
+export interface ChatMessage {
+  id: number
+  agent_id: number
+  role: 'user' | 'assistant' | 'system'
+  content: string
+  created_at: string
 }
 
 export default api

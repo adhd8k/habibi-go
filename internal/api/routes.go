@@ -16,15 +16,17 @@ type Router struct {
 	sessionHandler   *handlers.SessionHandler
 	agentHandler     *handlers.AgentHandler
 	websocketHandler *handlers.WebSocketHandler
+	chatHandler      *handlers.ChatHandler
 	webAssets        embed.FS
 }
 
-func NewRouter(projectHandler *handlers.ProjectHandler, sessionHandler *handlers.SessionHandler, agentHandler *handlers.AgentHandler, websocketHandler *handlers.WebSocketHandler) *Router {
+func NewRouter(projectHandler *handlers.ProjectHandler, sessionHandler *handlers.SessionHandler, agentHandler *handlers.AgentHandler, websocketHandler *handlers.WebSocketHandler, chatHandler *handlers.ChatHandler) *Router {
 	return &Router{
 		projectHandler:   projectHandler,
 		sessionHandler:   sessionHandler,
 		agentHandler:     agentHandler,
 		websocketHandler: websocketHandler,
+		chatHandler:      chatHandler,
 	}
 }
 
@@ -83,6 +85,10 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 		agents.GET("/:id/stats", r.agentHandler.GetCommandStats)
 		agents.POST("/cleanup", r.agentHandler.CleanupAgents)
 		agents.GET("/stats", r.agentHandler.GetAgentStats)
+		
+		// Chat history endpoints
+		agents.GET("/:id/chat", r.chatHandler.GetAgentChatHistory)
+		agents.DELETE("/:id/chat", r.chatHandler.DeleteAgentChatHistory)
 	}
 	
 	// WebSocket endpoint
@@ -130,6 +136,8 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 			v1Agents.POST("/:id/restart", r.agentHandler.RestartAgent)
 			v1Agents.POST("/:id/execute", r.agentHandler.SendCommand)
 			v1Agents.GET("/:id/logs", r.agentHandler.GetAgentLogs)
+			v1Agents.GET("/:id/chat", r.chatHandler.GetAgentChatHistory)
+			v1Agents.DELETE("/:id/chat", r.chatHandler.DeleteAgentChatHistory)
 		}
 	}
 	

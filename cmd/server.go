@@ -82,6 +82,7 @@ func runServer(cmd *cobra.Command, args []string) {
 	agentRepo := repositories.NewAgentRepository(db.DB)
 	commandRepo := repositories.NewAgentCommandRepository(db.DB)
 	eventRepo := repositories.NewEventRepository(db.DB)
+	chatRepo := repositories.NewChatMessageRepository(db.DB)
 	
 	// Initialize services
 	gitService := services.NewGitService()
@@ -97,7 +98,7 @@ func runServer(cmd *cobra.Command, args []string) {
 	}
 	
 	// Initialize Claude-specific service
-	claudeService := services.NewClaudeAgentService(agentRepo, eventRepo, claudeBinaryPath)
+	claudeService := services.NewClaudeAgentService(agentRepo, eventRepo, chatRepo, claudeBinaryPath)
 	
 	// Set Claude service on agent service
 	agentService.SetClaudeService(claudeService)
@@ -109,6 +110,7 @@ func runServer(cmd *cobra.Command, args []string) {
 	sessionHandler := handlers.NewSessionHandler(sessionService)
 	agentHandler := handlers.NewAgentHandler(agentService, commService)
 	websocketHandler := handlers.NewWebSocketHandler(agentService, commService)
+	chatHandler := handlers.NewChatHandler(chatRepo)
 	
 	// Wire up WebSocket event broadcasting
 	agentService.SetEventBroadcaster(websocketHandler)
@@ -123,7 +125,7 @@ func runServer(cmd *cobra.Command, args []string) {
 	websocketHandler.StartHub()
 	
 	// Initialize router
-	router := api.NewRouter(projectHandler, sessionHandler, agentHandler, websocketHandler)
+	router := api.NewRouter(projectHandler, sessionHandler, agentHandler, websocketHandler, chatHandler)
 	
 	// Set web assets if available
 	if webAssets != (embed.FS{}) {

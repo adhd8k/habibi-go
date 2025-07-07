@@ -16,6 +16,7 @@ import (
 type ClaudeAgentService struct {
 	agentRepo        *repositories.AgentRepository
 	eventRepo        *repositories.EventRepository
+	chatRepo         *repositories.ChatMessageRepository
 	claudeBinaryPath string
 	eventBroadcaster EventBroadcaster
 }
@@ -24,11 +25,13 @@ type ClaudeAgentService struct {
 func NewClaudeAgentService(
 	agentRepo *repositories.AgentRepository,
 	eventRepo *repositories.EventRepository,
+	chatRepo *repositories.ChatMessageRepository,
 	claudeBinaryPath string,
 ) *ClaudeAgentService {
 	return &ClaudeAgentService{
 		agentRepo:        agentRepo,
 		eventRepo:        eventRepo,
+		chatRepo:         chatRepo,
 		claudeBinaryPath: claudeBinaryPath,
 		eventBroadcaster: &NoOpBroadcaster{},
 	}
@@ -41,6 +44,12 @@ func (s *ClaudeAgentService) SetEventBroadcaster(broadcaster EventBroadcaster) {
 
 // SendClaudeMessage sends a message to Claude and returns the response
 func (s *ClaudeAgentService) SendClaudeMessage(agent *models.Agent, message string) error {
+	// Save user message
+	userMsg := models.NewChatMessage(agent.ID, "user", message)
+	if err := s.chatRepo.Create(userMsg); err != nil {
+		fmt.Printf("Failed to save user message: %v\n", err)
+	}
+	
 	// Prepare Claude command
 	args := []string{"--print"} // Use print mode for single response
 	
@@ -73,8 +82,11 @@ func (s *ClaudeAgentService) SendClaudeMessage(agent *models.Agent, message stri
 		return fmt.Errorf("failed to start Claude: %w", err)
 	}
 	
+	// Create a buffer to collect the full response
+	responseBuffer := &strings.Builder{}
+	
 	// Stream output line by line
-	go s.streamClaudeOutput(agent, stdout)
+	go s.streamClaudeOutput(agent, stdout, responseBuffer)
 	
 	// Capture stderr for error handling and session ID extraction
 	go s.processClaudeStderr(agent, stderr)
@@ -90,6 +102,14 @@ func (s *ClaudeAgentService) SendClaudeMessage(agent *models.Agent, message stri
 		}
 	}
 	
+	// Save assistant response
+	if responseBuffer.Len() > 0 {
+		assistantMsg := models.NewChatMessage(agent.ID, "assistant", responseBuffer.String())
+		if err := s.chatRepo.Create(assistantMsg); err != nil {
+			fmt.Printf("Failed to save assistant message: %v\n", err)
+		}
+	}
+	
 	// Send completion event
 	s.eventBroadcaster.BroadcastEvent("agent_response_complete", agent.ID, map[string]interface{}{
 		"timestamp": time.Now(),
@@ -99,11 +119,17 @@ func (s *ClaudeAgentService) SendClaudeMessage(agent *models.Agent, message stri
 }
 
 // streamClaudeOutput streams Claude's stdout to WebSocket
-func (s *ClaudeAgentService) streamClaudeOutput(agent *models.Agent, stdout interface{}) {
+func (s *ClaudeAgentService) streamClaudeOutput(agent *models.Agent, stdout interface{}, responseBuffer *strings.Builder) {
 	scanner := bufio.NewScanner(stdout.(interface{ Read([]byte) (int, error) }))
 	
 	for scanner.Scan() {
 		line := scanner.Text()
+		
+		// Append to response buffer
+		if responseBuffer.Len() > 0 {
+			responseBuffer.WriteString("\n")
+		}
+		responseBuffer.WriteString(line)
 		
 		// Broadcast the output line
 		s.eventBroadcaster.BroadcastEvent("agent_output", agent.ID, map[string]interface{}{

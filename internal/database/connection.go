@@ -139,6 +139,16 @@ func (db *DB) RunMigrations() error {
 		`ALTER TABLE projects ADD COLUMN setup_command TEXT`,
 		// Add claude_session_id column if it doesn't exist
 		`ALTER TABLE agents ADD COLUMN claude_session_id TEXT`,
+		// Add chat messages table
+		`CREATE TABLE IF NOT EXISTS chat_messages (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			agent_id INTEGER NOT NULL,
+			role TEXT NOT NULL CHECK(role IN ('user', 'assistant', 'system')),
+			content TEXT NOT NULL,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (agent_id) REFERENCES agents(id) ON DELETE CASCADE
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_chat_messages_agent_id ON chat_messages(agent_id)`,
 	}
 	
 	for i, migration := range migrations {
