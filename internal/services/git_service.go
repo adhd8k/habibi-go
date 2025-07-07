@@ -60,6 +60,22 @@ func (s *GitService) CreateWorktree(projectPath, sessionName, branchName string)
 	cmd.Dir = projectPath
 	
 	if output, err := cmd.CombinedOutput(); err != nil {
+		// Check if it's a "missing but already registered" error
+		if strings.Contains(string(output), "missing but already registered") {
+			// Try to prune and retry
+			pruneCmd := exec.Command("git", "worktree", "prune")
+			pruneCmd.Dir = projectPath
+			if pruneErr := pruneCmd.Run(); pruneErr == nil {
+				// Retry the worktree creation
+				if output2, err2 := cmd.CombinedOutput(); err2 == nil {
+					return worktreePath, nil
+				} else {
+					// Clean up partial creation
+					os.RemoveAll(worktreePath)
+					return "", fmt.Errorf("failed to create worktree after prune: %w, output: %s", err2, string(output2))
+				}
+			}
+		}
 		// Clean up partial creation
 		os.RemoveAll(worktreePath)
 		return "", fmt.Errorf("failed to create worktree: %w, output: %s", err, string(output))
