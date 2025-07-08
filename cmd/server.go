@@ -86,8 +86,9 @@ func runServer(cmd *cobra.Command, args []string) {
 	
 	// Initialize services
 	gitService := services.NewGitService()
+	sshService := services.NewSSHService()
 	projectService := services.NewProjectService(projectRepo, eventRepo, gitService)
-	sessionService := services.NewSessionService(sessionRepo, projectRepo, eventRepo, gitService)
+	sessionService := services.NewSessionService(sessionRepo, projectRepo, eventRepo, gitService, sshService)
 	agentService := services.NewAgentService(agentRepo, sessionRepo, eventRepo)
 	
 	// Configure agent service with Claude binary path
@@ -98,7 +99,7 @@ func runServer(cmd *cobra.Command, args []string) {
 	}
 	
 	// Initialize Claude-specific service
-	claudeService := services.NewClaudeAgentService(agentRepo, eventRepo, chatRepo, sessionRepo, claudeBinaryPath)
+	claudeService := services.NewClaudeAgentService(agentRepo, eventRepo, chatRepo, sessionRepo, projectRepo, claudeBinaryPath, sshService)
 	
 	// Set Claude service on agent service
 	agentService.SetClaudeService(claudeService)

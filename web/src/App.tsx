@@ -5,6 +5,7 @@ import { ProjectList } from './components/ProjectList'
 import { SessionManager } from './components/SessionManager'
 import { SessionView } from './components/SessionView'
 import { wsClient } from './api/websocket'
+import { useSessionActivity } from './hooks/useSessionActivity'
 
 function Dashboard() {
   return (
@@ -20,6 +21,9 @@ function Dashboard() {
 }
 
 function App() {
+  // Hook to handle session activity updates
+  useSessionActivity()
+  
   useEffect(() => {
     // Connect WebSocket on app start
     wsClient.connect()

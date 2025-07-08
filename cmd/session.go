@@ -106,8 +106,9 @@ func getSessionService() (*services.SessionService, *services.ProjectService) {
 	eventRepo := repositories.NewEventRepository(db.DB)
 	
 	gitService := services.NewGitService()
+	sshService := services.NewSSHService()
 	projectService := services.NewProjectService(projectRepo, eventRepo, gitService)
-	sessionService := services.NewSessionService(sessionRepo, projectRepo, eventRepo, gitService)
+	sessionService := services.NewSessionService(sessionRepo, projectRepo, eventRepo, gitService, sshService)
 	
 	return sessionService, projectService
 }

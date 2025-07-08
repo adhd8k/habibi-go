@@ -5,9 +5,24 @@ export interface Project {
   repository_url?: string
   default_branch: string
   setup_command?: string
-  config: Record<string, any>
+  config: ProjectConfig
   created_at: string
   updated_at: string
+}
+
+export interface ProjectConfig {
+  git_remote?: string
+  agent_defaults?: Record<string, string>
+  notifications?: boolean
+  current_branch?: string     // Current active branch
+  
+  // SSH Configuration
+  ssh_host?: string           // user@hostname
+  ssh_port?: number           // default 22
+  ssh_key_path?: string       // path to private key
+  remote_project_path?: string // path on remote server
+  environment_vars?: Record<string, string> // env vars to set
+  remote_setup_cmd?: string   // setup command with variables
 }
 
 export interface Session {
@@ -74,6 +89,7 @@ export interface CreateProjectRequest {
   repository_url?: string
   default_branch?: string
   setup_command?: string
+  config?: ProjectConfig
 }
 
 export interface CreateSessionRequest {

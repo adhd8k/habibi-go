@@ -19,8 +19,10 @@ type ClaudeAgentService struct {
 	eventRepo        *repositories.EventRepository
 	chatRepo         *repositories.ChatMessageRepository
 	sessionRepo      *repositories.SessionRepository
+	projectRepo      *repositories.ProjectRepository
 	claudeBinaryPath string
 	eventBroadcaster EventBroadcaster
+	sshService       *SSHService
 }
 
 // NewClaudeAgentService creates a new Claude agent service
@@ -29,15 +31,19 @@ func NewClaudeAgentService(
 	eventRepo *repositories.EventRepository,
 	chatRepo *repositories.ChatMessageRepository,
 	sessionRepo *repositories.SessionRepository,
+	projectRepo *repositories.ProjectRepository,
 	claudeBinaryPath string,
+	sshService *SSHService,
 ) *ClaudeAgentService {
 	return &ClaudeAgentService{
 		agentRepo:        agentRepo,
 		eventRepo:        eventRepo,
 		chatRepo:         chatRepo,
 		sessionRepo:      sessionRepo,
+		projectRepo:      projectRepo,
 		claudeBinaryPath: claudeBinaryPath,
 		eventBroadcaster: &NoOpBroadcaster{},
+		sshService:       sshService,
 	}
 }
 
@@ -52,11 +58,27 @@ func (s *ClaudeAgentService) SendClaudeMessage(agent *models.Agent, message stri
 	userMsg := models.NewChatMessage(agent.ID, "user", message)
 	if err := s.chatRepo.Create(userMsg); err != nil {
 		fmt.Printf("Failed to save user message: %v\n", err)
+	} else {
+		// Broadcast the new user message to connected clients
+		s.eventBroadcaster.BroadcastEvent("new_chat_message", agent.ID, map[string]interface{}{
+			"id":         userMsg.ID,
+			"role":       userMsg.Role,
+			"content":    userMsg.Content,
+			"created_at": userMsg.CreatedAt,
+			"agent_id":   userMsg.AgentID,
+		})
 	}
 	
 	// Set session to streaming status
 	if err := s.sessionRepo.UpdateActivityStatus(agent.SessionID, string(models.ActivityStatusStreaming)); err != nil {
 		fmt.Printf("Failed to update session activity status to streaming: %v\n", err)
+	} else {
+		// Broadcast session activity update
+		s.eventBroadcaster.BroadcastEvent("session_activity_update", agent.ID, map[string]interface{}{
+			"session_id": agent.SessionID,
+			"activity_status": string(models.ActivityStatusStreaming),
+			"timestamp": time.Now(),
+		})
 	}
 	
 	// Prepare Claude command with streaming
@@ -113,6 +135,13 @@ func (s *ClaudeAgentService) SendClaudeMessage(agent *models.Agent, message stri
 	// Set session to new response status
 	if err := s.sessionRepo.UpdateActivityStatus(agent.SessionID, string(models.ActivityStatusNewResponse)); err != nil {
 		fmt.Printf("Failed to update session activity status to new response: %v\n", err)
+	} else {
+		// Broadcast session activity update
+		s.eventBroadcaster.BroadcastEvent("session_activity_update", agent.ID, map[string]interface{}{
+			"session_id": agent.SessionID,
+			"activity_status": string(models.ActivityStatusNewResponse),
+			"timestamp": time.Now(),
+		})
 	}
 	
 	// Send completion event
@@ -353,4 +382,116 @@ type ClaudeContentBlock struct {
 	Name    string                 `json:"name,omitempty"`
 	Input   map[string]interface{} `json:"input,omitempty"`
 	Content interface{}            `json:"content,omitempty"`
+}
+
+// StreamClaudeDirectly starts a Claude process and streams its raw output without parsing
+// This can be used alongside the parsed streaming for debugging or different UI experiences
+func (s *ClaudeAgentService) StreamClaudeDirectly(agent *models.Agent, message string) error {
+	// Get session to check if it's an SSH project
+	session, err := s.sessionRepo.GetByID(agent.SessionID)
+	if err != nil {
+		return fmt.Errorf("failed to get session: %w", err)
+	}
+	
+	// Get project
+	project, err := s.projectRepo.GetByID(session.ProjectID)
+	if err != nil {
+		return fmt.Errorf("failed to get project: %w", err)
+	}
+	
+	// Prepare Claude args
+	args := []string{"--verbose", "-c", "-p", "--dangerously-skip-permissions"}
+	if agent.ClaudeSessionID != "" {
+		args = append(args, "--resume", agent.ClaudeSessionID)
+	}
+	args = append(args, message)
+	
+	// Check if SSH project
+	config, _ := s.sshService.ParseProjectSSHConfig(project)
+	if config != nil && config.SSHHost != "" {
+		// Stream from SSH
+		stdout, err := s.sshService.StreamClaudeOutput(project.ID, session.WorktreePath, args)
+		if err != nil {
+			return fmt.Errorf("failed to start remote Claude: %w", err)
+		}
+		
+		// Stream the raw output
+		go s.streamRawClaudeOutput(agent, stdout, true)
+	} else {
+		// Stream locally
+		cmd := exec.Command(s.claudeBinaryPath, args...)
+		cmd.Dir = agent.WorkingDirectory
+		
+		stdout, err := cmd.StdoutPipe()
+		if err != nil {
+			return fmt.Errorf("failed to create stdout pipe: %w", err)
+		}
+		
+		stderr, err := cmd.StderrPipe() 
+		if err != nil {
+			return fmt.Errorf("failed to create stderr pipe: %w", err)
+		}
+		
+		if err := cmd.Start(); err != nil {
+			return fmt.Errorf("failed to start Claude: %w", err)
+		}
+		
+		// Stream raw output
+		go s.streamRawClaudeOutput(agent, stdout, false)
+		go s.streamRawClaudeError(agent, stderr)
+		
+		// Wait for completion in background
+		go func() {
+			cmd.Wait()
+			s.eventBroadcaster.BroadcastEvent("agent_raw_stream_complete", agent.ID, map[string]interface{}{
+				"timestamp": time.Now(),
+			})
+		}()
+	}
+	
+	return nil
+}
+
+// streamRawClaudeOutput streams raw Claude output without parsing
+func (s *ClaudeAgentService) streamRawClaudeOutput(agent *models.Agent, reader interface{}, isSSH bool) {
+	scanner := bufio.NewScanner(reader.(interface{ Read([]byte) (int, error) }))
+	
+	for scanner.Scan() {
+		line := scanner.Text()
+		
+		// Broadcast raw output line
+		s.eventBroadcaster.BroadcastEvent("agent_raw_output", agent.ID, map[string]interface{}{
+			"line":      line,
+			"timestamp": time.Now(),
+			"is_ssh":    isSSH,
+		})
+	}
+	
+	// Close SSH reader if needed
+	if closer, ok := reader.(interface{ Close() error }); ok {
+		closer.Close()
+	}
+}
+
+// streamRawClaudeError streams raw Claude stderr
+func (s *ClaudeAgentService) streamRawClaudeError(agent *models.Agent, reader interface{}) {
+	scanner := bufio.NewScanner(reader.(interface{ Read([]byte) (int, error) }))
+	
+	for scanner.Scan() {
+		line := scanner.Text()
+		
+		// Broadcast raw error line
+		s.eventBroadcaster.BroadcastEvent("agent_raw_error", agent.ID, map[string]interface{}{
+			"line":      line,
+			"timestamp": time.Now(),
+		})
+		
+		// Still try to extract session ID from stderr
+		sessionIDRegex := regexp.MustCompile(`session[_-]?id[:\s]+([a-f0-9-]+)`)
+		if matches := sessionIDRegex.FindStringSubmatch(strings.ToLower(line)); len(matches) > 1 {
+			sessionID := matches[1]
+			agent.ClaudeSessionID = sessionID
+			s.agentRepo.UpdateClaudeSessionID(agent.ID, sessionID)
+		}
+	}
 }

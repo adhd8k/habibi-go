@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	"habibi-go/internal/database/repositories"
 	"habibi-go/internal/models"
@@ -14,6 +15,7 @@ type SessionService struct {
 	projectRepo  *repositories.ProjectRepository
 	eventRepo    *repositories.EventRepository
 	gitService   *GitService
+	sshService   *SSHService
 }
 
 func NewSessionService(
@@ -21,12 +23,14 @@ func NewSessionService(
 	projectRepo *repositories.ProjectRepository,
 	eventRepo *repositories.EventRepository,
 	gitService *GitService,
+	sshService *SSHService,
 ) *SessionService {
 	return &SessionService{
 		sessionRepo: sessionRepo,
 		projectRepo: projectRepo,
 		eventRepo:   eventRepo,
 		gitService:  gitService,
+		sshService:  sshService,
 	}
 }
 
@@ -60,21 +64,54 @@ func (s *SessionService) CreateSession(req *models.CreateSessionRequest) (*model
 		return nil, fmt.Errorf("session with name '%s' already exists in project '%s'", req.Name, project.Name)
 	}
 	
-	// Validate that project path is a Git repository
-	if err := s.gitService.gitUtil.ValidateRepository(project.Path); err != nil {
-		return nil, fmt.Errorf("project is not a valid Git repository: %w", err)
-	}
+	// Check if this is an SSH project
+	isSSHProject := s.isSSHProject(project)
 	
-	// Get the current branch to track as the original branch
-	originalBranch, err := s.gitService.GetCurrentBranch(project.Path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get current branch: %w", err)
-	}
+	var worktreePath string
+	var originalBranch string
 	
-	// Create worktree
-	worktreePath, err := s.gitService.CreateWorktree(project.Path, req.Name, req.BranchName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create worktree: %w", err)
+	if isSSHProject {
+		// Handle SSH project
+		config, err := s.getSSHConfig(project)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get SSH config: %w", err)
+		}
+		
+		// Connect to SSH if not already connected
+		if err := s.sshService.Connect(project); err != nil {
+			return nil, fmt.Errorf("failed to connect to SSH: %w", err)
+		}
+		
+		// Get current branch on remote
+		cmd := fmt.Sprintf("cd %s && git rev-parse --abbrev-ref HEAD", config.RemoteProjectPath)
+		output, err := s.sshService.ExecuteCommand(project.ID, cmd)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get remote branch: %w", err)
+		}
+		originalBranch = strings.TrimSpace(output)
+		
+		// Create remote worktree
+		worktreePath = fmt.Sprintf("%s-worktrees/%s", config.RemoteProjectPath, req.Name)
+		if err := s.sshService.CreateRemoteWorktree(project, req.BranchName, worktreePath); err != nil {
+			return nil, fmt.Errorf("failed to create remote worktree: %w", err)
+		}
+	} else {
+		// Handle local project
+		if err := s.gitService.gitUtil.ValidateRepository(project.Path); err != nil {
+			return nil, fmt.Errorf("project is not a valid Git repository: %w", err)
+		}
+		
+		// Get the current branch to track as the original branch
+		originalBranch, err = s.gitService.GetCurrentBranch(project.Path)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get current branch: %w", err)
+		}
+		
+		// Create worktree
+		worktreePath, err = s.gitService.CreateWorktree(project.Path, req.Name, req.BranchName)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create worktree: %w", err)
+		}
 	}
 	
 	// Create session
@@ -101,11 +138,21 @@ func (s *SessionService) CreateSession(req *models.CreateSessionRequest) (*model
 	}
 	
 	// Run setup command if defined
-	if project.SetupCommand != "" {
-		fmt.Printf("Running setup command for session %s: %s\n", session.Name, project.SetupCommand)
-		if err := s.runSetupCommand(project.SetupCommand, worktreePath); err != nil {
-			// Log error but don't fail session creation
-			fmt.Printf("Warning: setup command failed: %v\n", err)
+	if project.SetupCommand != "" || (isSSHProject && s.hasRemoteSetupCommand(project)) {
+		fmt.Printf("Running setup command for session %s\n", session.Name)
+		if isSSHProject {
+			// Run remote setup command
+			output, err := s.sshService.ExecuteSetupCommand(project, worktreePath)
+			if err != nil {
+				fmt.Printf("Warning: remote setup command failed: %v\n", err)
+			} else {
+				fmt.Printf("Remote setup command output: %s\n", output)
+			}
+		} else {
+			// Run local setup command
+			if err := s.runSetupCommand(project.SetupCommand, worktreePath); err != nil {
+				fmt.Printf("Warning: setup command failed: %v\n", err)
+			}
 		}
 	}
 	
@@ -705,4 +752,38 @@ func getUpdatedFields(req *models.UpdateSessionRequest) []string {
 	}
 	
 	return fields
+}
+
+// Helper methods for SSH support
+
+func (s *SessionService) isSSHProject(project *models.Project) bool {
+	if project.Config == nil {
+		return false
+	}
+	
+	// Check for SSH configuration in project config
+	if sshHost, ok := project.Config["ssh_host"].(string); ok && sshHost != "" {
+		return true
+	}
+	
+	// Check for nested SSH config
+	if sshConfig, ok := project.Config["ssh"].(map[string]interface{}); ok {
+		if host, ok := sshConfig["host"].(string); ok && host != "" {
+			return true
+		}
+	}
+	
+	return false
+}
+
+func (s *SessionService) getSSHConfig(project *models.Project) (*models.ProjectConfig, error) {
+	return s.sshService.ParseProjectSSHConfig(project)
+}
+
+func (s *SessionService) hasRemoteSetupCommand(project *models.Project) bool {
+	config, err := s.getSSHConfig(project)
+	if err != nil {
+		return false
+	}
+	return config.RemoteSetupCmd != ""
 }

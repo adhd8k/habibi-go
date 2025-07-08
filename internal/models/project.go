@@ -25,6 +25,14 @@ type ProjectConfig struct {
 	GitRemote     string            `json:"git_remote,omitempty"`
 	AgentDefaults map[string]string `json:"agent_defaults,omitempty"`
 	Notifications bool              `json:"notifications,omitempty"`
+	
+	// SSH Configuration
+	SSHHost           string            `json:"ssh_host,omitempty"`           // user@hostname
+	SSHPort           int               `json:"ssh_port,omitempty"`           // default 22
+	SSHKeyPath        string            `json:"ssh_key_path,omitempty"`       // path to private key
+	RemoteProjectPath string            `json:"remote_project_path,omitempty"` // path on remote server
+	EnvironmentVars   map[string]string `json:"environment_vars,omitempty"`    // env vars to set
+	RemoteSetupCmd    string            `json:"remote_setup_cmd,omitempty"`    // setup command with variables
 }
 
 type CreateProjectRequest struct {

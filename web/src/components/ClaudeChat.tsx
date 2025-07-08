@@ -39,6 +39,13 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
     scrollToBottom()
   }, [messages])
   
+  // Reset state when agent changes
+  useEffect(() => {
+    setIsInitialized(false)
+    setMessages([])
+    lastMessageRef.current = ''
+  }, [agent.id])
+  
   // Load chat history
   const { data: historyData } = useQuery({
     queryKey: ['chat-history', agent.id],
@@ -85,7 +92,8 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
     // Subscribe to agent output
     wsClient.subscribe(agent.id)
     
-    wsClient.on('agent_output', (message) => {
+    // Handler for agent output
+    const handleAgentOutput = (message: any) => {
       if (message.agent_id === agent.id && message.data) {
         const data = message.data
         const contentType = data.content_type || 'text'
@@ -185,10 +193,10 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
           }
         })
       }
-    })
+    }
     
-    // Listen for response completion
-    wsClient.on('agent_response_complete', (message) => {
+    // Handler for response completion
+    const handleResponseComplete = (message: any) => {
       if (message.agent_id === agent.id) {
         setIsProcessing(false)
         
@@ -197,12 +205,39 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
           playNotificationSound()
         }
       }
-    })
+    }
+    
+    // Handler for new user messages from backend
+    const handleNewMessage = (message: any) => {
+      if (message.agent_id === agent.id && message.data) {
+        const { role, content, id, created_at } = message.data
+        if (role === 'user') {
+          setMessages(prev => {
+            // Check if message already exists to prevent duplicates
+            const exists = prev.some(m => m.content === content && m.role === 'user')
+            if (exists) return prev
+            
+            return [...prev, {
+              id: id?.toString() || Date.now().toString(),
+              role: 'user',
+              content,
+              timestamp: new Date(created_at || Date.now())
+            }]
+          })
+        }
+      }
+    }
+    
+    // Register handlers
+    wsClient.on('agent_output', handleAgentOutput)
+    wsClient.on('agent_response_complete', handleResponseComplete)
+    wsClient.on('new_chat_message', handleNewMessage)
 
     return () => {
       wsClient.unsubscribe(agent.id)
       wsClient.off('agent_output')
       wsClient.off('agent_response_complete')
+      wsClient.off('new_chat_message')
     }
   }, [agent.id])
 
@@ -214,17 +249,9 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
       })
       return response.data
     },
-    onMutate: (message) => {
-      // Add user message immediately
-      setMessages(prev => [
-        ...prev,
-        {
-          id: Date.now().toString(),
-          role: 'user',
-          content: message,
-          timestamp: new Date()
-        }
-      ])
+    onMutate: () => {
+      // Don't add user message here - let it come from the backend
+      // to avoid duplicates. Just set processing state.
       setIsProcessing(true)
     },
     onError: () => {

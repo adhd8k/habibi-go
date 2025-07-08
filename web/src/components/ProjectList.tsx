@@ -3,11 +3,13 @@ import { useState } from 'react'
 import { projectsApi } from '../api/client'
 import { useAppStore } from '../store'
 import { Project, CreateProjectRequest } from '../types'
+import { AddSSHProjectForm } from './AddSSHProjectForm'
 
 export function ProjectList() {
   const queryClient = useQueryClient()
   const { currentProject, setCurrentProject, setCurrentSession } = useAppStore()
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [showSSHForm, setShowSSHForm] = useState(false)
   const [newProject, setNewProject] = useState({
     name: '',
     path: '',
@@ -94,12 +96,26 @@ export function ProjectList() {
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold">Projects</h2>
-        <button
-          onClick={() => setShowCreateForm(!showCreateForm)}
-          className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
-        >
-          New Project
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              setShowCreateForm(!showCreateForm)
+              setShowSSHForm(false)
+            }}
+            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+          >
+            New Local
+          </button>
+          <button
+            onClick={() => {
+              setShowSSHForm(!showSSHForm)
+              setShowCreateForm(false)
+            }}
+            className="px-3 py-1 bg-purple-500 text-white rounded hover:bg-purple-600 text-sm"
+          >
+            New SSH
+          </button>
+        </div>
       </div>
 
       {showCreateForm && (
@@ -153,6 +169,20 @@ export function ProjectList() {
         </div>
       )}
 
+      {showSSHForm && (
+        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+          <h3 className="text-lg font-semibold mb-3">Add SSH Project</h3>
+          <AddSSHProjectForm 
+            onSuccess={() => {
+              setShowSSHForm(false)
+            }}
+            onCancel={() => {
+              setShowSSHForm(false)
+            }}
+          />
+        </div>
+      )}
+
       <div className="space-y-2">
         {projects?.length === 0 && (
           <div className="text-center py-8 text-gray-500">
@@ -171,8 +201,23 @@ export function ProjectList() {
               }`}
             >
               <div className="pr-8">
-                <div className="font-medium">{project.name}</div>
-                <div className="text-sm text-gray-600">{project.path}</div>
+                <div className="font-medium flex items-center gap-2">
+                  {project.name}
+                  {project.config?.ssh_host && (
+                    <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">SSH</span>
+                  )}
+                </div>
+                <div className="text-sm text-gray-600">
+                  {project.config?.ssh_host ? (
+                    <>
+                      <span className="text-purple-600">{project.config.ssh_host}</span>
+                      <span className="text-gray-500">:</span>
+                      <span>{project.path}</span>
+                    </>
+                  ) : (
+                    project.path
+                  )}
+                </div>
                 {project.config?.current_branch && (
                   <div className="text-xs text-blue-600 mt-1 flex items-center">
                     <span className="mr-1">🌿</span>
