@@ -11,12 +11,18 @@ import (
 
 type SessionHandler struct {
 	sessionService *services.SessionService
+	wsHandler      *WebSocketHandler
 }
 
 func NewSessionHandler(sessionService *services.SessionService) *SessionHandler {
 	return &SessionHandler{
 		sessionService: sessionService,
 	}
+}
+
+// SetWebSocketHandler sets the WebSocket handler for broadcasting updates
+func (h *SessionHandler) SetWebSocketHandler(wsHandler *WebSocketHandler) {
+	h.wsHandler = wsHandler
 }
 
 func (h *SessionHandler) GetSessions(c *gin.Context) {
@@ -85,6 +91,14 @@ func (h *SessionHandler) CreateSession(c *gin.Context) {
 		return
 	}
 	
+	// Broadcast session creation via WebSocket if handler is set
+	if h.wsHandler != nil {
+		h.wsHandler.BroadcastEvent("session_created", 0, map[string]interface{}{
+			"project_id": session.ProjectID,
+			"session":    session,
+		})
+	}
+	
 	c.JSON(http.StatusCreated, gin.H{
 		"success": true,
 		"data":    session,
@@ -146,6 +160,11 @@ func (h *SessionHandler) UpdateSession(c *gin.Context) {
 		return
 	}
 	
+	// Broadcast session update via WebSocket if handler is set
+	if h.wsHandler != nil {
+		h.wsHandler.BroadcastSessionUpdate(session)
+	}
+	
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data":    session,
@@ -163,12 +182,23 @@ func (h *SessionHandler) DeleteSession(c *gin.Context) {
 		return
 	}
 	
+	// Get session before deletion for broadcast
+	session, _ := h.sessionService.GetSession(id)
+	
 	if err := h.sessionService.DeleteSession(id); err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"success": false,
 			"error":   err.Error(),
 		})
 		return
+	}
+	
+	// Broadcast session deletion via WebSocket if handler is set
+	if h.wsHandler != nil && session != nil {
+		h.wsHandler.BroadcastEvent("session_deleted", 0, map[string]interface{}{
+			"session_id": id,
+			"project_id": session.ProjectID,
+		})
 	}
 	
 	c.JSON(http.StatusOK, gin.H{

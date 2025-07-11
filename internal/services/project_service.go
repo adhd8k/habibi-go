@@ -64,6 +64,11 @@ func (s *ProjectService) CreateProject(req *models.CreateProjectRequest) (*model
 		Config:        make(map[string]interface{}),
 	}
 	
+	// Set default branch to "main" if not specified
+	if project.DefaultBranch == "" {
+		project.DefaultBranch = "main"
+	}
+	
 	if err := project.Validate(); err != nil {
 		return nil, fmt.Errorf("project validation failed: %w", err)
 	}

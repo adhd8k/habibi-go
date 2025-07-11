@@ -11,7 +11,9 @@ export function SessionManager() {
   const [newSession, setNewSession] = useState({
     session_name: '',
     branch_name: '',
+    base_branch: 'main',
   })
+  const [showBranchSuggestions, setShowBranchSuggestions] = useState(false)
 
   const { data: sessions, isLoading } = useQuery({
     queryKey: ['sessions', currentProject?.id],
@@ -37,7 +39,7 @@ export function SessionManager() {
     onSuccess: async (response) => {
       queryClient.invalidateQueries({ queryKey: ['sessions'] })
       setShowCreateForm(false)
-      setNewSession({ session_name: '', branch_name: '' })
+      setNewSession({ session_name: '', branch_name: '', base_branch: 'main' })
       
       // Extract session data from response
       const session = (response as any).data || response
@@ -76,6 +78,7 @@ export function SessionManager() {
       project_id: currentProject.id,
       name: newSession.session_name,
       branch_name: newSession.branch_name,
+      base_branch: newSession.base_branch,
     })
   }
 
@@ -115,6 +118,40 @@ export function SessionManager() {
             onChange={(e) => setNewSession({ ...newSession, branch_name: e.target.value })}
             className="w-full p-2 border rounded mb-2"
           />
+          <div className="relative mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Base Branch
+            </label>
+            <input
+              type="text"
+              placeholder="Base branch (e.g., main)"
+              value={newSession.base_branch}
+              onChange={(e) => setNewSession({ ...newSession, base_branch: e.target.value })}
+              onFocus={() => setShowBranchSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowBranchSuggestions(false), 200)}
+              className="w-full p-2 border rounded"
+            />
+            {showBranchSuggestions && (
+              <div className="absolute z-10 w-full mt-1 bg-white border rounded shadow-lg max-h-48 overflow-y-auto">
+                {['main', 'master', 'develop', 'staging', 'production'].map(branch => (
+                  <button
+                    key={branch}
+                    type="button"
+                    onClick={() => {
+                      setNewSession({ ...newSession, base_branch: branch })
+                      setShowBranchSuggestions(false)
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-gray-100"
+                  >
+                    {branch}
+                  </button>
+                ))}
+              </div>
+            )}
+            <p className="text-xs text-gray-500 mt-1">
+              The branch to create your new branch from
+            </p>
+          </div>
           <div className="flex gap-2">
             <button
               onClick={handleCreateSession}
@@ -126,7 +163,7 @@ export function SessionManager() {
             <button
               onClick={() => {
                 setShowCreateForm(false)
-                setNewSession({ session_name: '', branch_name: '' })
+                setNewSession({ session_name: '', branch_name: '', base_branch: 'main' })
               }}
               className="px-3 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 text-sm"
             >

@@ -101,14 +101,21 @@ func (s *SessionService) CreateSession(req *models.CreateSessionRequest) (*model
 			return nil, fmt.Errorf("project is not a valid Git repository: %w", err)
 		}
 		
-		// Get the current branch to track as the original branch
-		originalBranch, err = s.gitService.GetCurrentBranch(project.Path)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get current branch: %w", err)
+		// Determine the base branch to use
+		baseBranch := req.BaseBranch
+		if baseBranch == "" {
+			// Use project's default branch if not specified
+			baseBranch = project.DefaultBranch
+			if baseBranch == "" {
+				baseBranch = "main" // Fallback to main
+			}
 		}
 		
+		// Set original branch to the base branch
+		originalBranch = baseBranch
+		
 		// Create worktree
-		worktreePath, err = s.gitService.CreateWorktree(project.Path, req.Name, req.BranchName)
+		worktreePath, err = s.gitService.CreateWorktree(project.Path, req.Name, req.BranchName, baseBranch)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create worktree: %w", err)
 		}
@@ -149,8 +156,14 @@ func (s *SessionService) CreateSession(req *models.CreateSessionRequest) (*model
 				fmt.Printf("Remote setup command output: %s\n", output)
 			}
 		} else {
-			// Run local setup command
-			if err := s.runSetupCommand(project.SetupCommand, worktreePath); err != nil {
+			// Run local setup command with environment variables
+			envVars := map[string]string{
+				"PROJECT_PATH":  project.Path,
+				"WORKTREE_PATH": worktreePath,
+				"SESSION_NAME":  session.Name,
+				"BRANCH_NAME":   session.BranchName,
+			}
+			if err := s.runSetupCommand(project.SetupCommand, worktreePath, envVars); err != nil {
 				fmt.Printf("Warning: setup command failed: %v\n", err)
 			}
 		}
@@ -721,9 +734,15 @@ func (s *SessionService) CloseSession(id int) error {
 	return nil
 }
 
-func (s *SessionService) runSetupCommand(command, workingDir string) error {
+func (s *SessionService) runSetupCommand(command, workingDir string, envVars map[string]string) error {
 	cmd := exec.Command("sh", "-c", command)
 	cmd.Dir = workingDir
+	
+	// Set up environment variables
+	cmd.Env = os.Environ()
+	for key, value := range envVars {
+		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", key, value))
+	}
 	
 	output, err := cmd.CombinedOutput()
 	if err != nil {

@@ -47,6 +47,7 @@ type CreateSessionRequest struct {
 	ProjectID  int    `json:"project_id" binding:"required"`
 	Name       string `json:"name" binding:"required"`
 	BranchName string `json:"branch_name" binding:"required"`
+	BaseBranch string `json:"base_branch"` // Optional, defaults to project's default branch
 }
 
 type UpdateSessionRequest struct {

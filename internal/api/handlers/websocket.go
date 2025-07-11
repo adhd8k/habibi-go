@@ -342,6 +342,24 @@ func (h *WebSocketHandler) BroadcastEvent(eventType string, agentID int, data in
 	h.hub.broadcast <- msgData
 }
 
+// BroadcastSessionUpdate broadcasts a session update to all connected clients
+func (h *WebSocketHandler) BroadcastSessionUpdate(session interface{}) {
+	msg := WSMessage{
+		Type: "session_update",
+		Data: map[string]interface{}{
+			"session": session,
+		},
+	}
+	
+	msgData, err := json.Marshal(msg)
+	if err != nil {
+		log.Printf("Failed to marshal session update message: %v", err)
+		return
+	}
+	
+	h.hub.broadcast <- msgData
+}
+
 // Helper function to get agent ID from URL parameter
 func getAgentIDFromPath(c *gin.Context) (int, error) {
 	idStr := c.Param("id")

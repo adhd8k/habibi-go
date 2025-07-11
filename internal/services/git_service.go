@@ -22,29 +22,71 @@ func NewGitService() *GitService {
 }
 
 // CreateWorktree creates a new Git worktree for a session
-func (s *GitService) CreateWorktree(projectPath, sessionName, branchName string) (string, error) {
+func (s *GitService) CreateWorktree(projectPath, sessionName, branchName, baseBranch string) (string, error) {
 	// Validate the project is a Git repository
 	if err := s.gitUtil.ValidateRepository(projectPath); err != nil {
 		return "", fmt.Errorf("invalid Git repository: %w", err)
 	}
 	
+	// Sanitize session name for filesystem
+	sessionName = strings.ReplaceAll(sessionName, "/", "-")
+	sessionName = strings.ReplaceAll(sessionName, "\\", "-")
+	
 	// Create worktree path
 	worktreePath := filepath.Join(projectPath, ".worktrees", sessionName)
 	
-	// Check if worktree already exists
+	// Check if worktree already exists in git
+	worktrees, err := s.ListWorktrees(projectPath)
+	if err == nil {
+		for _, wt := range worktrees {
+			if wt.Path == worktreePath {
+				// Worktree is already registered, check if it actually exists
+				if _, err := os.Stat(worktreePath); os.IsNotExist(err) {
+					// Registered but missing, prune it
+					pruneCmd := exec.Command("git", "worktree", "prune")
+					pruneCmd.Dir = projectPath
+					pruneCmd.Run()
+				} else {
+					return "", fmt.Errorf("worktree already exists: %s", worktreePath)
+				}
+			}
+		}
+	}
+	
+	// Check if worktree directory exists
 	if _, err := os.Stat(worktreePath); err == nil {
-		return "", fmt.Errorf("worktree already exists: %s", worktreePath)
+		return "", fmt.Errorf("worktree directory already exists: %s", worktreePath)
 	}
 	
-	// Create worktree directory
+	// Create parent directory for worktree
 	if err := os.MkdirAll(filepath.Dir(worktreePath), 0755); err != nil {
-		return "", fmt.Errorf("failed to create worktree directory: %w", err)
+		return "", fmt.Errorf("failed to create worktree parent directory: %w", err)
 	}
 	
-	// Check if branch exists
+	// Fetch latest refs to ensure we have all branches
+	fetchCmd := exec.Command("git", "fetch", "--all")
+	fetchCmd.Dir = projectPath
+	fetchCmd.Run() // Ignore errors, not critical
+	
+	// Check if branch exists (local or remote)
 	branchExists, err := s.gitUtil.BranchExists(projectPath, branchName)
 	if err != nil {
 		return "", fmt.Errorf("failed to check branch existence: %w", err)
+	}
+	
+	// If not found locally, check remote branches
+	if !branchExists {
+		remoteBranch := "origin/" + branchName
+		if remoteBranchExists, _ := s.gitUtil.BranchExists(projectPath, remoteBranch); remoteBranchExists {
+			// Create local branch from remote
+			cmd := exec.Command("git", "worktree", "add", "-b", branchName, worktreePath, remoteBranch)
+			cmd.Dir = projectPath
+			if output, err := cmd.CombinedOutput(); err != nil {
+				os.RemoveAll(worktreePath)
+				return "", fmt.Errorf("failed to create worktree from remote branch: %w, output: %s", err, string(output))
+			}
+			return worktreePath, nil
+		}
 	}
 	
 	// Create the worktree
@@ -53,15 +95,36 @@ func (s *GitService) CreateWorktree(projectPath, sessionName, branchName string)
 		// Branch exists, create worktree from existing branch
 		cmd = exec.Command("git", "worktree", "add", worktreePath, branchName)
 	} else {
-		// Branch doesn't exist, create new branch and worktree
-		cmd = exec.Command("git", "worktree", "add", "-b", branchName, worktreePath)
+		// Branch doesn't exist, create new branch and worktree from base branch
+		if baseBranch != "" {
+			// Check if base branch exists
+			baseBranchExists := false
+			for _, variant := range []string{baseBranch, "origin/" + baseBranch} {
+				if exists, _ := s.gitUtil.BranchExists(projectPath, variant); exists {
+					baseBranch = variant
+					baseBranchExists = true
+					break
+				}
+			}
+			if baseBranchExists {
+				cmd = exec.Command("git", "worktree", "add", "-b", branchName, worktreePath, baseBranch)
+			} else {
+				// Base branch doesn't exist, create from HEAD
+				cmd = exec.Command("git", "worktree", "add", "-b", branchName, worktreePath)
+			}
+		} else {
+			// No base branch specified, create from HEAD
+			cmd = exec.Command("git", "worktree", "add", "-b", branchName, worktreePath)
+		}
 	}
 	
 	cmd.Dir = projectPath
 	
 	if output, err := cmd.CombinedOutput(); err != nil {
+		outputStr := string(output)
+		
 		// Check if it's a "missing but already registered" error
-		if strings.Contains(string(output), "missing but already registered") {
+		if strings.Contains(outputStr, "missing but already registered") || strings.Contains(outputStr, "already exists") {
 			// Try to prune and retry
 			pruneCmd := exec.Command("git", "worktree", "prune")
 			pruneCmd.Dir = projectPath
@@ -76,9 +139,10 @@ func (s *GitService) CreateWorktree(projectPath, sessionName, branchName string)
 				}
 			}
 		}
+		
 		// Clean up partial creation
 		os.RemoveAll(worktreePath)
-		return "", fmt.Errorf("failed to create worktree: %w, output: %s", err, string(output))
+		return "", fmt.Errorf("failed to create worktree: %w, output: %s", err, outputStr)
 	}
 	
 	return worktreePath, nil
@@ -93,28 +157,74 @@ func (s *GitService) RemoveWorktree(projectPath, worktreePath string) error {
 	
 	// Check if worktree exists
 	if _, err := os.Stat(worktreePath); os.IsNotExist(err) {
-		return fmt.Errorf("worktree does not exist: %s", worktreePath)
+		// Worktree doesn't exist on disk, but might still be registered in git
+		// Try to prune it from git's registry
+		pruneCmd := exec.Command("git", "worktree", "prune")
+		pruneCmd.Dir = projectPath
+		if pruneErr := pruneCmd.Run(); pruneErr != nil {
+			fmt.Printf("Warning: failed to prune worktrees: %v\n", pruneErr)
+		}
+		// Not an error - worktree is already gone
+		return nil
 	}
 	
-	// Remove the worktree from Git
+	// First, try to remove the worktree normally
 	cmd := exec.Command("git", "worktree", "remove", worktreePath)
 	cmd.Dir = projectPath
 	
 	if output, err := cmd.CombinedOutput(); err != nil {
-		// If git worktree remove fails, try force removal
-		forceCmd := exec.Command("git", "worktree", "remove", "--force", worktreePath)
-		forceCmd.Dir = projectPath
+		// Check for specific error cases
+		outputStr := string(output)
 		
-		if forceOutput, forceErr := forceCmd.CombinedOutput(); forceErr != nil {
-			return fmt.Errorf("failed to remove worktree: %w, output: %s, force output: %s", 
-				err, string(output), string(forceOutput))
+		if strings.Contains(outputStr, "is dirty") || strings.Contains(outputStr, "contains modified or untracked files") {
+			// Worktree has uncommitted changes, try force removal
+			forceCmd := exec.Command("git", "worktree", "remove", "--force", worktreePath)
+			forceCmd.Dir = projectPath
+			
+			if forceOutput, forceErr := forceCmd.CombinedOutput(); forceErr != nil {
+				// If force also fails, last resort is manual cleanup
+				if cleanupErr := s.manualWorktreeCleanup(projectPath, worktreePath); cleanupErr != nil {
+					return fmt.Errorf("failed to remove worktree: %w, output: %s, force output: %s", 
+						err, outputStr, string(forceOutput))
+				}
+			}
+		} else if strings.Contains(outputStr, "is not a working tree") {
+			// Git doesn't recognize this as a worktree, just remove the directory
+			if err := os.RemoveAll(worktreePath); err != nil {
+				return fmt.Errorf("failed to remove directory: %w", err)
+			}
+			// Prune any stale entries
+			pruneCmd := exec.Command("git", "worktree", "prune")
+			pruneCmd.Dir = projectPath
+			pruneCmd.Run()
+		} else {
+			return fmt.Errorf("failed to remove worktree: %w, output: %s", err, outputStr)
 		}
 	}
 	
 	// Clean up any remaining files
+	if _, err := os.Stat(worktreePath); err == nil {
+		if err := os.RemoveAll(worktreePath); err != nil {
+			// Log warning but don't fail - the important part is Git cleanup
+			fmt.Printf("Warning: failed to clean up worktree directory: %v\n", err)
+		}
+	}
+	
+	return nil
+}
+
+// manualWorktreeCleanup performs manual cleanup when git worktree remove fails
+func (s *GitService) manualWorktreeCleanup(projectPath, worktreePath string) error {
+	// Remove the directory
 	if err := os.RemoveAll(worktreePath); err != nil {
-		// Log warning but don't fail - the important part is Git cleanup
-		fmt.Printf("Warning: failed to clean up worktree directory: %v\n", err)
+		return fmt.Errorf("failed to remove worktree directory: %w", err)
+	}
+	
+	// Prune git's worktree registry
+	pruneCmd := exec.Command("git", "worktree", "prune")
+	pruneCmd.Dir = projectPath
+	if err := pruneCmd.Run(); err != nil {
+		return fmt.Errorf("failed to prune worktree registry: %w", err)
 	}
 	
 	return nil

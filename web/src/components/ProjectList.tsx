@@ -13,7 +13,6 @@ export function ProjectList() {
   const [newProject, setNewProject] = useState({
     name: '',
     path: '',
-    repository_url: '',
     setup_command: '',
   })
   
@@ -53,7 +52,7 @@ export function ProjectList() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] })
       setShowCreateForm(false)
-      setNewProject({ name: '', path: '', repository_url: '', setup_command: '' })
+      setNewProject({ name: '', path: '', setup_command: '' })
     },
   })
 
@@ -68,7 +67,6 @@ export function ProjectList() {
     createMutation.mutate({
       name: newProject.name,
       path: newProject.path,
-      repository_url: newProject.repository_url || undefined,
       setup_command: newProject.setup_command || undefined,
     })
   }
@@ -127,27 +125,44 @@ export function ProjectList() {
             onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
             className="w-full p-2 border rounded mb-2"
           />
-          <input
-            type="text"
-            placeholder="Project path (e.g., /home/user/myproject)"
-            value={newProject.path}
-            onChange={(e) => setNewProject({ ...newProject, path: e.target.value })}
-            className="w-full p-2 border rounded mb-2"
-          />
-          <input
-            type="text"
-            placeholder="Repository URL (optional)"
-            value={newProject.repository_url}
-            onChange={(e) => setNewProject({ ...newProject, repository_url: e.target.value })}
-            className="w-full p-2 border rounded mb-2"
-          />
-          <input
-            type="text"
-            placeholder="Setup command (e.g., cp .env.example .env)"
-            value={newProject.setup_command}
-            onChange={(e) => setNewProject({ ...newProject, setup_command: e.target.value })}
-            className="w-full p-2 border rounded mb-2"
-          />
+          <div className="relative mb-2">
+            <input
+              type="text"
+              placeholder="Project path (e.g., /home/user/myproject)"
+              value={newProject.path}
+              onChange={(e) => setNewProject({ ...newProject, path: e.target.value })}
+              className="w-full p-2 pr-10 border rounded"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                // Note: Browser file API doesn't support folder path selection
+                // This is just a hint to the user that they can browse
+                alert('Please enter the full path to your project directory.\n\nExample:\n/home/user/projects/myproject\n\nNote: Browser security prevents automatic folder browsing.')
+              }}
+              className="absolute right-2 top-2 p-1 text-gray-500 hover:text-gray-700"
+              title="Browse for folder"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+              </svg>
+            </button>
+          </div>
+          <div className="mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Setup Script (optional)
+            </label>
+            <textarea
+              placeholder="#!/bin/bash\n# This script runs when creating a new session\n# Available variables:\n# $PROJECT_PATH - Main project directory\n# $WORKTREE_PATH - Session worktree directory\n# $SESSION_NAME - Name of the session\n# $BRANCH_NAME - Git branch name\n\n# Example:\ncp $PROJECT_PATH/.env $WORKTREE_PATH/.env"
+              value={newProject.setup_command}
+              onChange={(e) => setNewProject({ ...newProject, setup_command: e.target.value })}
+              className="w-full p-2 border rounded font-mono text-sm"
+              rows={6}
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              This script will be executed each time a new session is created
+            </p>
+          </div>
           <div className="flex gap-2">
             <button
               onClick={handleCreateProject}
@@ -159,7 +174,7 @@ export function ProjectList() {
             <button
               onClick={() => {
                 setShowCreateForm(false)
-                setNewProject({ name: '', path: '', repository_url: '', setup_command: '' })
+                setNewProject({ name: '', path: '', setup_command: '' })
               }}
               className="px-3 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 text-sm"
             >
@@ -222,11 +237,6 @@ export function ProjectList() {
                   <div className="text-xs text-blue-600 mt-1 flex items-center">
                     <span className="mr-1">🌿</span>
                     {project.config.current_branch}
-                  </div>
-                )}
-                {project.repository_url && (
-                  <div className="text-xs text-gray-500 mt-1">
-                    {project.repository_url}
                   </div>
                 )}
               </div>

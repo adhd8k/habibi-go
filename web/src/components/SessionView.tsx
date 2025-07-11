@@ -5,6 +5,7 @@ import { FileDiffs } from './FileDiffs'
 import { ManageSession } from './ManageSession'
 import { Terminal } from './Terminal'
 import { useDiffStats } from '../hooks/useDiffStats'
+import { useSessionActivity } from '../hooks/useSessionActivity'
 
 type TabType = 'assistant' | 'diffs' | 'terminal' | 'manage'
 
@@ -12,6 +13,9 @@ export function SessionView() {
   const [activeTab, setActiveTab] = useState<TabType>('assistant')
   const { currentSession } = useAppStore()
   const { data: diffStats } = useDiffStats(currentSession?.id)
+  
+  // Enable real-time session updates
+  useSessionActivity()
 
   if (!currentSession) {
     return (

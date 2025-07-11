@@ -96,6 +96,7 @@ export interface CreateSessionRequest {
   project_id: number
   name: string
   branch_name: string
+  base_branch?: string
 }
 
 export interface CreateAgentRequest {

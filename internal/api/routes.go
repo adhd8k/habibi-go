@@ -37,6 +37,9 @@ func (r *Router) SetWebAssets(assets embed.FS) {
 }
 
 func (r *Router) SetupRoutes(engine *gin.Engine) {
+	// Connect WebSocket handler to session handler for broadcasting
+	r.sessionHandler.SetWebSocketHandler(r.websocketHandler)
+	
 	// Apply middleware
 	engine.Use(middleware.CORS())
 	engine.Use(middleware.Logger())
