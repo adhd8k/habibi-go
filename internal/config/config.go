@@ -25,6 +25,13 @@ type ServerConfig struct {
 	ReadTimeout     time.Duration `mapstructure:"read_timeout"`
 	WriteTimeout    time.Duration `mapstructure:"write_timeout"`
 	ShutdownTimeout time.Duration `mapstructure:"shutdown_timeout"`
+	Auth            AuthConfig    `mapstructure:"auth"`
+}
+
+type AuthConfig struct {
+	Enabled  bool   `mapstructure:"enabled"`
+	Username string `mapstructure:"username"`
+	Password string `mapstructure:"password"`
 }
 
 type DatabaseConfig struct {
@@ -114,6 +121,11 @@ func setDefaults() {
 	viper.SetDefault("server.read_timeout", "30s")
 	viper.SetDefault("server.write_timeout", "30s")
 	viper.SetDefault("server.shutdown_timeout", "10s")
+	
+	// Auth defaults
+	viper.SetDefault("server.auth.enabled", false)
+	viper.SetDefault("server.auth.username", "")
+	viper.SetDefault("server.auth.password", "")
 	
 	// Database defaults
 	viper.SetDefault("database.path", "~/.habibi-go/data.db")

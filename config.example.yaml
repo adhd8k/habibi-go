@@ -1,11 +1,17 @@
 # Habibi-Go Configuration Example
 
 server:
-  host: "localhost"
+  host: "localhost"  # Use "0.0.0.0" to listen on all interfaces
   port: 8080
   read_timeout: "30s"
   write_timeout: "30s"
   shutdown_timeout: "10s"
+  
+  # Basic authentication (optional)
+  auth:
+    enabled: false  # Set to true to enable authentication
+    username: ""   # Your username
+    password: ""   # Your password
 
 database:
   path: "~/.habibi-go/habibi.db"

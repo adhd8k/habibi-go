@@ -129,6 +129,9 @@ func runServer(cmd *cobra.Command, args []string) {
 	// Initialize router
 	router := api.NewRouter(projectHandler, sessionHandler, agentHandler, websocketHandler, chatHandler, terminalHandler)
 	
+	// Set auth config
+	router.SetAuthConfig(&cfg.Server.Auth)
+	
 	// Set web assets if available
 	if webAssets != (embed.FS{}) {
 		router.SetWebAssets(webAssets)

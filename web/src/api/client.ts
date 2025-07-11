@@ -11,6 +11,16 @@ import type {
   ExecuteCommandRequest,
 } from '../types'
 
+// Get auth credentials from localStorage or environment
+const getAuthHeader = () => {
+  const auth = localStorage.getItem('habibi_auth')
+  if (auth) {
+    const { username, password } = JSON.parse(auth)
+    return 'Basic ' + btoa(`${username}:${password}`)
+  }
+  return null
+}
+
 const api = axios.create({
   baseURL: '/api/v1',
   headers: {
@@ -18,7 +28,21 @@ const api = axios.create({
   },
 })
 
-// Add response interceptor for debugging
+// Add auth header to all requests
+api.interceptors.request.use(
+  (config) => {
+    const authHeader = getAuthHeader()
+    if (authHeader) {
+      config.headers.Authorization = authHeader
+    }
+    return config
+  },
+  (error) => {
+    return Promise.reject(error)
+  }
+)
+
+// Add response interceptor for debugging and auth handling
 api.interceptors.response.use(
   (response) => {
     console.log('API Response:', response.config.url, response.data)
@@ -26,6 +50,27 @@ api.interceptors.response.use(
   },
   (error) => {
     console.error('API Error:', error.response?.data || error.message)
+    
+    // Handle 401 Unauthorized
+    if (error.response?.status === 401) {
+      // Clear stored auth
+      localStorage.removeItem('habibi_auth')
+      
+      // Prompt for credentials
+      const username = prompt('Username:')
+      const password = prompt('Password:')
+      
+      if (username && password) {
+        // Store credentials
+        localStorage.setItem('habibi_auth', JSON.stringify({ username, password }))
+        
+        // Retry the request
+        const config = error.config
+        config.headers.Authorization = 'Basic ' + btoa(`${username}:${password}`)
+        return api(config)
+      }
+    }
+    
     return Promise.reject(error)
   }
 )

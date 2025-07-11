@@ -115,4 +115,18 @@ export class WebSocketClient {
   }
 }
 
-export const wsClient = new WebSocketClient('ws://localhost:8080/ws')
+// Get WebSocket URL with auth if needed
+const getWebSocketUrl = () => {
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  const host = window.location.host
+  const auth = localStorage.getItem('habibi_auth')
+  
+  if (auth) {
+    const { username, password } = JSON.parse(auth)
+    return `${protocol}//${username}:${password}@${host}/ws`
+  }
+  
+  return `${protocol}//${host}/ws`
+}
+
+export const wsClient = new WebSocketClient(getWebSocketUrl())

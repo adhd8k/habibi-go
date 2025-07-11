@@ -9,11 +9,11 @@ import { useSessionActivity } from './hooks/useSessionActivity'
 
 function Dashboard() {
   return (
-    <div className="h-full flex gap-6 p-6">
-      <div className="w-96 bg-white rounded-lg shadow-sm flex-shrink-0">
+    <div className="h-full flex flex-col lg:flex-row gap-4 lg:gap-6 p-4 lg:p-6">
+      <div className="w-full lg:w-96 bg-white rounded-lg shadow-sm flex-shrink-0">
         <SessionManager />
       </div>
-      <div className="flex-1 bg-white rounded-lg shadow-sm flex">
+      <div className="flex-1 bg-white rounded-lg shadow-sm flex min-h-0">
         <SessionView />
       </div>
     </div>

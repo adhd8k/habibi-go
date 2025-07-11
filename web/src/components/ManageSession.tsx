@@ -100,7 +100,7 @@ export function ManageSession() {
   }
 
   return (
-    <div className="p-6 max-w-2xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-2xl mx-auto overflow-y-auto">
       <h2 className="text-xl font-semibold mb-6">Manage Session</h2>
 
       {/* Session Info */}

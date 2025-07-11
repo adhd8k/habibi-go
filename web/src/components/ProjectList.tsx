@@ -222,7 +222,7 @@ export function ProjectList() {
                     <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">SSH</span>
                   )}
                 </div>
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-600 truncate">
                   {project.config?.ssh_host ? (
                     <>
                       <span className="text-purple-600">{project.config.ssh_host}</span>

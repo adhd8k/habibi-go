@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"habibi-go/internal/api/handlers"
 	"habibi-go/internal/api/middleware"
+	"habibi-go/internal/config"
 )
 
 type Router struct {
@@ -19,6 +20,7 @@ type Router struct {
 	chatHandler      *handlers.ChatHandler
 	terminalHandler  *handlers.TerminalHandler
 	webAssets        embed.FS
+	authConfig       *config.AuthConfig
 }
 
 func NewRouter(projectHandler *handlers.ProjectHandler, sessionHandler *handlers.SessionHandler, agentHandler *handlers.AgentHandler, websocketHandler *handlers.WebSocketHandler, chatHandler *handlers.ChatHandler, terminalHandler *handlers.TerminalHandler) *Router {
@@ -32,6 +34,10 @@ func NewRouter(projectHandler *handlers.ProjectHandler, sessionHandler *handlers
 	}
 }
 
+func (r *Router) SetAuthConfig(authConfig *config.AuthConfig) {
+	r.authConfig = authConfig
+}
+
 func (r *Router) SetWebAssets(assets embed.FS) {
 	r.webAssets = assets
 }
@@ -43,6 +49,11 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 	// Apply middleware
 	engine.Use(middleware.CORS())
 	engine.Use(middleware.Logger())
+	
+	// Apply auth middleware if configured
+	if r.authConfig != nil {
+		engine.Use(middleware.BasicAuth(r.authConfig))
+	}
 	
 	// API routes
 	api := engine.Group("/api")
