@@ -20,6 +20,7 @@ export function SessionListItem({ session }: SessionListItemProps) {
     : ''
 
   const handleSelect = () => {
+    console.log('Selecting session:', session)
     dispatch(setCurrentSession(session))
   }
 

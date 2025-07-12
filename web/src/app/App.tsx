@@ -9,6 +9,7 @@ import { ProjectListContainer } from '../features/projects/components/ProjectLis
 import { Layout } from '../components/Layout'
 import { SessionManagerContainer, SessionViewContainer } from '../features/sessions/components'
 import { selectCredentials } from '../features/auth/slice/authSlice'
+import { StoreSync } from '../shared/components/StoreSync'
 
 function Dashboard() {
   return (
@@ -50,6 +51,7 @@ function AppContent() {
 
   return (
     <>
+      <StoreSync />
       <AuthModal />
       <Layout
         sidebar={
