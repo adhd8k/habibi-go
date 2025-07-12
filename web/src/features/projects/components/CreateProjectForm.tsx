@@ -77,7 +77,7 @@ export function CreateProjectForm({ onSuccess, onCancel }: CreateProjectFormProp
         </label>
         <textarea
           placeholder="#!/bin/bash\n# This script runs when creating a new session\n# Available variables:\n# $PROJECT_PATH - Main project directory\n# $WORKTREE_PATH - Session worktree directory\n# $SESSION_NAME - Name of the session\n# $BRANCH_NAME - Git branch name\n\n# Example:\ncp $PROJECT_PATH/.env $WORKTREE_PATH/.env"
-          value={formData.setup_command}
+          value={formData.setup_command || ''}
           onChange={(e) => setFormData({ ...formData, setup_command: e.target.value })}
           className="w-full p-2 border rounded font-mono text-sm"
           rows={6}
