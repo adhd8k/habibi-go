@@ -1,6 +1,7 @@
 import { useGetSessionDiffsQuery } from '../api/sessionsApi'
 import { LoadingSpinner } from '../../../shared/components/LoadingSpinner'
 import { ErrorMessage } from '../../../shared/components/ErrorMessage'
+import { FileDiffs } from '../../../components/FileDiffs'
 
 interface SessionDiffsContainerProps {
   sessionId: number
@@ -22,8 +23,5 @@ export function SessionDiffsContainer({ sessionId }: SessionDiffsContainerProps)
     )
   }
 
-  // TODO: Migrate FileDiffs component
-  // For now, using the legacy component
-  const FileDiffs = require('../../../components/FileDiffs').FileDiffs
   return <FileDiffs />
 }
