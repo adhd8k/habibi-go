@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Project } from '../../../shared/types/schemas'
 import { CreateProjectForm } from './CreateProjectForm'
+import { AddSSHProjectForm } from './AddSSHProjectForm'
 
 interface ProjectListViewProps {
   projects: Project[]
@@ -81,8 +82,10 @@ export function ProjectListView({
       {showSSHForm && (
         <div className="mb-4 p-3 bg-gray-50 rounded-lg">
           <h3 className="text-lg font-semibold mb-3">Add SSH Project</h3>
-          {/* TODO: Add SSH form component */}
-          <p className="text-gray-500">SSH project form coming soon...</p>
+          <AddSSHProjectForm
+            onSuccess={() => setShowSSHForm(false)}
+            onCancel={() => setShowSSHForm(false)}
+          />
         </div>
       )}
 
