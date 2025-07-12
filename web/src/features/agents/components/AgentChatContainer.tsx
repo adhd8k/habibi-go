@@ -4,6 +4,7 @@ import { useGetAgentsQuery, useCreateAgentMutation, useGetAgentMessagesQuery, us
 import { selectCurrentAgent, setCurrentAgent } from '../slice/agentsSlice'
 import { AgentChatView } from './AgentChatView'
 import { LoadingSpinner } from '../../../shared/components/LoadingSpinner'
+import { getErrorMessage } from '../../../utils/errorHandling'
 
 interface AgentChatContainerProps {
   sessionId: number
@@ -12,7 +13,7 @@ interface AgentChatContainerProps {
 export function AgentChatContainer({ sessionId }: AgentChatContainerProps) {
   const dispatch = useAppDispatch()
   const currentAgent = useAppSelector(selectCurrentAgent)
-  const [pendingMessage, setPendingMessage] = useState<string | null>(null)
+  const [isCreatingAgent, setIsCreatingAgent] = useState(false)
   
   const { data: agents, isLoading } = useGetAgentsQuery(sessionId)
   const [createAgent] = useCreateAgentMutation()
@@ -31,53 +32,67 @@ export function AgentChatContainer({ sessionId }: AgentChatContainerProps) {
     }
   }, [agents, currentAgent, dispatch])
 
-  // Create agent and send message
-  const handleSendMessage = useCallback(async (message: string) => {
-    if (!agents || agents.length === 0) {
-      // No agent exists, create one first
-      console.log('Creating new Claude agent with command: claude --output-format stream-json')
-      try {
-        const newAgent = await createAgent({
-          session_id: sessionId,
-          agent_type: 'claude',
-          command: 'claude --output-format stream-json',
-        }).unwrap()
-        dispatch(setCurrentAgent(newAgent))
-        
-        // Send the message to the new agent
-        console.log(`Sending message to agent ${newAgent.id}:`, message)
-        await sendMessage({ agentId: newAgent.id, message }).unwrap()
-      } catch (error) {
-        console.error('Failed to create agent or send message:', error)
-      }
-    } else if (currentAgent) {
-      // Agent exists, just send the message
-      console.log(`Sending message to agent ${currentAgent.id}:`, message)
-      try {
-        await sendMessage({ agentId: currentAgent.id, message }).unwrap()
-      } catch (error) {
-        console.error('Failed to send message:', error)
-      }
+  // Create agent handler
+  const handleCreateAgent = useCallback(async () => {
+    setIsCreatingAgent(true)
+    try {
+      const newAgent = await createAgent({
+        session_id: sessionId,
+        agent_type: 'claude-code',
+        command: 'claude --output-format stream-json',
+      }).unwrap()
+      dispatch(setCurrentAgent(newAgent))
+    } catch (error) {
+      console.error('Failed to create agent:', error)
+      alert(`Failed to create agent: ${getErrorMessage(error)}`)
+    } finally {
+      setIsCreatingAgent(false)
     }
-  }, [agents, currentAgent, sessionId, createAgent, sendMessage, dispatch])
+  }, [sessionId, createAgent, dispatch])
 
-  // Handle pending message after agent is created
-  useEffect(() => {
-    if (pendingMessage && currentAgent) {
-      handleSendMessage(pendingMessage)
-      setPendingMessage(null)
+  // Send message handler
+  const handleSendMessage = useCallback(async (message: string) => {
+    if (!currentAgent) {
+      console.error('No agent available to send message')
+      return
     }
-  }, [pendingMessage, currentAgent, handleSendMessage])
+
+    console.log(`Sending message to agent ${currentAgent.id}:`, message)
+    try {
+      await sendMessage({ agentId: currentAgent.id, message }).unwrap()
+    } catch (error) {
+      console.error('Failed to send message:', error)
+      alert(`Failed to send message: ${getErrorMessage(error)}`)
+    }
+  }, [currentAgent, sendMessage])
 
   if (isLoading) {
     return <LoadingSpinner className="mt-8" />
   }
 
-  // Always show the chat interface, even without an agent
-  // The agent will be created on first message
+  // No agent exists, show create button
+  if (!agents || agents.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-8">
+        <div className="text-center mb-8">
+          <h3 className="text-xl font-semibold mb-2">No Claude Agent</h3>
+          <p className="text-gray-600">Create a Claude agent to start chatting</p>
+        </div>
+        <button
+          onClick={handleCreateAgent}
+          disabled={isCreatingAgent}
+          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isCreatingAgent ? 'Creating Agent...' : 'Create Claude Agent'}
+        </button>
+      </div>
+    )
+  }
+
+  // Show chat interface with existing agent
   return (
     <AgentChatView 
-      agent={currentAgent || null}
+      agent={currentAgent}
       messages={messages || []}
       onSendMessage={handleSendMessage}
     />

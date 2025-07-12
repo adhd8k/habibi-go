@@ -88,9 +88,9 @@ export const agentsApi = baseApi.injectEndpoints({
 
     sendAgentMessage: builder.mutation<void, { agentId: number; message: string }>({
       query: ({ agentId, message }) => ({
-        url: `/agents/${agentId}/send`,
+        url: `/agents/${agentId}/command`,
         method: 'POST',
-        body: { message },
+        body: { command: message },
       }),
       invalidatesTags: (_result, _error, { agentId }) => [
         { type: 'Chat', id: `agent-${agentId}` },
@@ -98,10 +98,11 @@ export const agentsApi = baseApi.injectEndpoints({
     }),
 
     getAgentMessages: builder.query<ChatMessage[], number>({
-      query: (agentId) => `/agents/${agentId}/messages`,
-      transformResponse: (response: ApiResponse<ChatMessage[]>) => {
-        if (response.data) {
-          return response.data.map(msg => ChatMessageSchema.parse(msg))
+      query: (agentId) => `/agents/${agentId}/chat`,
+      transformResponse: (response: any) => {
+        // Backend returns { messages: [...], success: true }
+        if (response.messages) {
+          return response.messages.map((msg: any) => ChatMessageSchema.parse(msg))
         }
         return []
       },
@@ -112,7 +113,7 @@ export const agentsApi = baseApi.injectEndpoints({
 
     clearAgentMessages: builder.mutation<void, number>({
       query: (agentId) => ({
-        url: `/agents/${agentId}/messages`,
+        url: `/agents/${agentId}/chat`,
         method: 'DELETE',
       }),
       invalidatesTags: (_result, _error, agentId) => [
