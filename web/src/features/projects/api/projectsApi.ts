@@ -34,7 +34,7 @@ export const projectsApi = baseApi.injectEndpoints({
         }
         throw new Error('Project not found')
       },
-      providesTags: (result, error, id) => [{ type: 'Project', id }],
+      providesTags: (_result, _error, id) => [{ type: 'Project', id }],
     }),
 
     createProject: builder.mutation<Project, CreateProjectRequest>({
@@ -64,7 +64,7 @@ export const projectsApi = baseApi.injectEndpoints({
         }
         throw new Error('Failed to update project')
       },
-      invalidatesTags: (result, error, { id }) => [
+      invalidatesTags: (_result, _error, { id }) => [
         { type: 'Project', id },
         { type: 'Project', id: 'LIST' },
       ],
@@ -75,7 +75,7 @@ export const projectsApi = baseApi.injectEndpoints({
         url: `/projects/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: (result, error, id) => [
+      invalidatesTags: (_result, _error, id) => [
         { type: 'Project', id },
         { type: 'Project', id: 'LIST' },
       ],

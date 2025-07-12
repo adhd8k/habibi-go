@@ -57,7 +57,7 @@ export const sessionsSlice = createSlice({
   },
   extraReducers: (builder) => {
     // Handle WebSocket messages
-    builder.addCase('websocket/messageReceived', (state, action: PayloadAction<WebSocketMessage>) => {
+    builder.addCase('websocket/messageReceived' as any, (state, action: PayloadAction<WebSocketMessage>) => {
       const message = action.payload
       
       switch (message.type) {

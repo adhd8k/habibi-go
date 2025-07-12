@@ -35,7 +35,7 @@ export const sessionsApi = baseApi.injectEndpoints({
         }
         throw new Error('Session not found')
       },
-      providesTags: (result, error, id) => [{ type: 'Session', id }],
+      providesTags: (_result, _error, id) => [{ type: 'Session', id }],
     }),
 
     createSession: builder.mutation<Session, CreateSessionRequest>({
@@ -68,7 +68,7 @@ export const sessionsApi = baseApi.injectEndpoints({
         }
         throw new Error('Failed to update session')
       },
-      invalidatesTags: (result, error, { id }) => [
+      invalidatesTags: (_result, _error, { id }) => [
         { type: 'Session', id },
         { type: 'Session', id: 'LIST' },
       ],
@@ -79,7 +79,7 @@ export const sessionsApi = baseApi.injectEndpoints({
         url: `/sessions/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: (result, error, id) => [
+      invalidatesTags: (_result, _error, id) => [
         { type: 'Session', id },
         { type: 'Session', id: 'LIST' },
         { type: 'Project', id: 'LIST' },
@@ -98,7 +98,7 @@ export const sessionsApi = baseApi.injectEndpoints({
         url: `/sessions/${id}/rebase`,
         method: 'POST',
       }),
-      invalidatesTags: (result, error, id) => [{ type: 'Session', id }],
+      invalidatesTags: (_result, _error, id) => [{ type: 'Session', id }],
     }),
 
     pushSession: builder.mutation<void, { id: number; remoteBranch?: string }>({
@@ -107,7 +107,7 @@ export const sessionsApi = baseApi.injectEndpoints({
         method: 'POST',
         body: { remote_branch: remoteBranch },
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: 'Session', id }],
+      invalidatesTags: (_result, _error, { id }) => [{ type: 'Session', id }],
     }),
 
     mergeSession: builder.mutation<void, { id: number; targetBranch?: string }>({
@@ -116,7 +116,7 @@ export const sessionsApi = baseApi.injectEndpoints({
         method: 'POST',
         body: { target_branch: targetBranch },
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: 'Session', id }],
+      invalidatesTags: (_result, _error, { id }) => [{ type: 'Session', id }],
     }),
 
     mergeSessionToOriginal: builder.mutation<void, number>({
@@ -124,7 +124,7 @@ export const sessionsApi = baseApi.injectEndpoints({
         url: `/sessions/${id}/merge-to-original`,
         method: 'POST',
       }),
-      invalidatesTags: (result, error, id) => [{ type: 'Session', id }],
+      invalidatesTags: (_result, _error, id) => [{ type: 'Session', id }],
     }),
 
     closeSession: builder.mutation<void, number>({
@@ -132,7 +132,7 @@ export const sessionsApi = baseApi.injectEndpoints({
         url: `/sessions/${id}/close`,
         method: 'POST',
       }),
-      invalidatesTags: (result, error, id) => [
+      invalidatesTags: (_result, _error, id) => [
         { type: 'Session', id },
         { type: 'Session', id: 'LIST' },
       ],

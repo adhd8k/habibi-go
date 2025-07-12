@@ -1,5 +1,4 @@
 import { Middleware } from '@reduxjs/toolkit'
-import { RootState } from '../store'
 
 export interface WebSocketMessage {
   type: string
@@ -53,7 +52,7 @@ export type WebSocketAction =
   | WebSocketConnectedAction
   | WebSocketDisconnectedAction
 
-export const websocketMiddleware: Middleware<{}, RootState> = (store) => {
+export const websocketMiddleware: Middleware = (store) => {
   let socket: WebSocket | null = null
   let reconnectAttempts = 0
   const maxReconnectAttempts = 10

@@ -3,6 +3,7 @@ import { useGetProjectsQuery, useDeleteProjectMutation } from '../api/projectsAp
 import { setCurrentProject, selectCurrentProject } from '../slice/projectsSlice'
 import { clearCurrentSession } from '../../sessions/slice/sessionsSlice'
 import { ProjectListView } from './ProjectListView'
+import { Project } from '../../../shared/types/schemas'
 
 export function ProjectListContainer() {
   const dispatch = useAppDispatch()
@@ -11,7 +12,7 @@ export function ProjectListContainer() {
   const { data: projects, isLoading, error } = useGetProjectsQuery()
   const [deleteProject, { isLoading: isDeleting }] = useDeleteProjectMutation()
   
-  const handleSelectProject = (project: typeof projects[0]) => {
+  const handleSelectProject = (project: Project) => {
     dispatch(setCurrentProject(project))
     dispatch(clearCurrentSession())
   }
