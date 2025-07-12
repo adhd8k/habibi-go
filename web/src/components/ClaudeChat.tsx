@@ -59,7 +59,7 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
   // Initialize messages from history
   useEffect(() => {
     if (historyData?.messages && !isInitialized) {
-      const historicalMessages: Message[] = historyData.messages.map(msg => ({
+      const historicalMessages: Message[] = historyData.messages.map((msg: any) => ({
         id: msg.id.toString(),
         role: msg.role as 'user' | 'assistant' | 'tool_use' | 'tool_result',
         content: msg.content,

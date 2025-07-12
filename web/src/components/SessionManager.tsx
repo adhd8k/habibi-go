@@ -36,7 +36,7 @@ export function SessionManager() {
       const response = await sessionsApi.create(data)
       return response.data
     },
-    onSuccess: async (response) => {
+    onSuccess: async (response: any) => {
       queryClient.invalidateQueries({ queryKey: ['sessions'] })
       setShowCreateForm(false)
       setNewSession({ session_name: '', branch_name: '', base_branch: 'main' })
