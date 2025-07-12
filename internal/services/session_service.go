@@ -715,21 +715,23 @@ func (s *SessionService) CloseSession(id int) error {
 		fmt.Printf("Warning: failed to remove worktree: %v\n", err)
 	}
 	
-	// Update session status
-	session.Status = "closed"
-	if err := s.sessionRepo.Update(session); err != nil {
-		return fmt.Errorf("failed to update session: %w", err)
-	}
-	
-	// Create close event
+	// Create close event before deletion
+	// Create close event before deletion
 	event := models.NewSessionEvent("session_closed", session.ID, map[string]interface{}{
 		"name":        session.Name,
 		"branch_name": session.BranchName,
+		"project_id":  session.ProjectID,
 	})
 	
 	if err := s.eventRepo.Create(event); err != nil {
 		fmt.Printf("Failed to create close event: %v\n", err)
 	}
+	
+	// Delete the session from database
+	if err := s.sessionRepo.Delete(id); err != nil {
+		return fmt.Errorf("failed to delete session: %w", err)
+	}
+	
 	
 	return nil
 }
