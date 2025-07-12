@@ -1,9 +1,7 @@
 import { useState } from 'react'
 import { useAppDispatch } from '../../../app/hooks'
 import { useCreateSessionMutation } from '../api/sessionsApi'
-import { useCreateAgentMutation } from '../../agents/api/agentsApi'
 import { setCurrentSession } from '../slice/sessionsSlice'
-import { setCurrentAgent } from '../../agents/slice/agentsSlice'
 import { CreateSessionRequest } from '../../../shared/types/schemas'
 
 interface CreateSessionModalProps {
@@ -15,7 +13,6 @@ interface CreateSessionModalProps {
 export function CreateSessionModal({ projectId, defaultBranch, onClose }: CreateSessionModalProps) {
   const dispatch = useAppDispatch()
   const [createSession, { isLoading }] = useCreateSessionMutation()
-  const [createAgent] = useCreateAgentMutation()
   
   const [formData, setFormData] = useState({
     name: '',
@@ -47,19 +44,6 @@ export function CreateSessionModal({ projectId, defaultBranch, onClose }: Create
     try {
       const newSession = await createSession(request).unwrap()
       dispatch(setCurrentSession(newSession))
-      
-      // Automatically create a Claude agent for the new session
-      try {
-        const newAgent = await createAgent({
-          session_id: newSession.id,
-          agent_type: 'claude',
-          command: 'claude --output-format stream-json',
-        }).unwrap()
-        dispatch(setCurrentAgent(newAgent))
-      } catch (agentErr) {
-        console.error('Failed to create agent:', agentErr)
-      }
-      
       onClose()
     } catch (err: any) {
       setError(err.data?.message || 'Failed to create session')

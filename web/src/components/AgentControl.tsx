@@ -46,7 +46,7 @@ export function AgentControl() {
   if (!currentSession) {
     return (
       <div className="p-4 text-gray-500">
-        Select a session to chat with Claude
+        Select a session to start chatting
       </div>
     )
   }
@@ -89,7 +89,7 @@ export function AgentControl() {
         
         {!claudeAgent && agents?.length === 0 && (
           <p className="text-sm text-gray-500 mt-2">
-            Claude will automatically connect when you create a session
+            Send a message to start chatting with Claude
           </p>
         )}
         
