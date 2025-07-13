@@ -85,14 +85,6 @@ export function TodoList({ agent }: TodoListProps) {
     }
   }, [agent?.id])
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'text-red-600 bg-red-50 border-red-200'
-      case 'medium': return 'text-yellow-600 bg-yellow-50 border-yellow-200'
-      case 'low': return 'text-green-600 bg-green-50 border-green-200'
-      default: return 'text-gray-600 bg-gray-50 border-gray-200'
-    }
-  }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -114,7 +106,7 @@ export function TodoList({ agent }: TodoListProps) {
 
   if (!agent) {
     return (
-      <div className="p-4 text-gray-500 text-center">
+      <div className="text-sm text-gray-500">
         <p>No agent selected</p>
       </div>
     )
@@ -122,18 +114,11 @@ export function TodoList({ agent }: TodoListProps) {
 
   if (todos.length === 0) {
     return (
-      <div className="p-4 text-gray-500 text-center">
-        <p className="text-lg mb-2">📋 No tasks yet</p>
-        <p className="text-sm mb-4">Tasks will appear here when Claude creates a todo list</p>
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-left max-w-md mx-auto">
-          <p className="text-sm text-blue-800 mb-2">
-            <strong>How it works:</strong>
-          </p>
-          <p className="text-xs text-blue-700">
-            When Claude uses the TodoWrite tool to track tasks, they'll automatically appear here. 
-            You'll see tasks organized by status (in progress, pending, completed) with their priorities.
-          </p>
-        </div>
+      <div className="text-sm text-gray-500">
+        <p className="mb-1">No tasks yet</p>
+        <p className="text-xs text-gray-400">
+          Tasks appear when Claude uses TodoWrite
+        </p>
       </div>
     )
   }
@@ -146,27 +131,30 @@ export function TodoList({ agent }: TodoListProps) {
   }
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="p-4">
-        <h3 className="text-lg font-semibold mb-4">Claude's Task List</h3>
+    <div className="h-full">
+      <div>
         
         {/* In Progress */}
         {todosByStatus.in_progress.length > 0 && (
-          <div className="mb-6">
-            <h4 className="text-sm font-medium text-gray-700 mb-2">In Progress</h4>
-            <div className="space-y-2">
+          <div className="mb-3">
+            <h4 className="text-xs font-medium text-gray-600 mb-1">In Progress</h4>
+            <div className="space-y-1">
               {todosByStatus.in_progress.map((todo) => (
                 <div
                   key={todo.id}
-                  className="flex items-start gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg"
+                  className="flex items-start gap-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs"
                 >
-                  <span className="text-lg">{getStatusIcon(todo.status)}</span>
+                  <span>{getStatusIcon(todo.status)}</span>
                   <div className="flex-1">
-                    <p className={`font-medium ${getStatusColor(todo.status)}`}>
+                    <p className={`${getStatusColor(todo.status)}`}>
                       {todo.content}
                     </p>
-                    <span className={`inline-block mt-1 text-xs px-2 py-1 rounded-full border ${getPriorityColor(todo.priority)}`}>
-                      {todo.priority} priority
+                    <span className={`text-xs ${
+                      todo.priority === 'high' ? 'text-red-600' :
+                      todo.priority === 'medium' ? 'text-yellow-600' :
+                      'text-green-600'
+                    }`}>
+                      {todo.priority}
                     </span>
                   </div>
                 </div>
@@ -177,21 +165,25 @@ export function TodoList({ agent }: TodoListProps) {
 
         {/* Pending */}
         {todosByStatus.pending.length > 0 && (
-          <div className="mb-6">
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Pending</h4>
-            <div className="space-y-2">
+          <div className="mb-3">
+            <h4 className="text-xs font-medium text-gray-600 mb-1">Pending</h4>
+            <div className="space-y-1">
               {todosByStatus.pending.map((todo) => (
                 <div
                   key={todo.id}
-                  className="flex items-start gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg"
+                  className="flex items-start gap-2 p-2 bg-gray-50 border border-gray-200 rounded text-xs"
                 >
-                  <span className="text-lg">{getStatusIcon(todo.status)}</span>
+                  <span className="text-sm">{getStatusIcon(todo.status)}</span>
                   <div className="flex-1">
                     <p className={`${getStatusColor(todo.status)}`}>
                       {todo.content}
                     </p>
-                    <span className={`inline-block mt-1 text-xs px-2 py-1 rounded-full border ${getPriorityColor(todo.priority)}`}>
-                      {todo.priority} priority
+                    <span className={`text-xs ${
+                      todo.priority === 'high' ? 'text-red-600' :
+                      todo.priority === 'medium' ? 'text-yellow-600' :
+                      'text-green-600'
+                    }`}>
+                      {todo.priority}
                     </span>
                   </div>
                 </div>
@@ -202,44 +194,43 @@ export function TodoList({ agent }: TodoListProps) {
 
         {/* Completed */}
         {todosByStatus.completed.length > 0 && (
-          <div className="mb-6">
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Completed</h4>
-            <div className="space-y-2">
-              {todosByStatus.completed.map((todo) => (
+          <div>
+            <h4 className="text-xs font-medium text-gray-600 mb-1">
+              Completed ({todosByStatus.completed.length})
+            </h4>
+            <div className="space-y-1">
+              {todosByStatus.completed.slice(0, 2).map((todo) => (
                 <div
                   key={todo.id}
-                  className="flex items-start gap-3 p-3 bg-green-50 border border-green-200 rounded-lg opacity-75"
+                  className="flex items-start gap-2 p-1 text-xs opacity-60"
                 >
-                  <span className="text-lg">{getStatusIcon(todo.status)}</span>
-                  <div className="flex-1">
-                    <p className={`line-through ${getStatusColor(todo.status)}`}>
-                      {todo.content}
-                    </p>
-                    <span className={`inline-block mt-1 text-xs px-2 py-1 rounded-full border ${getPriorityColor(todo.priority)}`}>
-                      {todo.priority} priority
-                    </span>
-                  </div>
+                  <span className="text-sm">{getStatusIcon(todo.status)}</span>
+                  <p className={`flex-1 line-through ${getStatusColor(todo.status)}`}>
+                    {todo.content}
+                  </p>
                 </div>
               ))}
+              {todosByStatus.completed.length > 2 && (
+                <p className="text-xs text-gray-400 pl-6">
+                  +{todosByStatus.completed.length - 2} more
+                </p>
+              )}
             </div>
           </div>
         )}
 
-        {/* Summary */}
-        <div className="mt-6 pt-4 border-t border-gray-200">
-          <div className="flex justify-around text-sm text-gray-600">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{todosByStatus.in_progress.length}</div>
-              <div>In Progress</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-600">{todosByStatus.pending.length}</div>
-              <div>Pending</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{todosByStatus.completed.length}</div>
-              <div>Completed</div>
-            </div>
+        {/* Compact Summary */}
+        <div className="mt-3 pt-2 border-t border-gray-200">
+          <div className="flex gap-3 text-xs text-gray-600">
+            <span>
+              <span className="font-semibold text-blue-600">{todosByStatus.in_progress.length}</span> active
+            </span>
+            <span>
+              <span className="font-semibold text-gray-600">{todosByStatus.pending.length}</span> pending
+            </span>
+            <span>
+              <span className="font-semibold text-green-600">{todosByStatus.completed.length}</span> done
+            </span>
           </div>
         </div>
       </div>

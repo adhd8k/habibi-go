@@ -5,6 +5,7 @@ import { useAppStore } from '../store'
 import { Agent } from '../types'
 import { ClaudeChat } from './ClaudeChat'
 import { AgentSelector } from './AgentSelector'
+import { TodoList } from './TodoList'
 
 export function AgentControl() {
   const queryClient = useQueryClient()
@@ -88,15 +89,31 @@ export function AgentControl() {
 
   return (
     <div className="h-full flex flex-col">
-      {claudeAgents.length > 0 && (
-        <AgentSelector
-          agents={claudeAgents}
-          currentAgent={selectedAgent}
-          onSelectAgent={handleSelectAgent}
-          onCreateNewAgent={handleCreateNewAgent}
-        />
-      )}
+      {/* Top section with Agent Selector and Todo List side by side */}
+      <div className="flex gap-4 p-4 border-b">
+        {/* Agent Selector - Left Half */}
+        <div className="flex-1">
+          <h3 className="text-sm font-semibold text-gray-700 mb-2">Claude Sessions</h3>
+          {claudeAgents.length > 0 ? (
+            <AgentSelector
+              agents={claudeAgents}
+              currentAgent={selectedAgent}
+              onSelectAgent={handleSelectAgent}
+              onCreateNewAgent={handleCreateNewAgent}
+            />
+          ) : (
+            <div className="text-sm text-gray-500">No Claude sessions yet</div>
+          )}
+        </div>
+        
+        {/* Todo List - Right Half */}
+        <div className="flex-1 max-h-64 overflow-y-auto border-l pl-4">
+          <h3 className="text-sm font-semibold text-gray-700 mb-2">Tasks</h3>
+          <TodoList agent={selectedAgent} />
+        </div>
+      </div>
       
+      {/* Chat area below */}
       <div className="flex-1 overflow-hidden">
         {selectedAgent && selectedAgent.status === 'running' ? (
           <ClaudeChat agent={selectedAgent} />
