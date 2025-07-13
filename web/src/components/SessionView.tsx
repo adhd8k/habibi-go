@@ -4,10 +4,11 @@ import { AgentControl } from './AgentControl'
 import { FileDiffs } from './FileDiffs'
 import { ManageSession } from './ManageSession'
 import { Terminal } from './Terminal'
+import { SessionTasks } from './SessionTasks'
 import { useDiffStats } from '../hooks/useDiffStats'
 import { useSessionActivity } from '../hooks/useSessionActivity'
 
-type TabType = 'assistant' | 'diffs' | 'terminal' | 'manage'
+type TabType = 'assistant' | 'diffs' | 'terminal' | 'tasks' | 'manage'
 
 export function SessionView() {
   const [activeTab, setActiveTab] = useState<TabType>('assistant')
@@ -53,6 +54,7 @@ export function SessionView() {
       hasChanges: diffStats && diffStats.filesChanged > 0
     },
     { id: 'terminal' as TabType, label: 'Terminal', icon: '🖥️' },
+    { id: 'tasks' as TabType, label: 'Tasks', icon: '📋' },
     { id: 'manage' as TabType, label: 'Manage Session', icon: '⚙️' },
   ]
 
@@ -79,6 +81,7 @@ export function SessionView() {
                 {tab.id === 'assistant' && 'Chat'}
                 {tab.id === 'diffs' && 'Diffs'}
                 {tab.id === 'terminal' && 'Term'}
+                {tab.id === 'tasks' && 'Tasks'}
                 {tab.id === 'manage' && 'Manage'}
               </span>
             </button>
@@ -91,6 +94,7 @@ export function SessionView() {
         {activeTab === 'assistant' && <AgentControl />}
         {activeTab === 'diffs' && <FileDiffs />}
         {activeTab === 'terminal' && <Terminal />}
+        {activeTab === 'tasks' && <SessionTasks />}
         {activeTab === 'manage' && <ManageSession />}
       </div>
     </div>
