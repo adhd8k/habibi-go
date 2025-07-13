@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { agentsApi } from '../api/client'
 import { wsClient } from '../api/websocket'
@@ -29,7 +29,7 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
   const [input, setInput] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
-  const [showToolMessages, setShowToolMessages] = useState(true)
+  const [showToolMessages, setShowToolMessages] = useState(false)
   const [currentAgent, setCurrentAgent] = useState<Agent | null>(agent)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const lastMessageRef = useRef<string>('')
@@ -339,6 +339,22 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
   const filteredMessages = messages.filter(msg => 
     showToolMessages || (msg.role !== 'tool_use' && msg.role !== 'tool_result')
   )
+  
+  // Count hidden tool messages between visible messages
+  const getHiddenToolCount = (index: number): number => {
+    if (showToolMessages) return 0
+    
+    let count = 0
+    const startIndex = index === 0 ? 0 : messages.indexOf(filteredMessages[index - 1]) + 1
+    const endIndex = messages.indexOf(filteredMessages[index])
+    
+    for (let i = startIndex; i < endIndex; i++) {
+      if (messages[i].role === 'tool_use' || messages[i].role === 'tool_result') {
+        count++
+      }
+    }
+    return count
+  }
 
   return (
     <div className="flex flex-col h-full w-full max-w-full overflow-hidden" style={{ width: '100%', maxWidth: '100vw' }}>
@@ -364,15 +380,28 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
           </div>
         )}
         
-        {filteredMessages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex min-w-0 w-full max-w-full ${
-              message.role === 'user' ? 'justify-end' : 
-              message.role === 'tool_use' || message.role === 'tool_result' ? 'justify-center' :
-              'justify-start'
-            }`}
-          >
+        {filteredMessages.map((message, index) => {
+          const hiddenToolCount = getHiddenToolCount(index)
+          
+          return (
+            <React.Fragment key={message.id}>
+              {hiddenToolCount > 0 && !showToolMessages && (
+                <div className="flex justify-center my-2">
+                  <button
+                    onClick={() => setShowToolMessages(true)}
+                    className="text-xs text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full transition-colors"
+                  >
+                    🔧 {hiddenToolCount} tool {hiddenToolCount === 1 ? 'action' : 'actions'} hidden
+                  </button>
+                </div>
+              )}
+              <div
+                className={`flex min-w-0 w-full max-w-full ${
+                  message.role === 'user' ? 'justify-end' : 
+                  message.role === 'tool_use' || message.role === 'tool_result' ? 'justify-center' :
+                  'justify-start'
+                }`}
+              >
             <div
               className={`max-w-lg min-w-0 w-auto rounded-lg p-3 overflow-hidden word-wrap break-words ${
                 message.role === 'user'
@@ -463,7 +492,30 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
               </div>
             </div>
           </div>
-        ))}
+            </React.Fragment>
+          )
+        })}
+        
+        {/* Show hidden tools at the end if any */}
+        {!showToolMessages && filteredMessages.length > 0 && (() => {
+          const lastFilteredIndex = messages.indexOf(filteredMessages[filteredMessages.length - 1])
+          let count = 0
+          for (let i = lastFilteredIndex + 1; i < messages.length; i++) {
+            if (messages[i].role === 'tool_use' || messages[i].role === 'tool_result') {
+              count++
+            }
+          }
+          return count > 0 ? (
+            <div className="flex justify-center my-2">
+              <button
+                onClick={() => setShowToolMessages(true)}
+                className="text-xs text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full transition-colors"
+              >
+                🔧 {count} tool {count === 1 ? 'action' : 'actions'} hidden
+              </button>
+            </div>
+          ) : null
+        })()}
         
         {isProcessing && (
           <div className="flex justify-start">
