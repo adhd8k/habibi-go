@@ -4,6 +4,7 @@ import { Layout } from './components/Layout'
 import { ProjectList } from './components/ProjectList'
 import { SessionManager } from './components/SessionManager'
 import { SessionView } from './components/SessionView'
+import { FloatingTodoPanel } from './components/FloatingTodoPanel'
 import { wsClient } from './api/websocket'
 import { useSessionActivity } from './hooks/useSessionActivity'
 
@@ -49,6 +50,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
       </Routes>
+      <FloatingTodoPanel />
     </Layout>
   )
 }

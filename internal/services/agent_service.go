@@ -330,7 +330,8 @@ func (s *AgentService) GetOrCreateClaudeAgent(sessionID int, agentID int) (*mode
 	if agentID > 0 {
 		agent, err := s.agentRepo.GetByID(agentID)
 		if err == nil && agent.SessionID == sessionID && agent.AgentType == "claude-code" {
-			// If agent is stopped, restart it
+			// Always restart the agent if it's not running
+			// This ensures we can resume after server restart
 			if agent.Status != string(models.AgentStatusRunning) {
 				return s.RestartAgent(agent.ID)
 			}
@@ -338,20 +339,30 @@ func (s *AgentService) GetOrCreateClaudeAgent(sessionID int, agentID int) (*mode
 		}
 	}
 	
-	// Otherwise, look for any running Claude agent for this session
+	// Otherwise, look for any Claude agent for this session
 	agents, err := s.agentRepo.GetBySessionID(sessionID)
 	if err == nil {
+		// First, check for running agents
 		for _, agent := range agents {
 			if agent.AgentType == "claude-code" && agent.Status == string(models.AgentStatusRunning) {
 				return agent, nil
 			}
 		}
 		
-		// If we have a stopped Claude agent, restart it
+		// If we have any Claude agent with a session ID, prefer to restart the most recent one
+		var bestAgent *models.Agent
 		for _, agent := range agents {
 			if agent.AgentType == "claude-code" {
-				return s.RestartAgent(agent.ID)
+				if bestAgent == nil || 
+				   (agent.ClaudeSessionID != "" && bestAgent.ClaudeSessionID == "") ||
+				   (agent.ID > bestAgent.ID) {
+					bestAgent = agent
+				}
 			}
+		}
+		
+		if bestAgent != nil {
+			return s.RestartAgent(bestAgent.ID)
 		}
 	}
 	
@@ -365,18 +376,40 @@ func (s *AgentService) GetOrCreateClaudeAgent(sessionID int, agentID int) (*mode
 }
 
 func (s *AgentService) RestartAgent(id int) (*models.Agent, error) {
-	// Stop the agent first
-	if err := s.StopAgent(id); err != nil {
-		return nil, fmt.Errorf("failed to stop agent: %w", err)
-	}
-	
-	// Get agent details
+	// Get agent details first
 	agent, err := s.agentRepo.GetByID(id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get agent: %w", err)
 	}
 	
-	// Create restart request
+	// For Claude agents, we need to preserve the session ID
+	claudeSessionID := agent.ClaudeSessionID
+	
+	// Stop the agent
+	if err := s.StopAgent(id); err != nil {
+		return nil, fmt.Errorf("failed to stop agent: %w", err)
+	}
+	
+	// For Claude agents, use the Claude service directly to preserve session
+	if agent.AgentType == "claude-code" {
+		// Create new Claude agent
+		newAgent, err := s.claudeService.StartClaudeAgent(agent.SessionID, agent.WorkingDirectory)
+		if err != nil {
+			return nil, fmt.Errorf("failed to restart Claude agent: %w", err)
+		}
+		
+		// Preserve the Claude session ID if we had one
+		if claudeSessionID != "" {
+			newAgent.ClaudeSessionID = claudeSessionID
+			if err := s.agentRepo.UpdateClaudeSessionID(newAgent.ID, claudeSessionID); err != nil {
+				fmt.Printf("Failed to preserve Claude session ID: %v\n", err)
+			}
+		}
+		
+		return newAgent, nil
+	}
+	
+	// For non-Claude agents, use the normal restart flow
 	req := &models.CreateAgentRequest{
 		SessionID:        agent.SessionID,
 		AgentType:        agent.AgentType,
