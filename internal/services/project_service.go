@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"habibi-go/internal/database/repositories"
@@ -49,9 +50,20 @@ func (s *ProjectService) CreateProject(req *models.CreateProjectRequest) (*model
 		return nil, fmt.Errorf("failed to expand path: %w", err)
 	}
 	
-	// Validate path exists
+	// Create directory if it doesn't exist
 	if _, err := os.Stat(expandedPath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("project path does not exist: %s", expandedPath)
+		if err := os.MkdirAll(expandedPath, 0755); err != nil {
+			return nil, fmt.Errorf("failed to create project directory: %w", err)
+		}
+	}
+	
+	// Check if it's a git repository
+	gitPath := filepath.Join(expandedPath, ".git")
+	if _, err := os.Stat(gitPath); os.IsNotExist(err) {
+		// Initialize git repository
+		if err := s.initializeGitRepo(expandedPath); err != nil {
+			return nil, fmt.Errorf("failed to initialize git repository: %w", err)
+		}
 	}
 	
 	// Create project
@@ -302,4 +314,37 @@ func expandPath(path string) (string, error) {
 		return filepath.Join(home, path[1:]), nil
 	}
 	return filepath.Abs(path)
+}
+
+// initializeGitRepo initializes a new git repository with initial commit
+func (s *ProjectService) initializeGitRepo(path string) error {
+	// Initialize git repository
+	cmd := exec.Command("git", "init")
+	cmd.Dir = path
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to run git init: %w", err)
+	}
+	
+	// Create .gitignore file
+	gitignorePath := filepath.Join(path, ".gitignore")
+	gitignoreContent := ".habibi-worktrees\n"
+	if err := os.WriteFile(gitignorePath, []byte(gitignoreContent), 0644); err != nil {
+		return fmt.Errorf("failed to create .gitignore: %w", err)
+	}
+	
+	// Add .gitignore to git
+	cmd = exec.Command("git", "add", ".gitignore")
+	cmd.Dir = path
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to add .gitignore: %w", err)
+	}
+	
+	// Create initial commit
+	cmd = exec.Command("git", "commit", "-m", "Initial commit with .gitignore")
+	cmd.Dir = path
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to create initial commit: %w", err)
+	}
+	
+	return nil
 }
