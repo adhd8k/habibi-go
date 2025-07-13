@@ -201,6 +201,8 @@ func (c *Client) handleMessage(message []byte) {
 	switch msg.Type {
 	case "agent_command":
 		c.handleAgentCommand(msg)
+	case "session_chat":
+		c.handleSessionChat(msg)
 	case "agent_logs_subscribe":
 		c.handleAgentLogsSubscribe(msg)
 	case "agent_status_request":
@@ -210,6 +212,48 @@ func (c *Client) handleMessage(message []byte) {
 	default:
 		c.sendError(fmt.Sprintf("Unknown message type: %s", msg.Type))
 	}
+}
+
+func (c *Client) handleSessionChat(msg WSMessage) {
+	sessionID, ok := msg.Data.(map[string]interface{})["session_id"].(float64)
+	if !ok || sessionID == 0 {
+		c.sendError("Session ID is required")
+		return
+	}
+	
+	command, ok := msg.Data.(map[string]interface{})["command"].(string)
+	if !ok || command == "" {
+		c.sendError("Command is required")
+		return
+	}
+	
+	agentID := 0
+	if id, ok := msg.Data.(map[string]interface{})["agent_id"].(float64); ok {
+		agentID = int(id)
+	}
+	
+	// Get or create Claude agent for this session
+	agent, err := c.handler.agentService.GetOrCreateClaudeAgent(int(sessionID), agentID)
+	if err != nil {
+		c.sendError(fmt.Sprintf("Failed to get or create agent: %v", err))
+		return
+	}
+	
+	// Send the message
+	if err := c.handler.commService.SendClaudeMessage(agent.ID, command); err != nil {
+		c.sendError(fmt.Sprintf("Failed to send message: %v", err))
+		return
+	}
+	
+	// Send acknowledgment with agent info
+	c.sendMessage(WSMessage{
+		Type: "session_chat_started",
+		Data: map[string]interface{}{
+			"session_id": int(sessionID),
+			"agent_id":   agent.ID,
+			"status":     "sent",
+		},
+	})
 }
 
 func (c *Client) handleAgentCommand(msg WSMessage) {

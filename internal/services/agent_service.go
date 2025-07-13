@@ -325,6 +325,45 @@ type AgentStatusInfo struct {
 	ProcessInfo   *util.ProcessInfo `json:"process_info,omitempty"`
 }
 
+func (s *AgentService) GetOrCreateClaudeAgent(sessionID int, agentID int) (*models.Agent, error) {
+	// If agentID is provided, try to get that specific agent
+	if agentID > 0 {
+		agent, err := s.agentRepo.GetByID(agentID)
+		if err == nil && agent.SessionID == sessionID && agent.AgentType == "claude-code" {
+			// If agent is stopped, restart it
+			if agent.Status != string(models.AgentStatusRunning) {
+				return s.RestartAgent(agent.ID)
+			}
+			return agent, nil
+		}
+	}
+	
+	// Otherwise, look for any running Claude agent for this session
+	agents, err := s.agentRepo.GetBySessionID(sessionID)
+	if err == nil {
+		for _, agent := range agents {
+			if agent.AgentType == "claude-code" && agent.Status == string(models.AgentStatusRunning) {
+				return agent, nil
+			}
+		}
+		
+		// If we have a stopped Claude agent, restart it
+		for _, agent := range agents {
+			if agent.AgentType == "claude-code" {
+				return s.RestartAgent(agent.ID)
+			}
+		}
+	}
+	
+	// No Claude agent found, create a new one
+	session, err := s.sessionRepo.GetByID(sessionID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get session: %w", err)
+	}
+	
+	return s.claudeService.StartClaudeAgent(sessionID, session.WorktreePath)
+}
+
 func (s *AgentService) RestartAgent(id int) (*models.Agent, error) {
 	// Stop the agent first
 	if err := s.StopAgent(id); err != nil {

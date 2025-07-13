@@ -1,12 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
 import { agentsApi } from '../api/client'
 import { useAppStore } from '../store'
 import { Agent } from '../types'
 import { ClaudeChat } from './ClaudeChat'
+import { AgentSelector } from './AgentSelector'
 
 export function AgentControl() {
   const queryClient = useQueryClient()
   const { currentSession } = useAppStore()
+  const [selectedAgentId, setSelectedAgentId] = useState<number | null>(null)
 
   const { data: agents, isLoading } = useQuery({
     queryKey: ['agents', currentSession?.id],
@@ -24,14 +27,6 @@ export function AgentControl() {
     enabled: !!currentSession,
   })
 
-  const stopMutation = useMutation({
-    mutationFn: async (id: number) => {
-      await agentsApi.stop(id)
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['agents'] })
-    },
-  })
 
   const restartMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -51,10 +46,20 @@ export function AgentControl() {
     )
   }
 
-  // Find the Claude agent for this session
-  const claudeAgent = agents?.find((agent: Agent) => 
-    agent.agent_type === 'claude-code' && agent.status === 'running'
-  )
+  // Filter Claude agents
+  const claudeAgents = agents?.filter((agent: Agent) => 
+    agent.agent_type === 'claude-code'
+  ) || []
+  
+  // Find the selected or active agent
+  const selectedAgent = selectedAgentId 
+    ? claudeAgents.find((a: Agent) => a.id === selectedAgentId)
+    : claudeAgents.find((a: Agent) => a.status === 'running') || claudeAgents[0]
+    
+  // Auto-select the first running agent or the most recent one
+  if (!selectedAgentId && selectedAgent) {
+    setSelectedAgentId(selectedAgent.id)
+  }
 
   if (isLoading) {
     return (
@@ -67,64 +72,43 @@ export function AgentControl() {
     )
   }
 
+  const handleSelectAgent = async (agent: Agent) => {
+    setSelectedAgentId(agent.id)
+    
+    // If agent is stopped, restart it
+    if (agent.status !== 'running') {
+      await restartMutation.mutateAsync(agent.id)
+    }
+  }
+  
+  const handleCreateNewAgent = () => {
+    // This will trigger ClaudeChat to create a new agent when sending the first message
+    setSelectedAgentId(null)
+  }
+
   return (
     <div className="h-full flex flex-col">
-      <div className="p-4 border-b">
-        <div className="flex justify-between items-center">
-          <h2 className="text-lg font-semibold">Claude Assistant</h2>
-          {claudeAgent && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs px-2 py-1 rounded bg-green-200 text-green-800">
-                Connected
-              </span>
-              <button
-                onClick={() => stopMutation.mutate(claudeAgent.id)}
-                className="text-xs px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-              >
-                Disconnect
-              </button>
-            </div>
-          )}
-        </div>
-        
-        {!claudeAgent && agents?.length === 0 && (
-          <p className="text-sm text-gray-500 mt-2">
-            Send a message to start chatting with Claude
-          </p>
-        )}
-        
-        {!claudeAgent && agents?.some((a: Agent) => a.agent_type === 'claude-code' && a.status !== 'running') && (
-          <div className="mt-2">
-            <p className="text-sm text-yellow-600 mb-2">
-              Claude is not running. Would you like to restart?
-            </p>
-            <button
-              onClick={() => {
-                const stoppedAgent = agents.find((a: Agent) => 
-                  a.agent_type === 'claude-code' && a.status !== 'running'
-                )
-                if (stoppedAgent) {
-                  restartMutation.mutate(stoppedAgent.id)
-                }
-              }}
-              className="text-sm px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
-            >
-              Restart Claude
-            </button>
-          </div>
-        )}
-      </div>
-
+      {claudeAgents.length > 0 && (
+        <AgentSelector
+          agents={claudeAgents}
+          currentAgent={selectedAgent}
+          onSelectAgent={handleSelectAgent}
+          onCreateNewAgent={handleCreateNewAgent}
+        />
+      )}
+      
       <div className="flex-1 overflow-hidden">
-        {claudeAgent ? (
-          <ClaudeChat agent={claudeAgent} />
-        ) : (
+        {selectedAgent && selectedAgent.status === 'running' ? (
+          <ClaudeChat agent={selectedAgent} />
+        ) : selectedAgent ? (
           <div className="h-full flex items-center justify-center text-gray-500">
             <div className="text-center">
-              <p className="text-lg mb-2">Claude is not connected</p>
-              <p className="text-sm">Create a session to start chatting</p>
+              <p className="text-lg mb-2">Restarting Claude...</p>
+              <p className="text-sm">Please wait a moment</p>
             </div>
           </div>
+        ) : (
+          <ClaudeChat agent={null} />
         )}
       </div>
     </div>

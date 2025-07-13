@@ -92,6 +92,16 @@ export class WebSocketClient {
     }
   }
 
+  send(data: any) {
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify(data))
+    } else {
+      console.error('WebSocket is not connected')
+      // Try to connect if not connected
+      this.connect()
+    }
+  }
+
   on(event: string, handler: (data: any) => void) {
     this.messageHandlers.set(event, handler)
   }

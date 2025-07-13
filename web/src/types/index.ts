@@ -57,6 +57,7 @@ export interface Agent {
   resource_usage: Record<string, any>
   started_at: string
   stopped_at?: string
+  claude_session_id?: string
 }
 
 export interface AgentCommand {

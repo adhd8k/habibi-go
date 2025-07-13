@@ -6,6 +6,7 @@ import { Agent } from '../types'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { playNotificationSound, getNotificationsEnabled } from '../utils/notifications'
+import { useAppStore } from '../store'
 
 interface Message {
   id: string
@@ -19,15 +20,17 @@ interface Message {
 }
 
 interface ClaudeChatProps {
-  agent: Agent
+  agent: Agent | null
 }
 
 export function ClaudeChat({ agent }: ClaudeChatProps) {
+  const { currentSession } = useAppStore()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
   const [showToolMessages, setShowToolMessages] = useState(true)
+  const [currentAgent, setCurrentAgent] = useState<Agent | null>(agent)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const lastMessageRef = useRef<string>('')
 
@@ -39,21 +42,27 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
     scrollToBottom()
   }, [messages])
   
+  // Update current agent when prop changes
+  useEffect(() => {
+    setCurrentAgent(agent)
+  }, [agent])
+  
   // Reset state when agent changes
   useEffect(() => {
     setIsInitialized(false)
     setMessages([])
     lastMessageRef.current = ''
-  }, [agent.id])
+  }, [currentAgent?.id])
   
   // Load chat history
   const { data: historyData } = useQuery({
-    queryKey: ['chat-history', agent.id],
+    queryKey: ['chat-history', currentAgent?.id],
     queryFn: async () => {
-      const response = await agentsApi.chatHistory(agent.id, 100)
+      if (!currentAgent) return { messages: [] }
+      const response = await agentsApi.chatHistory(currentAgent.id, 100)
       return response.data
     },
-    enabled: agent.status === 'running'
+    enabled: !!currentAgent && currentAgent.status === 'running'
   })
   
   // Initialize messages from history
@@ -89,12 +98,14 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
   }, [historyData, isInitialized])
 
   useEffect(() => {
+    if (!currentAgent) return
+    
     // Subscribe to agent output
-    wsClient.subscribe(agent.id)
+    wsClient.subscribe(currentAgent.id)
     
     // Handler for agent output
     const handleAgentOutput = (message: any) => {
-      if (message.agent_id === agent.id && message.data) {
+      if (message.agent_id === currentAgent.id && message.data) {
         const data = message.data
         const contentType = data.content_type || 'text'
         const dbMessageId = data.db_message_id
@@ -197,7 +208,7 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
     
     // Handler for response completion
     const handleResponseComplete = (message: any) => {
-      if (message.agent_id === agent.id) {
+      if (message.agent_id === currentAgent?.id) {
         setIsProcessing(false)
         
         // Play notification sound when Claude responds
@@ -209,7 +220,7 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
     
     // Handler for new user messages from backend
     const handleNewMessage = (message: any) => {
-      if (message.agent_id === agent.id && message.data) {
+      if (message.agent_id === currentAgent.id && message.data) {
         const { role, content, id, created_at } = message.data
         if (role === 'user') {
           setMessages(prev => {
@@ -234,17 +245,66 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
     wsClient.on('new_chat_message', handleNewMessage)
 
     return () => {
-      wsClient.unsubscribe(agent.id)
+      wsClient.unsubscribe(currentAgent.id)
       wsClient.off('agent_output')
       wsClient.off('agent_response_complete')
       wsClient.off('new_chat_message')
     }
-  }, [agent.id])
+  }, [currentAgent?.id])
 
   const sendMessage = useMutation({
     mutationFn: async (message: string) => {
+      // If no current agent, send via session_chat to create one
+      if (!currentAgent || currentAgent.status !== 'running') {
+        if (!currentSession) {
+          throw new Error('No session selected')
+        }
+        
+        // Send via WebSocket to create/resume agent
+        return new Promise((resolve, reject) => {
+          const handleResponse = (msg: any) => {
+            if (msg.type === 'session_chat_started' && msg.data?.session_id === currentSession.id) {
+              wsClient.off('session_chat_started')
+              wsClient.off('error')
+              
+              // Update current agent ID
+              const newAgentId = msg.data.agent_id
+              if (newAgentId) {
+                // We'll get the agent details from the next query
+                resolve({ agent_id: newAgentId })
+              }
+            } else if (msg.type === 'error') {
+              wsClient.off('session_chat_started')
+              wsClient.off('error')
+              reject(new Error(msg.data?.error || 'Failed to start chat'))
+            }
+          }
+          
+          wsClient.on('session_chat_started', handleResponse)
+          wsClient.on('error', handleResponse)
+          
+          // Send session chat message
+          wsClient.send({
+            type: 'session_chat',
+            data: {
+              session_id: currentSession.id,
+              command: message,
+              agent_id: currentAgent?.id
+            }
+          })
+          
+          // Timeout after 10 seconds
+          setTimeout(() => {
+            wsClient.off('session_chat_started')
+            wsClient.off('error')
+            reject(new Error('Chat start timeout'))
+          }, 10000)
+        })
+      }
+      
+      // Normal agent command
       const response = await agentsApi.execute({ 
-        agent_id: agent.id, 
+        agent_id: currentAgent.id, 
         command: message 
       })
       return response.data
@@ -428,19 +488,19 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
             placeholder="Type your message..."
-            disabled={isProcessing || agent.status !== 'running'}
+            disabled={isProcessing || currentAgent?.status !== 'running'}
             className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
           />
           <button
             onClick={handleSend}
-            disabled={!input.trim() || isProcessing || agent.status !== 'running'}
+            disabled={!input.trim() || isProcessing || currentAgent?.status !== 'running'}
             className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Send
           </button>
         </div>
         
-        {agent.status !== 'running' && (
+        {currentAgent?.status !== 'running' && (
           <p className="text-sm text-red-500 mt-2">
             Agent is not running. Please start the agent to send messages.
           </p>

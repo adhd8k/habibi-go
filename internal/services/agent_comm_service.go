@@ -32,6 +32,26 @@ func NewAgentCommService(
 	}
 }
 
+// SendClaudeMessage sends a message to a Claude agent
+func (s *AgentCommService) SendClaudeMessage(agentID int, message string) error {
+	// Validate agent exists and is running
+	agent, err := s.agentRepo.GetByID(agentID)
+	if err != nil {
+		return fmt.Errorf("failed to get agent: %w", err)
+	}
+	
+	if !agent.IsRunning() {
+		return fmt.Errorf("agent is not running (status: %s)", agent.Status)
+	}
+	
+	if agent.AgentType != "claude-code" {
+		return fmt.Errorf("agent is not a Claude agent (type: %s)", agent.AgentType)
+	}
+	
+	// Use the Claude service to send the message
+	return s.claudeService.SendClaudeMessage(agent, message)
+}
+
 // SendCommand sends a command to an agent and returns the command record
 func (s *AgentCommService) SendCommand(agentID int, commandText string) (*models.AgentCommand, error) {
 	// Validate agent exists and is running
