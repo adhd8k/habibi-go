@@ -559,12 +559,7 @@ func (s *GitService) GetWorkingTreeDiff(worktreePath, baseBranch string) ([]Diff
 			fileStatus = "modified"
 		}
 		
-		// Get full diff for this file
-		cmd = exec.Command("git", "diff", compareBase, "--", path)
-		cmd.Dir = worktreePath
-		fileDiffOutput, _ := cmd.Output()
-		
-		// Get stats
+		// Get stats first to check file size
 		cmd = exec.Command("git", "diff", "--numstat", compareBase, "--", path)
 		cmd.Dir = worktreePath
 		numstatOutput, _ := cmd.Output()
@@ -578,12 +573,39 @@ func (s *GitService) GetWorkingTreeDiff(worktreePath, baseBranch string) ([]Diff
 			}
 		}
 		
+		// Limit diff size to prevent browser crashes
+		const maxDiffSize = 1024 * 1024 // 1MB limit
+		const maxDiffLines = 5000 // 5000 lines limit
+		
+		var fileDiff string
+		var isTruncated bool
+		
+		// Skip diff for very large files
+		if additions+deletions > maxDiffLines {
+			fileDiff = fmt.Sprintf("Diff too large to display (%d additions, %d deletions)\n", additions, deletions)
+			isTruncated = true
+		} else {
+			// Get full diff for this file
+			cmd = exec.Command("git", "diff", compareBase, "--", path)
+			cmd.Dir = worktreePath
+			fileDiffOutput, _ := cmd.Output()
+			
+			if len(fileDiffOutput) > maxDiffSize {
+				// Truncate the diff and add a message
+				fileDiff = string(fileDiffOutput[:maxDiffSize]) + "\n\n... Diff truncated (file too large) ...\n"
+				isTruncated = true
+			} else {
+				fileDiff = string(fileDiffOutput)
+			}
+		}
+		
 		diffFile := DiffFile{
-			Path:      path,
-			Status:    fileStatus,
-			Diff:      string(fileDiffOutput),
-			Additions: additions,
-			Deletions: deletions,
+			Path:        path,
+			Status:      fileStatus,
+			Diff:        fileDiff,
+			Additions:   additions,
+			Deletions:   deletions,
+			IsTruncated: isTruncated,
 		}
 		
 		if diffFile.Diff != "" || diffFile.Status == "deleted" {
@@ -741,10 +763,11 @@ func (s *GitService) MergeBranch(projectPath, sessionBranch, targetBranch string
 
 // DiffFile represents a file in a git diff
 type DiffFile struct {
-	Path      string `json:"path"`
-	Status    string `json:"status"`
-	Additions int    `json:"additions"`
-	Deletions int    `json:"deletions"`
-	Diff      string `json:"diff"`
-	isUntracked bool // internal field, not exported to JSON
+	Path        string `json:"path"`
+	Status      string `json:"status"`
+	Additions   int    `json:"additions"`
+	Deletions   int    `json:"deletions"`
+	Diff        string `json:"diff"`
+	IsTruncated bool   `json:"is_truncated,omitempty"`
+	isUntracked bool   // internal field, not exported to JSON
 }
