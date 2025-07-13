@@ -63,10 +63,12 @@ func (s *GitService) CreateWorktree(projectPath, sessionName, branchName, baseBr
 		return "", fmt.Errorf("failed to create worktree parent directory: %w", err)
 	}
 	
-	// Fetch latest refs to ensure we have all branches
-	fetchCmd := exec.Command("git", "fetch", "--all")
-	fetchCmd.Dir = projectPath
-	fetchCmd.Run() // Ignore errors, not critical
+	// Fetch latest refs to ensure we have all branches, but only if remote exists
+	if s.HasRemote(projectPath) {
+		fetchCmd := exec.Command("git", "fetch", "--all")
+		fetchCmd.Dir = projectPath
+		fetchCmd.Run() // Ignore errors, not critical
+	}
 	
 	// Check if branch exists (local or remote)
 	branchExists, err := s.gitUtil.BranchExists(projectPath, branchName)
@@ -604,15 +606,27 @@ func (s *GitService) RebaseWorktree(worktreePath, targetBranch string) error {
 		return fmt.Errorf("worktree does not exist: %s", worktreePath)
 	}
 	
-	// Fetch latest changes
-	cmd := exec.Command("git", "fetch", "origin")
-	cmd.Dir = worktreePath
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to fetch: %w", err)
+	// Check if remote exists before trying to fetch
+	projectPath := filepath.Dir(worktreePath)
+	if strings.Contains(worktreePath, ".worktrees") {
+		// Get the actual project path (parent of .worktrees)
+		parts := strings.Split(worktreePath, ".worktrees")
+		if len(parts) > 0 {
+			projectPath = parts[0]
+		}
+	}
+	
+	if s.HasRemote(projectPath) {
+		// Fetch latest changes
+		cmd := exec.Command("git", "fetch", "origin")
+		cmd.Dir = worktreePath
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("failed to fetch: %w", err)
+		}
 	}
 	
 	// Perform rebase
-	cmd = exec.Command("git", "rebase", fmt.Sprintf("origin/%s", targetBranch))
+	cmd := exec.Command("git", "rebase", fmt.Sprintf("origin/%s", targetBranch))
 	cmd.Dir = worktreePath
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -632,6 +646,20 @@ func (s *GitService) PushBranch(worktreePath, localBranch, remoteBranch string) 
 		return fmt.Errorf("worktree does not exist: %s", worktreePath)
 	}
 	
+	// Check if remote exists before trying to push
+	projectPath := filepath.Dir(worktreePath)
+	if strings.Contains(worktreePath, ".worktrees") {
+		// Get the actual project path (parent of .worktrees)
+		parts := strings.Split(worktreePath, ".worktrees")
+		if len(parts) > 0 {
+			projectPath = parts[0]
+		}
+	}
+	
+	if !s.HasRemote(projectPath) {
+		return fmt.Errorf("cannot push: no remote configured for this repository")
+	}
+	
 	// Push to remote
 	cmd := exec.Command("git", "push", "origin", fmt.Sprintf("%s:%s", localBranch, remoteBranch))
 	cmd.Dir = worktreePath
@@ -643,31 +671,51 @@ func (s *GitService) PushBranch(worktreePath, localBranch, remoteBranch string) 
 	return nil
 }
 
+// HasRemote checks if the repository has any remote configured
+func (s *GitService) HasRemote(projectPath string) bool {
+	cmd := exec.Command("git", "remote")
+	cmd.Dir = projectPath
+	output, err := cmd.Output()
+	if err != nil {
+		return false
+	}
+	return strings.TrimSpace(string(output)) != ""
+}
+
 // MergeBranch merges a session branch into the target branch
 func (s *GitService) MergeBranch(projectPath, sessionBranch, targetBranch string) error {
 	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
 		return fmt.Errorf("project path does not exist: %s", projectPath)
 	}
 	
-	// Fetch latest changes
-	cmd := exec.Command("git", "fetch", "origin")
-	cmd.Dir = projectPath
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to fetch: %w", err)
+	// Check if remote exists before trying to fetch
+	hasRemote := s.HasRemote(projectPath)
+	
+	if hasRemote {
+		// Fetch latest changes
+		cmd := exec.Command("git", "fetch", "origin")
+		cmd.Dir = projectPath
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("failed to fetch: %w", err)
+		}
 	}
 	
 	// Switch to target branch
-	cmd = exec.Command("git", "checkout", targetBranch)
+	cmd := exec.Command("git", "checkout", targetBranch)
 	cmd.Dir = projectPath
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to checkout target branch %s: %w", targetBranch, err)
 	}
 	
-	// Pull latest changes for target branch
-	cmd = exec.Command("git", "pull", "origin", targetBranch)
-	cmd.Dir = projectPath
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to pull latest changes for %s: %w", targetBranch, err)
+	// Pull latest changes for target branch only if remote exists
+	if hasRemote {
+		cmd = exec.Command("git", "pull", "origin", targetBranch)
+		cmd.Dir = projectPath
+		if err := cmd.Run(); err != nil {
+			// Don't fail if pull fails - branch might not exist on remote
+			// Just log a warning
+			fmt.Printf("Warning: failed to pull latest changes for %s: %v\n", targetBranch, err)
+		}
 	}
 	
 	// Merge the session branch
