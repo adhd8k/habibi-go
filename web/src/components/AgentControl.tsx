@@ -1,16 +1,12 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { agentsApi } from '../api/client'
 import { useAppStore } from '../store'
 import { Agent } from '../types'
 import { ClaudeChat } from './ClaudeChat'
-import { AgentSelector } from './AgentSelector'
 import { TodoList } from './TodoList'
 
 export function AgentControl() {
-  const queryClient = useQueryClient()
   const { currentSession } = useAppStore()
-  const [selectedAgentId, setSelectedAgentId] = useState<number | null>(null)
 
   const { data: agents, isLoading } = useQuery({
     queryKey: ['agents', currentSession?.id],
@@ -28,38 +24,12 @@ export function AgentControl() {
     enabled: !!currentSession,
   })
 
-
-  const restartMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const response = await agentsApi.restart(id)
-      return response.data
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['agents'] })
-    },
-  })
-
   if (!currentSession) {
     return (
       <div className="p-4 text-gray-500">
         Select a session to start chatting
       </div>
     )
-  }
-
-  // Filter Claude agents
-  const claudeAgents = agents?.filter((agent: Agent) => 
-    agent.agent_type === 'claude-code'
-  ) || []
-  
-  // Find the selected or active agent
-  const selectedAgent = selectedAgentId 
-    ? claudeAgents.find((a: Agent) => a.id === selectedAgentId)
-    : claudeAgents.find((a: Agent) => a.status === 'running') || claudeAgents[0]
-    
-  // Auto-select the first running agent or the most recent one
-  if (!selectedAgentId && selectedAgent) {
-    setSelectedAgentId(selectedAgent.id)
   }
 
   if (isLoading) {
@@ -73,60 +43,27 @@ export function AgentControl() {
     )
   }
 
-  const handleSelectAgent = async (agent: Agent) => {
-    setSelectedAgentId(agent.id)
-    
-    // If agent is stopped, restart it
-    if (agent.status !== 'running') {
-      await restartMutation.mutateAsync(agent.id)
-    }
-  }
+  // Filter Claude agents
+  const claudeAgents = agents?.filter((agent: Agent) => 
+    agent.agent_type === 'claude-code'
+  ) || []
   
-  const handleCreateNewAgent = () => {
-    // This will trigger ClaudeChat to create a new agent when sending the first message
-    setSelectedAgentId(null)
-  }
+  // Always use the first available Claude agent
+  const currentAgent = claudeAgents.find((a: Agent) => a.status === 'running') || claudeAgents[0]
 
   return (
     <div className="h-full flex flex-col">
-      {/* Top section with Agent Selector and Todo List side by side */}
-      <div className="flex gap-4 p-4 border-b">
-        {/* Agent Selector - Left Half */}
-        <div className="flex-1">
-          <h3 className="text-sm font-semibold text-gray-700 mb-2">Claude Sessions</h3>
-          {claudeAgents.length > 0 ? (
-            <AgentSelector
-              agents={claudeAgents}
-              currentAgent={selectedAgent}
-              onSelectAgent={handleSelectAgent}
-              onCreateNewAgent={handleCreateNewAgent}
-            />
-          ) : (
-            <div className="text-sm text-gray-500">No Claude sessions yet</div>
-          )}
-        </div>
-        
-        {/* Todo List - Right Half */}
-        <div className="flex-1 max-h-64 overflow-y-auto border-l pl-4">
-          <h3 className="text-sm font-semibold text-gray-700 mb-2">Tasks</h3>
-          <TodoList agent={selectedAgent} />
+      {/* Top section with Todo List */}
+      <div className="p-4 border-b">
+        <div className="max-h-64 overflow-y-auto">
+          <h3 className="text-sm font-semibold text-gray-700 mb-2">Claude's Tasks</h3>
+          <TodoList agent={currentAgent} />
         </div>
       </div>
       
       {/* Chat area below */}
       <div className="flex-1 overflow-hidden">
-        {selectedAgent && selectedAgent.status === 'running' ? (
-          <ClaudeChat agent={selectedAgent} />
-        ) : selectedAgent ? (
-          <div className="h-full flex items-center justify-center text-gray-500">
-            <div className="text-center">
-              <p className="text-lg mb-2">Restarting Claude...</p>
-              <p className="text-sm">Please wait a moment</p>
-            </div>
-          </div>
-        ) : (
-          <ClaudeChat agent={null} />
-        )}
+        <ClaudeChat agent={currentAgent} />
       </div>
     </div>
   )

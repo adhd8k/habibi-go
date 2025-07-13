@@ -225,6 +225,11 @@ func (db *DB) RunMigrations() error {
 		return fmt.Errorf("failed to fix session status constraint: %w", err)
 	}
 	
+	// Simplify agent architecture - migrate to session-based chat
+	if err := db.simplifyAgentArchitecture(); err != nil {
+		return fmt.Errorf("failed to simplify agent architecture: %w", err)
+	}
+	
 	return nil
 }
 
@@ -437,5 +442,107 @@ func (db *DB) fixSessionStatusConstraint() error {
 		return fmt.Errorf("failed to recreate index: %w", err)
 	}
 	
+	return tx.Commit()
+}
+
+// simplifyAgentArchitecture migrates from agent-based to session-based chat
+func (db *DB) simplifyAgentArchitecture() error {
+	// Check if we've already migrated
+	if db.columnExists("chat_messages", "session_id") {
+		return nil // Already migrated
+	}
+	
+	fmt.Println("Migrating to simplified agent architecture...")
+	
+	tx, err := db.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+	
+	// Create new chat_messages table with session_id
+	_, err = tx.Exec(`
+		CREATE TABLE IF NOT EXISTS chat_messages_v2 (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			session_id INTEGER NOT NULL,
+			role TEXT NOT NULL CHECK(role IN ('user', 'assistant', 'system', 'tool_use', 'tool_result')),
+			content TEXT NOT NULL,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			tool_name TEXT,
+			tool_input TEXT,
+			tool_use_id TEXT,
+			tool_content TEXT,
+			FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
+		)
+	`)
+	if err != nil {
+		return fmt.Errorf("failed to create new chat_messages table: %w", err)
+	}
+	
+	// Check if the old chat_messages table exists
+	var tableExists int
+	err = tx.QueryRow(`SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='chat_messages'`).Scan(&tableExists)
+	if err != nil {
+		return fmt.Errorf("failed to check if chat_messages exists: %w", err)
+	}
+	
+	if tableExists > 0 {
+		// Copy existing chat messages, linking to sessions through agents
+		_, err = tx.Exec(`
+			INSERT INTO chat_messages_v2 (id, session_id, role, content, created_at, tool_name, tool_input, tool_use_id, tool_content)
+			SELECT 
+				cm.id,
+				a.session_id,
+				cm.role,
+				cm.content,
+				cm.created_at,
+				cm.tool_name,
+				cm.tool_input,
+				cm.tool_use_id,
+				cm.tool_content
+			FROM chat_messages cm
+			JOIN agents a ON cm.agent_id = a.id
+		`)
+		if err != nil {
+			fmt.Printf("Warning: Failed to migrate chat messages: %v\n", err)
+			// Continue anyway - might be no data to migrate
+		}
+		
+		// Drop old chat_messages table
+		_, err = tx.Exec(`DROP TABLE IF EXISTS chat_messages`)
+		if err != nil {
+			return fmt.Errorf("failed to drop old chat_messages table: %w", err)
+		}
+	}
+	
+	// Drop agent-related tables
+	_, err = tx.Exec(`DROP TABLE IF EXISTS agent_commands`)
+	if err != nil {
+		fmt.Printf("Warning: Failed to drop agent_commands: %v\n", err)
+	}
+	
+	_, err = tx.Exec(`DROP TABLE IF EXISTS agent_files`)
+	if err != nil {
+		fmt.Printf("Warning: Failed to drop agent_files: %v\n", err)
+	}
+	
+	_, err = tx.Exec(`DROP TABLE IF EXISTS agents`)
+	if err != nil {
+		fmt.Printf("Warning: Failed to drop agents: %v\n", err)
+	}
+	
+	// Rename new table
+	_, err = tx.Exec(`ALTER TABLE chat_messages_v2 RENAME TO chat_messages`)
+	if err != nil {
+		return fmt.Errorf("failed to rename chat_messages table: %w", err)
+	}
+	
+	// Create index
+	_, err = tx.Exec(`CREATE INDEX IF NOT EXISTS idx_chat_messages_session_id ON chat_messages(session_id)`)
+	if err != nil {
+		return fmt.Errorf("failed to create index: %w", err)
+	}
+	
+	fmt.Println("Successfully migrated to simplified agent architecture")
 	return tx.Commit()
 }
