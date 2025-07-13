@@ -13,7 +13,7 @@ export const sessionsApi = baseApi.injectEndpoints({
         ? `/sessions?project_id=${projectId}` 
         : '/sessions',
       transformResponse: (response: ApiResponse<Session[]>) => {
-        if (response.data) {
+        if (response.success && response.data) {
           return response.data.map(session => SessionSchema.parse(session))
         }
         return []
@@ -30,10 +30,10 @@ export const sessionsApi = baseApi.injectEndpoints({
     getSession: builder.query<Session, number>({
       query: (id) => `/sessions/${id}`,
       transformResponse: (response: ApiResponse<Session>) => {
-        if (response.data) {
+        if (response.success && response.data) {
           return SessionSchema.parse(response.data)
         }
-        throw new Error('Session not found')
+        throw new Error(response.error || 'Session not found')
       },
       providesTags: (_result, _error, id) => [{ type: 'Session', id }],
     }),
@@ -45,10 +45,10 @@ export const sessionsApi = baseApi.injectEndpoints({
         body: CreateSessionRequestSchema.parse(session),
       }),
       transformResponse: (response: ApiResponse<Session>) => {
-        if (response.data) {
+        if (response.success && response.data) {
           return SessionSchema.parse(response.data)
         }
-        throw new Error('Failed to create session')
+        throw new Error(response.error || 'Failed to create session')
       },
       invalidatesTags: [
         { type: 'Session', id: 'LIST' },
@@ -63,10 +63,10 @@ export const sessionsApi = baseApi.injectEndpoints({
         body: data,
       }),
       transformResponse: (response: ApiResponse<Session>) => {
-        if (response.data) {
+        if (response.success && response.data) {
           return SessionSchema.parse(response.data)
         }
-        throw new Error('Failed to update session')
+        throw new Error(response.error || 'Failed to update session')
       },
       invalidatesTags: (_result, _error, { id }) => [
         { type: 'Session', id },
@@ -89,7 +89,10 @@ export const sessionsApi = baseApi.injectEndpoints({
     getSessionDiffs: builder.query<any, number>({
       query: (id) => `/sessions/${id}/diffs`,
       transformResponse: (response: ApiResponse<any>) => {
-        return response.data || { files: [] }
+        if (response.success && response.data) {
+          return response.data
+        }
+        return { files: [] }
       },
     }),
 

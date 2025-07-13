@@ -46,7 +46,9 @@ export function CreateSessionModal({ projectId, defaultBranch, onClose }: Create
       dispatch(setCurrentSession(newSession))
       onClose()
     } catch (err: any) {
-      setError(err.data?.message || 'Failed to create session')
+      console.error('Failed to create session:', err)
+      const errorMessage = err.data?.error || err.data?.message || err.message || 'Failed to create session'
+      setError(errorMessage)
     }
   }
 
