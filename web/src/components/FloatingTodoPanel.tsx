@@ -119,7 +119,8 @@ export function FloatingTodoPanel() {
     }
   }, [currentAgent?.id, isOpen])
 
-  if (!currentSession || todos.length === 0) {
+  // Always show the button if there's a session, even with no todos
+  if (!currentSession) {
     return null
   }
 
@@ -193,6 +194,15 @@ export function FloatingTodoPanel() {
           {/* Content */}
           {!isMinimized && (
             <div className="p-3 overflow-y-auto max-h-[500px]">
+              {todos.length === 0 ? (
+                <div className="text-center py-4">
+                  <p className="text-gray-500 mb-2">No tasks yet</p>
+                  <p className="text-xs text-gray-400">
+                    Tasks will appear here when Claude tracks them
+                  </p>
+                </div>
+              ) : (
+                <>
               {/* In Progress */}
               {todos.filter(t => t.status === 'in_progress').length > 0 && (
                 <div className="mb-4">
@@ -261,6 +271,8 @@ export function FloatingTodoPanel() {
                     )}
                   </div>
                 </div>
+              )}
+                </>
               )}
             </div>
           )}

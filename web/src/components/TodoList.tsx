@@ -123,8 +123,17 @@ export function TodoList({ agent }: TodoListProps) {
   if (todos.length === 0) {
     return (
       <div className="p-4 text-gray-500 text-center">
-        <p className="text-lg mb-2">No tasks yet</p>
-        <p className="text-sm">Tasks will appear here when Claude creates a todo list</p>
+        <p className="text-lg mb-2">📋 No tasks yet</p>
+        <p className="text-sm mb-4">Tasks will appear here when Claude creates a todo list</p>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-left max-w-md mx-auto">
+          <p className="text-sm text-blue-800 mb-2">
+            <strong>How it works:</strong>
+          </p>
+          <p className="text-xs text-blue-700">
+            When Claude uses the TodoWrite tool to track tasks, they'll automatically appear here. 
+            You'll see tasks organized by status (in progress, pending, completed) with their priorities.
+          </p>
+        </div>
       </div>
     )
   }
