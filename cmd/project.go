@@ -98,7 +98,7 @@ func getProjectService() *services.ProjectService {
 	
 	projectRepo := repositories.NewProjectRepository(db.DB)
 	eventRepo := repositories.NewEventRepository(db.DB)
-	gitService := services.NewGitService()
+	gitService := services.NewGitService(cfg.Projects.WorktreeBasePath)
 	
 	return services.NewProjectService(projectRepo, eventRepo, gitService)
 }

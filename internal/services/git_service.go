@@ -13,11 +13,16 @@ import (
 
 type GitService struct {
 	gitUtil *util.GitUtil
+	worktreeBasePath string
 }
 
-func NewGitService() *GitService {
+func NewGitService(worktreeBasePath string) *GitService {
+	if worktreeBasePath == "" {
+		worktreeBasePath = ".habibi-worktrees"
+	}
 	return &GitService{
 		gitUtil: util.NewGitUtil(),
+		worktreeBasePath: worktreeBasePath,
 	}
 }
 
@@ -33,7 +38,7 @@ func (s *GitService) CreateWorktree(projectPath, sessionName, branchName, baseBr
 	sessionName = strings.ReplaceAll(sessionName, "\\", "-")
 	
 	// Create worktree path
-	worktreePath := filepath.Join(projectPath, ".worktrees", sessionName)
+	worktreePath := filepath.Join(projectPath, s.worktreeBasePath, sessionName)
 	
 	// Check if worktree already exists in git
 	worktrees, err := s.ListWorktrees(projectPath)
@@ -608,9 +613,9 @@ func (s *GitService) RebaseWorktree(worktreePath, targetBranch string) error {
 	
 	// Check if remote exists before trying to fetch
 	projectPath := filepath.Dir(worktreePath)
-	if strings.Contains(worktreePath, ".worktrees") {
-		// Get the actual project path (parent of .worktrees)
-		parts := strings.Split(worktreePath, ".worktrees")
+	if strings.Contains(worktreePath, s.worktreeBasePath) {
+		// Get the actual project path (parent of worktree base)
+		parts := strings.Split(worktreePath, s.worktreeBasePath)
 		if len(parts) > 0 {
 			projectPath = parts[0]
 		}
@@ -648,9 +653,9 @@ func (s *GitService) PushBranch(worktreePath, localBranch, remoteBranch string) 
 	
 	// Check if remote exists before trying to push
 	projectPath := filepath.Dir(worktreePath)
-	if strings.Contains(worktreePath, ".worktrees") {
-		// Get the actual project path (parent of .worktrees)
-		parts := strings.Split(worktreePath, ".worktrees")
+	if strings.Contains(worktreePath, s.worktreeBasePath) {
+		// Get the actual project path (parent of worktree base)
+		parts := strings.Split(worktreePath, s.worktreeBasePath)
 		if len(parts) > 0 {
 			projectPath = parts[0]
 		}

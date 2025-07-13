@@ -136,7 +136,7 @@ func setDefaults() {
 	// Projects defaults
 	viper.SetDefault("projects.default_directory", "~/projects")
 	viper.SetDefault("projects.auto_discover", true)
-	viper.SetDefault("projects.worktree_base_path", ".worktrees")
+	viper.SetDefault("projects.worktree_base_path", ".habibi-worktrees")
 	
 	// Agents defaults
 	viper.SetDefault("agents.default_timeout", "30m")

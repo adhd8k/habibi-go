@@ -17,7 +17,7 @@ database:
 projects:
   default_directory: "~/projects"
   auto_discover: true
-  worktree_base_path: ".worktrees"
+  worktree_base_path: ".habibi-worktrees"
 
 # Agent configuration
 agents:

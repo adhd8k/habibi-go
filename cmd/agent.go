@@ -131,7 +131,7 @@ func getAgentServices() (*services.AgentService, *services.AgentCommService, *se
 	eventRepo := repositories.NewEventRepository(db.DB)
 	
 	// Initialize services
-	gitService := services.NewGitService()
+	gitService := services.NewGitService(cfg.Projects.WorktreeBasePath)
 	agentService := services.NewAgentService(agentRepo, sessionRepo, eventRepo)
 	
 	// Initialize Claude service

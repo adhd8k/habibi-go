@@ -85,7 +85,7 @@ func runServer(cmd *cobra.Command, args []string) {
 	chatRepo := repositories.NewChatMessageRepository(db.DB)
 	
 	// Initialize services
-	gitService := services.NewGitService()
+	gitService := services.NewGitService(cfg.Projects.WorktreeBasePath)
 	sshService := services.NewSSHService()
 	projectService := services.NewProjectService(projectRepo, eventRepo, gitService)
 	sessionService := services.NewSessionService(sessionRepo, projectRepo, eventRepo, gitService, sshService)

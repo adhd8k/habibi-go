@@ -22,7 +22,7 @@ database:
 projects:
   default_directory: "~/projects"
   auto_discover: false
-  worktree_base_path: ".worktrees"
+  worktree_base_path: ".habibi-worktrees"
 
 agents:
   default_timeout: "30m"
