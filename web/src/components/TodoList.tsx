@@ -1,8 +1,6 @@
-import { useEffect, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { agentsApi } from '../api/client'
+import { useState, useEffect } from 'react'
 import { wsClient } from '../api/websocket'
-import { Agent } from '../types'
+import { useAppStore } from '../store'
 
 interface Todo {
   content: string
@@ -11,80 +9,101 @@ interface Todo {
   id: string
 }
 
-interface TodoListProps {
-  agent: Agent | null
-}
-
-export function TodoList({ agent }: TodoListProps) {
+export function TodoList() {
   const [todos, setTodos] = useState<Todo[]>([])
+  const { currentSession } = useAppStore()
+  
+  console.log('TodoList component rendered, currentSession:', currentSession?.id)
 
-  // Load chat history to extract todos
-  const { data: historyData } = useQuery({
-    queryKey: ['chat-history-todos', agent?.id],
-    queryFn: async () => {
-      if (!agent) return { messages: [] }
-      const response = await agentsApi.chatHistory(agent.id, 100)
-      return response.data
-    },
-    enabled: !!agent && agent.status === 'running',
-    refetchInterval: 5000 // Refresh every 5 seconds to catch new todos
-  })
-
-  // Extract todos from tool calls in chat history
+  // Load existing todos from chat history
   useEffect(() => {
-    if (!historyData?.messages) return
+    if (!currentSession) return
 
-    // Find the most recent TodoWrite tool call
-    const todoWriteCalls = historyData.messages
-      .filter((msg: any) => msg.role === 'tool_use' && msg.tool_name === 'TodoWrite')
-      .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-
-    if (todoWriteCalls.length > 0) {
-      const latestCall = todoWriteCalls[0]
+    const loadExistingTodos = async () => {
       try {
-        const toolInput = typeof latestCall.tool_input === 'string' 
-          ? JSON.parse(latestCall.tool_input) 
-          : latestCall.tool_input
-        
-        if (toolInput?.todos && Array.isArray(toolInput.todos)) {
-          setTodos(toolInput.todos)
+        const response = await fetch(`/api/v1/sessions/${currentSession.id}/chat`, {
+          headers: {
+            'Authorization': 'Basic ' + btoa('moe:jay')
+          }
+        })
+        if (response.ok) {
+          const data = await response.json()
+          if (data.data && Array.isArray(data.data)) {
+            // Find the most recent TodoWrite tool use
+            const todoMessages = data.data
+              .filter((msg: any) => msg.role === 'tool_use' && msg.tool_name === 'TodoWrite')
+              .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+            
+            if (todoMessages.length > 0) {
+              const latestTodos = todoMessages[0]
+              try {
+                const toolInput = typeof latestTodos.tool_input === 'string' 
+                  ? JSON.parse(latestTodos.tool_input) 
+                  : latestTodos.tool_input
+                if (toolInput?.todos && Array.isArray(toolInput.todos)) {
+                  console.log('Loaded existing todos from chat history:', toolInput.todos)
+                  setTodos(toolInput.todos)
+                }
+              } catch (error) {
+                console.error('Failed to parse existing todos:', error)
+              }
+            }
+          }
         }
       } catch (error) {
-        console.error('Failed to parse todo list:', error)
+        console.error('Failed to load chat history for todos:', error)
       }
     }
-  }, [historyData])
 
-  // Listen for real-time TodoWrite tool calls
+    loadExistingTodos()
+  }, [currentSession?.id])
+
+  // Listen for real-time TodoWrite tool calls - separate effect to avoid re-registration issues
   useEffect(() => {
-    if (!agent) return
-
-    const handleAgentOutput = (message: any) => {
-      if (message.agent_id === agent.id && message.data) {
+    const handleClaudeOutput = (message: any) => {
+      console.log('TodoList received claude_output:', message)
+      
+      // Check if this message is for any session (not just current)
+      if (message.data) {
         const data = message.data
-        if (data.content_type === 'tool_use' && data.tool_name === 'TodoWrite') {
-          try {
-            const toolInput = data.tool_input
-            if (toolInput?.todos && Array.isArray(toolInput.todos)) {
-              setTodos(toolInput.todos)
+        console.log('TodoList checking message - session_id:', data.session_id, 'content_type:', data.content_type, 'tool_name:', data.tool_name)
+        
+        // Only process if it's for the current session
+        if (data.session_id === currentSession?.id) {
+          if (data.content_type === 'tool_use' && data.tool_name === 'TodoWrite') {
+            console.log('TodoWrite detected! Tool input:', data.tool_input)
+            try {
+              let toolInput = data.tool_input
+              
+              // If tool_input is a string, try to parse it
+              if (typeof toolInput === 'string') {
+                console.log('Parsing tool_input string:', toolInput)
+                toolInput = JSON.parse(toolInput)
+              }
+              
+              // Check if toolInput.todos exists and is an array
+              if (toolInput && toolInput.todos && Array.isArray(toolInput.todos)) {
+                console.log('Updating todos from WebSocket:', toolInput.todos)
+                setTodos(toolInput.todos)
+              } else {
+                console.warn('TodoWrite tool_input missing todos array:', toolInput)
+              }
+            } catch (error) {
+              console.error('Failed to parse todo list from WebSocket:', error)
             }
-          } catch (error) {
-            console.error('Failed to parse todo list from WebSocket:', error)
           }
         }
       }
     }
 
-    // Subscribe to agent output
-    wsClient.subscribe(agent.id)
-    wsClient.on('agent_output', handleAgentOutput)
+    console.log('TodoList registering WebSocket handler')
+    wsClient.on('claude_output', handleClaudeOutput)
 
     return () => {
-      wsClient.unsubscribe(agent.id)
-      wsClient.off('agent_output')
+      console.log('TodoList unregistering WebSocket handler')
+      wsClient.off('claude_output', handleClaudeOutput)
     }
-  }, [agent?.id])
-
+  }, [currentSession?.id])
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -104,10 +123,10 @@ export function TodoList({ agent }: TodoListProps) {
     }
   }
 
-  if (!agent) {
+  if (!currentSession) {
     return (
       <div className="text-sm text-gray-500">
-        <p>No agent selected</p>
+        <p>No session selected</p>
       </div>
     )
   }
@@ -133,7 +152,6 @@ export function TodoList({ agent }: TodoListProps) {
   return (
     <div className="h-full">
       <div>
-        
         {/* In Progress */}
         {todosByStatus.in_progress.length > 0 && (
           <div className="mb-3">

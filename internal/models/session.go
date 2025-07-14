@@ -23,7 +23,6 @@ type Session struct {
 	
 	// Relationships
 	Project *Project `json:"project,omitempty"`
-	Agents  []Agent  `json:"agents,omitempty"`
 }
 
 type SessionStatus string

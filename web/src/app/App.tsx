@@ -7,7 +7,8 @@ import { websocketConnect } from './middleware/websocket'
 import { AuthModal } from '../features/auth/components/AuthModal'
 import { ProjectListContainer } from '../features/projects/components/ProjectListContainer'
 import { Layout } from '../components/Layout'
-import { SessionManagerContainer, SessionViewContainer } from '../features/sessions/components'
+import { SessionManager } from '../components/SessionManager'
+import { SessionView } from '../components/SessionView'
 import { selectCredentials } from '../features/auth/slice/authSlice'
 import { StoreSync } from '../shared/components/StoreSync'
 
@@ -15,10 +16,10 @@ function Dashboard() {
   return (
     <div className="h-full flex flex-col lg:flex-row gap-4 lg:gap-6 p-4 lg:p-6">
       <div className="w-full lg:w-96 bg-white rounded-lg shadow-sm flex-shrink-0">
-        <SessionManagerContainer />
+        <SessionManager />
       </div>
       <div className="flex-1 bg-white rounded-lg shadow-sm flex min-h-0">
-        <SessionViewContainer />
+        <SessionView />
       </div>
     </div>
   )

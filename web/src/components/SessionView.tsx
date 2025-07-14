@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAppStore } from '../store'
-import { AgentControl } from './AgentControl'
+import { AssistantView } from './AssistantView'
 import { FileDiffs } from './FileDiffs'
 import { ManageSession } from './ManageSession'
 import { Terminal } from './Terminal'
@@ -88,7 +88,7 @@ export function SessionView() {
 
       {/* Tab Content */}
       <div className="flex-1 overflow-hidden">
-        {activeTab === 'assistant' && <AgentControl />}
+        {activeTab === 'assistant' && <AssistantView />}
         {activeTab === 'diffs' && <FileDiffs />}
         {activeTab === 'terminal' && <Terminal />}
         {activeTab === 'manage' && <ManageSession />}

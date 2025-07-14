@@ -137,6 +137,62 @@ func (r *ChatMessageV2Repository) GetBySessionID(sessionID int, limit int) ([]*m
 	return messages, nil
 }
 
+// GetByID retrieves a specific message by ID
+func (r *ChatMessageV2Repository) GetByID(id int) (*models.ChatMessage, error) {
+	msg := &models.ChatMessage{}
+	var toolName, toolInput, toolUseID, toolContent sql.NullString
+	
+	err := r.db.QueryRow(`
+		SELECT id, session_id, role, content, created_at, 
+		       tool_name, tool_input, tool_use_id, tool_content
+		FROM chat_messages
+		WHERE id = ?
+	`, id).Scan(
+		&msg.ID,
+		&msg.SessionID,
+		&msg.Role,
+		&msg.Content,
+		&msg.CreatedAt,
+		&toolName,
+		&toolInput,
+		&toolUseID,
+		&toolContent,
+	)
+	
+	if err != nil {
+		return nil, fmt.Errorf("failed to get chat message by ID: %w", err)
+	}
+
+	// Handle tool metadata
+	if toolName.Valid {
+		msg.ToolName = toolName.String
+	}
+	if toolUseID.Valid {
+		msg.ToolUseID = toolUseID.String
+	}
+	if toolInput.Valid {
+		if err := json.Unmarshal([]byte(toolInput.String), &msg.ToolInput); err != nil {
+			msg.ToolInput = toolInput.String
+		}
+	}
+	if toolContent.Valid {
+		if err := json.Unmarshal([]byte(toolContent.String), &msg.ToolContent); err != nil {
+			msg.ToolContent = toolContent.String
+		}
+	}
+
+	return msg, nil
+}
+
+// UpdateContent updates the content of an existing message
+func (r *ChatMessageV2Repository) UpdateContent(messageID int, content string) error {
+	_, err := r.db.Exec("UPDATE chat_messages SET content = ? WHERE id = ?", content, messageID)
+	if err != nil {
+		return fmt.Errorf("failed to update chat message content: %w", err)
+	}
+	return nil
+}
+
 // DeleteBySessionID deletes all messages for a session
 func (r *ChatMessageV2Repository) DeleteBySessionID(sessionID int) error {
 	_, err := r.db.Exec("DELETE FROM chat_messages WHERE session_id = ?", sessionID)

@@ -15,7 +15,6 @@ import (
 type Router struct {
 	projectHandler   *handlers.ProjectHandler
 	sessionHandler   *handlers.SessionHandler
-	agentHandler     *handlers.AgentHandler
 	websocketHandler *handlers.WebSocketHandler
 	chatHandler      *handlers.ChatHandler
 	terminalHandler  *handlers.TerminalHandler
@@ -23,11 +22,16 @@ type Router struct {
 	authConfig       *config.AuthConfig
 }
 
-func NewRouter(projectHandler *handlers.ProjectHandler, sessionHandler *handlers.SessionHandler, agentHandler *handlers.AgentHandler, websocketHandler *handlers.WebSocketHandler, chatHandler *handlers.ChatHandler, terminalHandler *handlers.TerminalHandler) *Router {
+func NewRouter(
+	projectHandler *handlers.ProjectHandler, 
+	sessionHandler *handlers.SessionHandler, 
+	websocketHandler *handlers.WebSocketHandler,
+	chatHandler *handlers.ChatHandler,
+	terminalHandler *handlers.TerminalHandler,
+) *Router {
 	return &Router{
 		projectHandler:   projectHandler,
 		sessionHandler:   sessionHandler,
-		agentHandler:     agentHandler,
 		websocketHandler: websocketHandler,
 		chatHandler:      chatHandler,
 		terminalHandler:  terminalHandler,
@@ -43,9 +47,6 @@ func (r *Router) SetWebAssets(assets embed.FS) {
 }
 
 func (r *Router) SetupRoutes(engine *gin.Engine) {
-	// Connect WebSocket handler to session handler for broadcasting
-	r.sessionHandler.SetWebSocketHandler(r.websocketHandler)
-	
 	// Apply middleware
 	engine.Use(middleware.CORS())
 	engine.Use(middleware.Logger())
@@ -90,27 +91,11 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 		sessions.POST("/:id/merge", r.sessionHandler.MergeSession)
 		sessions.POST("/:id/merge-to-original", r.sessionHandler.MergeSessionToOriginal)
 		sessions.POST("/:id/close", r.sessionHandler.CloseSession)
-	}
-	
-	// Agents routes
-	agents := api.Group("/agents")
-	{
-		agents.GET("", r.agentHandler.GetAgents)
-		agents.POST("", r.agentHandler.CreateAgent)
-		agents.GET("/:id", r.agentHandler.GetAgent)
-		agents.POST("/:id/stop", r.agentHandler.StopAgent)
-		agents.POST("/:id/restart", r.agentHandler.RestartAgent)
-		agents.GET("/:id/status", r.agentHandler.GetAgentStatus)
-		agents.POST("/:id/command", r.agentHandler.SendCommand)
-		agents.GET("/:id/logs", r.agentHandler.GetAgentLogs)
-		agents.GET("/:id/commands", r.agentHandler.GetCommandHistory)
-		agents.GET("/:id/stats", r.agentHandler.GetCommandStats)
-		agents.POST("/cleanup", r.agentHandler.CleanupAgents)
-		agents.GET("/stats", r.agentHandler.GetAgentStats)
 		
-		// Chat history endpoints
-		agents.GET("/:id/chat", r.chatHandler.GetAgentChatHistory)
-		agents.DELETE("/:id/chat", r.chatHandler.DeleteAgentChatHistory)
+		// Chat history for sessions
+		sessions.GET("/:id/chat", r.chatHandler.GetSessionChatHistory)
+		sessions.DELETE("/:id/chat", r.chatHandler.DeleteSessionChatHistory)
+		sessions.POST("/:id/chat", r.chatHandler.SendChatMessage)
 	}
 	
 	// WebSocket endpoint
@@ -118,6 +103,9 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 	
 	// Terminal WebSocket endpoint
 	api.GET("/terminal/:sessionId", r.terminalHandler.HandleTerminalWebSocket)
+	
+	// WebSocket endpoint (also available on root for compatibility)
+	engine.GET("/ws", r.websocketHandler.HandleWebSocket)
 	
 	// Health check
 	api.GET("/health", func(c *gin.Context) {
@@ -138,6 +126,9 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 			v1Projects.GET("/:id", r.projectHandler.GetProject)
 			v1Projects.PUT("/:id", r.projectHandler.UpdateProject)
 			v1Projects.DELETE("/:id", r.projectHandler.DeleteProject)
+			v1Projects.GET("/:id/sessions", r.sessionHandler.GetProjectSessions)
+			v1Projects.POST("/discover", r.projectHandler.DiscoverProjects)
+			v1Projects.GET("/stats", r.projectHandler.GetProjectStats)
 		}
 		
 		// Sessions routes
@@ -154,26 +145,11 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 			v1Sessions.POST("/:id/merge", r.sessionHandler.MergeSession)
 			v1Sessions.POST("/:id/merge-to-original", r.sessionHandler.MergeSessionToOriginal)
 			v1Sessions.POST("/:id/close", r.sessionHandler.CloseSession)
-		}
-		
-		// Agents routes
-		v1Agents := v1.Group("/agents")
-		{
-			v1Agents.GET("", r.agentHandler.GetAgents)
-			v1Agents.POST("", r.agentHandler.CreateAgent)
-			v1Agents.GET("/:id", r.agentHandler.GetAgent)
-			v1Agents.GET("/:id/status", r.agentHandler.GetAgentStatus)
-			v1Agents.POST("/:id/stop", r.agentHandler.StopAgent)
-			v1Agents.POST("/:id/restart", r.agentHandler.RestartAgent)
-			v1Agents.POST("/:id/execute", r.agentHandler.SendCommand)
-			v1Agents.GET("/:id/logs", r.agentHandler.GetAgentLogs)
-			v1Agents.GET("/:id/chat", r.chatHandler.GetAgentChatHistory)
-			v1Agents.DELETE("/:id/chat", r.chatHandler.DeleteAgentChatHistory)
+			v1Sessions.GET("/:id/chat", r.chatHandler.GetSessionChatHistory)
+			v1Sessions.DELETE("/:id/chat", r.chatHandler.DeleteSessionChatHistory)
+			v1Sessions.POST("/:id/chat", r.chatHandler.SendChatMessage)
 		}
 	}
-	
-	// WebSocket endpoint (also available on root)
-	engine.GET("/ws", r.websocketHandler.HandleWebSocket)
 	
 	// Serve static files if webAssets is set
 	if r.webAssets != (embed.FS{}) {

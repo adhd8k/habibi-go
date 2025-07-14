@@ -23,7 +23,7 @@ import (
 var serverCmd = &cobra.Command{
 	Use:   "server",
 	Short: "Start the web server",
-	Long:  `Start the web server with the specified configuration.`,
+	Long:  `Start the web server with session-based Claude integration.`,
 	Run:   runServer,
 }
 
@@ -79,55 +79,36 @@ func runServer(cmd *cobra.Command, args []string) {
 	// Initialize repositories
 	projectRepo := repositories.NewProjectRepository(db.DB)
 	sessionRepo := repositories.NewSessionRepository(db.DB)
-	agentRepo := repositories.NewAgentRepository(db.DB)
-	commandRepo := repositories.NewAgentCommandRepository(db.DB)
 	eventRepo := repositories.NewEventRepository(db.DB)
-	chatRepo := repositories.NewChatMessageRepository(db.DB)
+	chatRepo := repositories.NewChatMessageV2Repository(db.DB)
 	
 	// Initialize services
 	gitService := services.NewGitService(cfg.Projects.WorktreeBasePath)
 	sshService := services.NewSSHService()
 	projectService := services.NewProjectService(projectRepo, eventRepo, gitService)
 	sessionService := services.NewSessionService(sessionRepo, projectRepo, eventRepo, gitService, sshService)
-	agentService := services.NewAgentService(agentRepo, sessionRepo, eventRepo)
 	
-	// Configure agent service with Claude binary path
+	// Configure Claude binary path
 	claudeBinaryPath := "claude"
 	if cfg.Agents.ClaudeBinaryPath != "" {
 		claudeBinaryPath = cfg.Agents.ClaudeBinaryPath
-		agentService.SetClaudeBinaryPath(cfg.Agents.ClaudeBinaryPath)
 	}
 	
-	// Initialize Claude-specific service
-	claudeService := services.NewClaudeAgentService(agentRepo, eventRepo, chatRepo, sessionRepo, projectRepo, claudeBinaryPath, sshService)
-	
-	// Set Claude service on agent service
-	agentService.SetClaudeService(claudeService)
-	
-	commService := services.NewAgentCommService(agentRepo, commandRepo, eventRepo, agentService, claudeService)
+	// Initialize Claude session service
+	claudeSessionService := services.NewClaudeSessionService(sessionRepo, projectRepo, chatRepo, eventRepo, claudeBinaryPath)
 	
 	// Initialize handlers
 	projectHandler := handlers.NewProjectHandler(projectService)
 	sessionHandler := handlers.NewSessionHandler(sessionService)
-	agentHandler := handlers.NewAgentHandler(agentService, commService)
-	websocketHandler := handlers.NewWebSocketHandler(agentService, commService)
-	chatHandler := handlers.NewChatHandler(chatRepo)
+	websocketHandler := handlers.NewWebSocketHandler(claudeSessionService)
+	chatHandler := handlers.NewChatHandler(chatRepo, sessionRepo)
 	terminalHandler := handlers.NewTerminalHandler(sessionService)
-	
-	// Wire up WebSocket event broadcasting
-	agentService.SetEventBroadcaster(websocketHandler)
-	claudeService.SetEventBroadcaster(websocketHandler)
-	
-	// Recover agents from previous run
-	if err := agentService.RecoverActiveAgents(); err != nil {
-		log.Printf("Warning: failed to recover agents: %v", err)
-	}
 	
 	// Start WebSocket hub
 	websocketHandler.StartHub()
 	
 	// Initialize router
-	router := api.NewRouter(projectHandler, sessionHandler, agentHandler, websocketHandler, chatHandler, terminalHandler)
+	router := api.NewRouter(projectHandler, sessionHandler, websocketHandler, chatHandler, terminalHandler)
 	
 	// Set auth config
 	router.SetAuthConfig(&cfg.Server.Auth)

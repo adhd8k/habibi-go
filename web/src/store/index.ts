@@ -1,12 +1,11 @@
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
-import type { Project, Session, Agent } from '../types'
+import type { Project, Session } from '../types'
 
 interface AppState {
   // Current selections
   currentProject: Project | null
   currentSession: Session | null
-  currentAgent: Agent | null
   
   // UI state
   sidebarOpen: boolean
@@ -19,7 +18,6 @@ interface AppState {
   // Actions
   setCurrentProject: (project: Project | null) => void
   setCurrentSession: (session: Session | null) => void
-  setCurrentAgent: (agent: Agent | null) => void
   setSidebarOpen: (open: boolean) => void
   setSessionLoading: (loading: boolean) => void
   setSessionError: (error: string | null) => void
@@ -33,7 +31,6 @@ export const useAppStore = create<AppState>()(
     // Initial state
     currentProject: null,
     currentSession: null,
-    currentAgent: null,
     sidebarOpen: true,
     isSessionLoading: false,
     sessionError: null,
@@ -50,7 +47,6 @@ export const useAppStore = create<AppState>()(
       }
     },
     
-    setCurrentAgent: (agent) => set({ currentAgent: agent }),
     setSidebarOpen: (open) => set({ sidebarOpen: open }),
     setSessionLoading: (loading) => set({ isSessionLoading: loading }),
     setSessionError: (error) => set({ sessionError: error }),

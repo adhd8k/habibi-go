@@ -2,9 +2,8 @@ import { useEffect } from 'react'
 import { useAppSelector } from '../../app/hooks'
 import { selectCurrentProject } from '../../features/projects/slice/projectsSlice'
 import { selectCurrentSession } from '../../features/sessions/slice/sessionsSlice'
-import { selectCurrentAgent } from '../../features/agents/slice/agentsSlice'
 import { useAppStore } from '../../store'
-import type { Project, Session, Agent } from '../../types'
+import type { Project, Session } from '../../types'
 
 /**
  * Syncs Redux state with Zustand store for legacy components
@@ -13,11 +12,9 @@ import type { Project, Session, Agent } from '../../types'
 export function StoreSync() {
   const reduxProject = useAppSelector(selectCurrentProject)
   const reduxSession = useAppSelector(selectCurrentSession)
-  const reduxAgent = useAppSelector(selectCurrentAgent)
   
   const setCurrentProject = useAppStore(state => state.setCurrentProject)
   const setCurrentSession = useAppStore(state => state.setCurrentSession)
-  const setCurrentAgent = useAppStore(state => state.setCurrentAgent)
 
   // Helper to convert null to undefined for legacy types
   const nullToUndefined = <T extends Record<string, any>>(obj: T | null): T | null => {
@@ -47,15 +44,6 @@ export function StoreSync() {
     }
     setCurrentSession(zustandSession)
   }, [reduxSession, setCurrentSession])
-
-  // Sync Redux agent to Zustand
-  useEffect(() => {
-    const zustandAgent = nullToUndefined(reduxAgent) as Agent | null
-    if (zustandAgent) {
-      console.log('Syncing agent to Zustand:', zustandAgent)
-    }
-    setCurrentAgent(zustandAgent)
-  }, [reduxAgent, setCurrentAgent])
 
   return null
 }

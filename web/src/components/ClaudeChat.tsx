@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { agentsApi } from '../api/client'
+import { useMutation } from '@tanstack/react-query'
 import { wsClient } from '../api/websocket'
-import { Agent } from '../types'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { playNotificationSound, getNotificationsEnabled } from '../utils/notifications'
@@ -19,20 +17,13 @@ interface Message {
   toolContent?: any
 }
 
-interface ClaudeChatProps {
-  agent: Agent | null
-}
-
-export function ClaudeChat({ agent }: ClaudeChatProps) {
+export function ClaudeChat() {
   const { currentSession } = useAppStore()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
-  const [isInitialized, setIsInitialized] = useState(false)
   const [showToolMessages, setShowToolMessages] = useState(false)
-  const [currentAgent, setCurrentAgent] = useState<Agent | null>(agent)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const lastMessageRef = useRef<string>('')
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -41,115 +32,75 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
-  
-  // Update current agent when prop changes
+
+  // Load chat history and setup WebSocket
   useEffect(() => {
-    setCurrentAgent(agent)
-  }, [agent])
-  
-  // Reset state when agent changes
-  useEffect(() => {
-    setIsInitialized(false)
-    setMessages([])
-    lastMessageRef.current = ''
-  }, [currentAgent?.id])
-  
-  // Load chat history
-  const { data: historyData } = useQuery({
-    queryKey: ['chat-history', currentAgent?.id],
-    queryFn: async () => {
-      if (!currentAgent) return { messages: [] }
-      const response = await agentsApi.chatHistory(currentAgent.id, 100)
-      return response.data
-    },
-    enabled: !!currentAgent && currentAgent.status === 'running'
-  })
-  
-  // Initialize messages from history
-  useEffect(() => {
-    if (historyData?.messages && !isInitialized) {
-      const historicalMessages: Message[] = historyData.messages.map((msg: any) => ({
-        id: msg.id.toString(),
-        role: msg.role as 'user' | 'assistant' | 'tool_use' | 'tool_result',
-        content: msg.content,
-        timestamp: new Date(msg.created_at),
-        toolName: msg.tool_name,
-        toolInput: msg.tool_input ? (() => {
-          try { return JSON.parse(msg.tool_input) } 
-          catch { return msg.tool_input }
-        })() : undefined,
-        toolUseId: msg.tool_use_id,
-        toolContent: msg.tool_content ? (() => {
-          try { return JSON.parse(msg.tool_content) }
-          catch { return msg.tool_content }
-        })() : undefined
-      }))
-      setMessages(historicalMessages)
-      setIsInitialized(true)
-      
-      // Store the last message to prevent duplicates
-      if (historicalMessages.length > 0) {
-        const lastMessage = historicalMessages[historicalMessages.length - 1]
-        if (lastMessage.role === 'user') {
-          lastMessageRef.current = lastMessage.content
+    if (!currentSession) return
+
+    // Ensure WebSocket is connected
+    console.log('WebSocket readyState:', wsClient.getReadyState())
+    if (!wsClient.isConnected()) {
+      console.log('WebSocket not connected, connecting...')
+      wsClient.connect()
+    }
+
+    // Load existing chat history
+    const loadChatHistory = async () => {
+      try {
+        const response = await fetch(`/api/v1/sessions/${currentSession.id}/chat`, {
+          headers: {
+            'Authorization': 'Basic ' + btoa('moe:jay')
+          }
+        })
+        if (response.ok) {
+          const data = await response.json()
+          if (data.data && Array.isArray(data.data)) {
+            const historyMessages = data.data.map((msg: any) => ({
+              id: msg.id?.toString() || Date.now().toString(),
+              role: msg.role,
+              content: msg.content,
+              timestamp: new Date(msg.created_at),
+              toolName: msg.tool_name,
+              toolInput: msg.tool_input,
+              toolUseId: msg.tool_use_id,
+              toolContent: msg.tool_content
+            }))
+            setMessages(historyMessages)
+          }
         }
+      } catch (error) {
+        console.error('Failed to load chat history:', error)
       }
     }
-  }, [historyData, isInitialized])
 
-  useEffect(() => {
-    if (!currentAgent) return
-    
-    // Subscribe to agent output
-    wsClient.subscribe(currentAgent.id)
-    
-    // Handler for agent output
-    const handleAgentOutput = (message: any) => {
-      if (message.agent_id === currentAgent.id && message.data) {
+    loadChatHistory()
+
+    const handleClaudeOutput = (message: any) => {
+      console.log('handleClaudeOutput called with message:', message)
+      if (message.data && message.data.session_id === currentSession.id) {
+        console.log('Processing claude_output for session:', currentSession.id)
         const data = message.data
         const contentType = data.content_type || 'text'
-        const dbMessageId = data.db_message_id
         
         setMessages(prev => {
           switch (contentType) {
             case 'text': {
               const output = data.output
-              const isChunk = data.is_chunk
+              const isChunk = data.is_chunk !== false // Default to true for backward compatibility
+              const dbMessageId = data.db_message_id
               
-              // Skip empty output
-              if (!output) {
-                return prev
-              }
+              if (!output) return prev
               
-              // If this is a chunk, find the message by db_message_id or append to last assistant message
+              // If this is a chunk, append to last assistant message
               if (isChunk) {
-                // Try to find existing message by db_message_id
-                if (dbMessageId) {
-                  const existingIndex = prev.findIndex(msg => 
-                    msg.role === 'assistant' && msg.id === dbMessageId.toString()
-                  )
-                  
-                  if (existingIndex >= 0) {
-                    // Update existing message
-                    const updatedMessages = [...prev]
-                    updatedMessages[existingIndex] = {
-                      ...updatedMessages[existingIndex],
-                      content: updatedMessages[existingIndex].content + output
-                    }
-                    return updatedMessages
-                  }
-                }
-                
                 const lastMessage = prev[prev.length - 1]
                 
-                // If we have an assistant message being built, append seamlessly
                 if (lastMessage && lastMessage.role === 'assistant') {
                   return [
                     ...prev.slice(0, -1),
                     {
                       ...lastMessage,
-                      content: lastMessage.content + output,
-                      id: dbMessageId?.toString() || lastMessage.id
+                      content: lastMessage.content + output
                     }
                   ]
                 }
@@ -164,16 +115,37 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
                     timestamp: new Date()
                   }
                 ]
+              } else {
+                // Non-chunked message - create or replace
+                const existingIndex = prev.findIndex(m => m.id === dbMessageId?.toString())
+                if (existingIndex >= 0) {
+                  // Update existing message
+                  const updated = [...prev]
+                  updated[existingIndex] = {
+                    ...updated[existingIndex],
+                    content: output
+                  }
+                  return updated
+                } else {
+                  // Create new message
+                  return [
+                    ...prev,
+                    {
+                      id: dbMessageId?.toString() || Date.now().toString(),
+                      role: 'assistant',
+                      content: output,
+                      timestamp: new Date()
+                    }
+                  ]
+                }
               }
-              return prev
             }
             
             case 'tool_use': {
-              // Add tool use message
               return [
                 ...prev,
                 {
-                  id: dbMessageId?.toString() || Date.now().toString(),
+                  id: Date.now().toString(),
                   role: 'tool_use',
                   content: '',
                   timestamp: new Date(),
@@ -185,11 +157,10 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
             }
             
             case 'tool_result': {
-              // Add tool result message
               return [
                 ...prev,
                 {
-                  id: dbMessageId?.toString() || Date.now().toString(),
+                  id: Date.now().toString(),
                   role: 'tool_result',
                   content: '',
                   timestamp: new Date(),
@@ -206,9 +177,8 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
       }
     }
     
-    // Handler for response completion
     const handleResponseComplete = (message: any) => {
-      if (message.agent_id === currentAgent?.id) {
+      if (message.data && message.data.session_id === currentSession?.id) {
         setIsProcessing(false)
         
         // Play notification sound when Claude responds
@@ -218,100 +188,102 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
       }
     }
     
-    // Handler for new user messages from backend
     const handleNewMessage = (message: any) => {
-      if (message.agent_id === currentAgent.id && message.data) {
-        const { role, content, id, created_at } = message.data
-        if (role === 'user') {
-          setMessages(prev => {
-            // Check if message already exists to prevent duplicates
-            const exists = prev.some(m => m.content === content && m.role === 'user')
+      if (message.data && message.data.session_id === currentSession.id && message.data.message) {
+        const { role, content, id, created_at, tool_name, tool_input, tool_use_id, tool_content } = message.data.message
+        
+        setMessages(prev => {
+          // For user messages, check if already exists to prevent duplicates
+          if (role === 'user') {
+            const exists = prev.some(m => m.content === content && m.role === 'user' && 
+              Math.abs(new Date(m.timestamp).getTime() - Date.now()) < 5000) // within 5 seconds
             if (exists) return prev
-            
-            return [...prev, {
-              id: id?.toString() || Date.now().toString(),
-              role: 'user',
-              content,
-              timestamp: new Date(created_at || Date.now())
-            }]
-          })
-        }
+          }
+          
+          // For assistant messages, check if we already have it from streaming
+          if (role === 'assistant') {
+            const exists = prev.some(m => m.role === 'assistant' && m.id === id?.toString())
+            if (exists) return prev
+          }
+          
+          return [...prev, {
+            id: id?.toString() || Date.now().toString(),
+            role: role as 'user' | 'assistant' | 'tool_use' | 'tool_result',
+            content,
+            timestamp: new Date(created_at || Date.now()),
+            toolName: tool_name,
+            toolInput: tool_input,
+            toolUseId: tool_use_id,
+            toolContent: tool_content
+          }]
+        })
       }
     }
     
     // Register handlers
-    wsClient.on('agent_output', handleAgentOutput)
-    wsClient.on('agent_response_complete', handleResponseComplete)
+    console.log('Registering WebSocket handlers for session:', currentSession.id)
+    wsClient.on('claude_output', handleClaudeOutput)
+    wsClient.on('claude_response_complete', handleResponseComplete)
     wsClient.on('new_chat_message', handleNewMessage)
 
     return () => {
-      wsClient.unsubscribe(currentAgent.id)
-      wsClient.off('agent_output')
-      wsClient.off('agent_response_complete')
-      wsClient.off('new_chat_message')
+      wsClient.off('claude_output', handleClaudeOutput)
+      wsClient.off('claude_response_complete', handleResponseComplete)
+      wsClient.off('new_chat_message', handleNewMessage)
     }
-  }, [currentAgent?.id])
+  }, [currentSession?.id])
 
   const sendMessage = useMutation({
     mutationFn: async (message: string) => {
-      // If no current agent, send via session_chat to create one
-      if (!currentAgent || currentAgent.status !== 'running') {
-        if (!currentSession) {
-          throw new Error('No session selected')
-        }
-        
-        // Send via WebSocket to create/resume agent
-        return new Promise((resolve, reject) => {
-          const handleResponse = (msg: any) => {
-            if (msg.type === 'session_chat_started' && msg.data?.session_id === currentSession.id) {
-              wsClient.off('session_chat_started')
-              wsClient.off('error')
-              
-              // Update current agent ID
-              const newAgentId = msg.data.agent_id
-              if (newAgentId) {
-                // We'll get the agent details from the next query
-                resolve({ agent_id: newAgentId })
-              }
-            } else if (msg.type === 'error') {
-              wsClient.off('session_chat_started')
-              wsClient.off('error')
-              reject(new Error(msg.data?.error || 'Failed to start chat'))
-            }
-          }
-          
-          wsClient.on('session_chat_started', handleResponse)
-          wsClient.on('error', handleResponse)
-          
-          // Send session chat message
-          wsClient.send({
-            type: 'session_chat',
-            data: {
-              session_id: currentSession.id,
-              command: message,
-              agent_id: currentAgent?.id
-            }
-          })
-          
-          // Timeout after 10 seconds
-          setTimeout(() => {
-            wsClient.off('session_chat_started')
-            wsClient.off('error')
-            reject(new Error('Chat start timeout'))
-          }, 10000)
-        })
+      if (!currentSession) {
+        throw new Error('No session selected')
       }
       
-      // Normal agent command
-      const response = await agentsApi.execute({ 
-        agent_id: currentAgent.id, 
-        command: message 
+      // Immediately add user message to UI for instant feedback
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        role: 'user',
+        content: message,
+        timestamp: new Date()
+      }
+      
+      setMessages(prev => [...prev, userMessage])
+      
+      // Send via WebSocket
+      return new Promise((resolve, reject) => {
+        const handleResponse = (msg: any) => {
+          if (msg.type === 'chat_sent' && msg.data?.session_id === currentSession.id) {
+            wsClient.off('chat_sent')
+            wsClient.off('error')
+            resolve({ success: true })
+          } else if (msg.type === 'error') {
+            wsClient.off('chat_sent')
+            wsClient.off('error')
+            reject(new Error(msg.data?.error || 'Failed to send message'))
+          }
+        }
+        
+        wsClient.on('chat_sent', handleResponse)
+        wsClient.on('error', handleResponse)
+        
+        // Send chat message
+        wsClient.send({
+          type: 'session_chat',
+          data: {
+            session_id: currentSession.id,
+            message: message
+          }
+        })
+        
+        // Timeout after 10 seconds
+        setTimeout(() => {
+          wsClient.off('chat_sent')
+          wsClient.off('error')
+          reject(new Error('Message send timeout'))
+        }, 10000)
       })
-      return response.data
     },
     onMutate: () => {
-      // Don't add user message here - let it come from the backend
-      // to avoid duplicates. Just set processing state.
       setIsProcessing(true)
     },
     onError: () => {
@@ -323,14 +295,6 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
     if (!input.trim() || isProcessing) return
     
     const messageToSend = input.trim()
-    
-    // Prevent sending the same message twice
-    if (messageToSend === lastMessageRef.current) {
-      console.log('Preventing duplicate message send')
-      return
-    }
-    
-    lastMessageRef.current = messageToSend
     sendMessage.mutate(messageToSend)
     setInput('')
   }
@@ -356,8 +320,19 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
     return count
   }
 
+  if (!currentSession) {
+    return (
+      <div className="h-full flex items-center justify-center text-gray-500">
+        <div className="text-center">
+          <p className="text-lg mb-2">No session selected</p>
+          <p className="text-sm">Select a session to start chatting with Claude</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="flex flex-col h-full w-full max-w-full overflow-hidden" style={{ width: '100%', maxWidth: '100vw' }}>
+    <div className="flex flex-col h-full w-full max-w-full overflow-hidden">
       <div className="border-b p-2 flex justify-between items-center bg-gray-50">
         <h3 className="font-medium">Claude Chat</h3>
         <button
@@ -372,7 +347,7 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
         </button>
       </div>
       
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4 w-full max-w-full" style={{ width: '100%', maxWidth: '100%' }}>
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4 w-full max-w-full">
         {filteredMessages.length === 0 && (
           <div className="text-center text-gray-500 mt-8">
             <p className="text-lg mb-2">Start a conversation with Claude</p>
@@ -402,96 +377,92 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
                   'justify-start'
                 }`}
               >
-            <div
-              className={`max-w-lg min-w-0 w-auto rounded-lg p-3 overflow-hidden word-wrap break-words ${
-                message.role === 'user'
-                  ? 'bg-blue-500 text-white'
-                  : message.role === 'tool_use'
-                  ? 'bg-amber-50 border border-amber-200 text-amber-900'
-                  : message.role === 'tool_result'  
-                  ? 'bg-green-50 border border-green-200 text-green-900'
-                  : 'bg-gray-100 text-gray-900'
-              }`}
-              style={{ 
-                maxWidth: '28rem', 
-                width: 'auto', 
-                wordBreak: 'break-word', 
-                overflowWrap: 'anywhere',
-                tableLayout: 'fixed' 
-              }}
-            >
-              {message.role === 'user' ? (
-                <div className="whitespace-pre-wrap break-words">{message.content}</div>
-              ) : message.role === 'tool_use' ? (
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-xs font-medium bg-amber-200 px-2 py-1 rounded">🔧 Tool Use</span>
-                    <span className="font-medium">{message.toolName}</span>
-                  </div>
-                  {message.toolInput && (
-                    <div className="text-xs bg-amber-100 p-2 rounded overflow-hidden">
-                      <pre className="whitespace-pre-wrap break-words overflow-wrap-anywhere">
-                        {JSON.stringify(message.toolInput, null, 2)}
-                      </pre>
-                    </div>
-                  )}
-                </div>
-              ) : message.role === 'tool_result' ? (
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-xs font-medium bg-green-200 px-2 py-1 rounded">✅ Tool Result</span>
-                    {message.toolUseId && (
-                      <span className="text-xs text-green-600">ID: {message.toolUseId}</span>
-                    )}
-                  </div>
-                  {message.toolContent && (
-                    <div className="text-xs bg-green-100 p-2 rounded overflow-hidden max-h-48">
-                      <pre className="whitespace-pre-wrap break-words overflow-wrap-anywhere overflow-y-auto">
-                        {typeof message.toolContent === 'string' 
-                          ? message.toolContent 
-                          : JSON.stringify(message.toolContent, null, 2)}
-                      </pre>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="prose prose-sm max-w-none dark:prose-invert overflow-hidden" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
-                  <ReactMarkdown 
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                      pre: ({ ...props }) => (
-                        <div className="bg-gray-800 text-gray-100 p-2 rounded overflow-hidden text-sm">
-                          <pre className="whitespace-pre-wrap text-xs" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }} {...props} />
+                <div
+                  className={`max-w-lg min-w-0 w-auto rounded-lg p-3 overflow-hidden word-wrap break-words ${
+                    message.role === 'user'
+                      ? 'bg-blue-500 text-white'
+                      : message.role === 'tool_use'
+                      ? 'bg-amber-50 border border-amber-200 text-amber-900'
+                      : message.role === 'tool_result'  
+                      ? 'bg-green-50 border border-green-200 text-green-900'
+                      : 'bg-gray-100 text-gray-900'
+                  }`}
+                  style={{ 
+                    maxWidth: '28rem', 
+                    width: 'auto', 
+                    wordBreak: 'break-word', 
+                    overflowWrap: 'anywhere'
+                  }}
+                >
+                  {message.role === 'user' ? (
+                    <div className="whitespace-pre-wrap break-words">{message.content}</div>
+                  ) : message.role === 'tool_use' ? (
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-medium bg-amber-200 px-2 py-1 rounded">🔧 Tool Use</span>
+                        <span className="font-medium">{message.toolName}</span>
+                      </div>
+                      {message.toolInput && (
+                        <div className="text-xs bg-amber-100 p-2 rounded overflow-hidden">
+                          <pre className="whitespace-pre-wrap break-words overflow-wrap-anywhere">
+                            {JSON.stringify(message.toolInput, null, 2)}
+                          </pre>
                         </div>
-                      ),
-                      code: ({ className, children, ...props }) => {
-                        const match = /language-(\w+)/.exec(className || '')
-                        return match ? (
-                          <code className="bg-gray-800 text-gray-100 text-xs" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }} {...props}>
-                            {children}
-                          </code>
-                        ) : (
-                          <code className="bg-gray-200 px-1 rounded text-xs" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }} {...props}>
-                            {children}
-                          </code>
-                        )
-                      },
-                    }}
-                  >
-                    {message.content}
-                  </ReactMarkdown>
+                      )}
+                    </div>
+                  ) : message.role === 'tool_result' ? (
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-medium bg-green-200 px-2 py-1 rounded">✅ Tool Result</span>
+                      </div>
+                      {message.toolContent && (
+                        <div className="text-xs bg-green-100 p-2 rounded overflow-hidden max-h-48">
+                          <pre className="whitespace-pre-wrap break-words overflow-wrap-anywhere overflow-y-auto">
+                            {typeof message.toolContent === 'string' 
+                              ? message.toolContent 
+                              : JSON.stringify(message.toolContent, null, 2)}
+                          </pre>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="prose prose-sm max-w-none dark:prose-invert overflow-hidden">
+                      <ReactMarkdown 
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          pre: ({ ...props }) => (
+                            <div className="bg-gray-800 text-gray-100 p-2 rounded overflow-hidden text-sm">
+                              <pre className="whitespace-pre-wrap text-xs" {...props} />
+                            </div>
+                          ),
+                          code: ({ className, children, ...props }) => {
+                            const match = /language-(\w+)/.exec(className || '')
+                            return match ? (
+                              <code className="bg-gray-800 text-gray-100 text-xs" {...props}>
+                                {children}
+                              </code>
+                            ) : (
+                              <code className="bg-gray-200 px-1 rounded text-xs" {...props}>
+                                {children}
+                              </code>
+                            )
+                          },
+                        }}
+                      >
+                        {message.content}
+                      </ReactMarkdown>
+                    </div>
+                  )}
+                  <div className={`text-xs mt-1 ${
+                    message.role === 'user' ? 'text-blue-100' : 
+                    message.role === 'tool_use' ? 'text-amber-600' :
+                    message.role === 'tool_result' ? 'text-green-600' :
+                    'text-gray-500'
+                  }`}>
+                    {message.timestamp.toLocaleTimeString()}
+                  </div>
                 </div>
-              )}
-              <div className={`text-xs mt-1 ${
-                message.role === 'user' ? 'text-blue-100' : 
-                message.role === 'tool_use' ? 'text-amber-600' :
-                message.role === 'tool_result' ? 'text-green-600' :
-                'text-gray-500'
-              }`}>
-                {message.timestamp.toLocaleTimeString()}
               </div>
-            </div>
-          </div>
             </React.Fragment>
           )
         })}
@@ -540,23 +511,17 @@ export function ClaudeChat({ agent }: ClaudeChatProps) {
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
             placeholder="Type your message..."
-            disabled={isProcessing || currentAgent?.status !== 'running'}
+            disabled={isProcessing}
             className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
           />
           <button
             onClick={handleSend}
-            disabled={!input.trim() || isProcessing || currentAgent?.status !== 'running'}
+            disabled={!input.trim() || isProcessing}
             className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Send
           </button>
         </div>
-        
-        {currentAgent?.status !== 'running' && (
-          <p className="text-sm text-red-500 mt-2">
-            Agent is not running. Please start the agent to send messages.
-          </p>
-        )}
       </div>
     </div>
   )

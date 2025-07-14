@@ -61,6 +61,7 @@ func (s *ClaudeSessionService) SendMessage(sessionID int, message string) error 
 	if err := s.chatRepo.Create(userMsg); err != nil {
 		return fmt.Errorf("failed to save user message: %w", err)
 	}
+	fmt.Printf("Saved user message with ID: %d for session: %d\n", userMsg.ID, sessionID)
 
 	// Broadcast the user message
 	s.eventBroadcaster.BroadcastEvent("new_chat_message", 0, map[string]interface{}{
@@ -88,7 +89,8 @@ func (s *ClaudeSessionService) executeClaudeCommand(session *models.Session, mes
 	}
 
 	// Build command with -c flag to continue conversation in this directory
-	args := []string{"-c", message}
+	// Note: message should come after -c flag, and --verbose is required for proper output
+	args := []string{"--verbose", "--output-format", "stream-json", "--dangerously-skip-permissions", "-c", message}
 	cmd := exec.Command(claudePath, args...)
 	cmd.Dir = session.WorktreePath
 
@@ -107,10 +109,12 @@ func (s *ClaudeSessionService) executeClaudeCommand(session *models.Session, mes
 	}
 
 	// Start command
+	fmt.Printf("Starting Claude command: %s %v in directory: %s\n", claudePath, args, session.WorktreePath)
 	if err := cmd.Start(); err != nil {
 		s.handleError(session.ID, fmt.Errorf("failed to start Claude: %w", err))
 		return
 	}
+	fmt.Printf("Claude command started successfully for session %d\n", session.ID)
 
 	// Read stderr in background for debugging
 	go func() {
@@ -126,18 +130,38 @@ func (s *ClaudeSessionService) executeClaudeCommand(session *models.Session, mes
 	var assistantMessage strings.Builder
 	assistantMessageID := 0
 
+	fmt.Printf("Starting to read Claude output for session %d\n", session.ID)
 	for scanner.Scan() {
 		line := scanner.Text()
-		
+		fmt.Printf("Claude stdout line: %s\n", line)
+
 		// Try to parse as JSON (stream-json format)
 		var streamMsg map[string]interface{}
 		if err := json.Unmarshal([]byte(line), &streamMsg); err == nil {
-			s.handleStreamMessage(session.ID, streamMsg, &assistantMessage, &assistantMessageID)
+			msgType, _ := streamMsg["type"].(string)
+			fmt.Printf("Parsed JSON stream message type=%v\n", msgType)
+
+			switch msgType {
+			case "assistant":
+				// Handle assistant messages - each message is independent
+				messageID := 0
+				s.handleAssistantMessage(session.ID, streamMsg, &messageID)
+			case "user":
+				// Handle tool results
+				s.handleToolResultMessage(session.ID, streamMsg)
+			case "system", "result":
+				// Log but don't process
+				fmt.Printf("System/Result message: %+v\n", streamMsg)
+			default:
+				// Try old format handler as fallback
+				s.handleStreamMessage(session.ID, streamMsg, &assistantMessage, &assistantMessageID)
+			}
 		} else {
+			fmt.Printf("Failed to parse as JSON (error: %v), treating as plain text: %s\n", err, line)
 			// If not JSON, treat as plain text output
 			assistantMessage.WriteString(line)
 			assistantMessage.WriteString("\n")
-			
+
 			// Broadcast the chunk
 			s.eventBroadcaster.BroadcastEvent("claude_output", 0, map[string]interface{}{
 				"session_id":   session.ID,
@@ -147,6 +171,7 @@ func (s *ClaudeSessionService) executeClaudeCommand(session *models.Session, mes
 			})
 		}
 	}
+	fmt.Printf("Finished reading Claude output for session %d\n", session.ID)
 
 	// Wait for command to complete
 	if err := cmd.Wait(); err != nil {
@@ -154,17 +179,9 @@ func (s *ClaudeSessionService) executeClaudeCommand(session *models.Session, mes
 		return
 	}
 
-	// Save final assistant message if we have content
-	if assistantMessage.Len() > 0 {
-		msg := &models.ChatMessage{
-			SessionID: session.ID,
-			Role:      "assistant",
-			Content:   assistantMessage.String(),
-		}
-		if err := s.chatRepo.Create(msg); err != nil {
-			fmt.Printf("Failed to save assistant message: %v\n", err)
-		}
-	}
+	// Since messages are now saved as they arrive, we don't need to do final saving
+	// Just log the completion
+	fmt.Printf("Claude command completed. Assistant message ID: %d\n", assistantMessageID)
 
 	// Update session activity
 	if err := s.sessionRepo.UpdateActivityStatus(session.ID, string(models.ActivityStatusNewResponse)); err != nil {
@@ -180,10 +197,11 @@ func (s *ClaudeSessionService) executeClaudeCommand(session *models.Session, mes
 // handleStreamMessage processes a JSON message from Claude's stream
 func (s *ClaudeSessionService) handleStreamMessage(sessionID int, msg map[string]interface{}, assistantMessage *strings.Builder, assistantMessageID *int) {
 	msgType, _ := msg["type"].(string)
-	
+
 	switch msgType {
 	case "message_start":
 		// New message started
+		fmt.Printf("message_start: creating new assistant message for session %d\n", sessionID)
 		if message, ok := msg["message"].(map[string]interface{}); ok {
 			if _, ok := message["id"].(string); ok {
 				// Create new assistant message
@@ -194,6 +212,9 @@ func (s *ClaudeSessionService) handleStreamMessage(sessionID int, msg map[string
 				}
 				if err := s.chatRepo.Create(newMsg); err == nil {
 					*assistantMessageID = newMsg.ID
+					fmt.Printf("Created assistant message with ID: %d\n", newMsg.ID)
+				} else {
+					fmt.Printf("Failed to create assistant message: %v\n", err)
 				}
 			}
 		}
@@ -203,14 +224,14 @@ func (s *ClaudeSessionService) handleStreamMessage(sessionID int, msg map[string
 		if delta, ok := msg["delta"].(map[string]interface{}); ok {
 			if text, ok := delta["text"].(string); ok {
 				assistantMessage.WriteString(text)
-				
+
 				// Broadcast the chunk
 				s.eventBroadcaster.BroadcastEvent("claude_output", 0, map[string]interface{}{
-					"session_id":     sessionID,
-					"content_type":   "text",
-					"output":         text,
-					"is_chunk":       true,
-					"db_message_id":  *assistantMessageID,
+					"session_id":    sessionID,
+					"content_type":  "text",
+					"output":        text,
+					"is_chunk":      true,
+					"db_message_id": *assistantMessageID,
 				})
 			}
 		}
@@ -220,25 +241,25 @@ func (s *ClaudeSessionService) handleStreamMessage(sessionID int, msg map[string
 		if toolName, ok := msg["name"].(string); ok {
 			toolUseID, _ := msg["id"].(string)
 			toolInput := msg["input"]
-			
+
 			// Save tool use message
 			toolMsg := &models.ChatMessage{
-				SessionID:   sessionID,
-				Role:        "tool_use",
-				Content:     "",
-				ToolName:    toolName,
-				ToolInput:   toolInput,
-				ToolUseID:   toolUseID,
+				SessionID: sessionID,
+				Role:      "tool_use",
+				Content:   "",
+				ToolName:  toolName,
+				ToolInput: toolInput,
+				ToolUseID: toolUseID,
 			}
 			if err := s.chatRepo.Create(toolMsg); err == nil {
 				// Broadcast tool use
 				s.eventBroadcaster.BroadcastEvent("claude_output", 0, map[string]interface{}{
-					"session_id":     sessionID,
-					"content_type":   "tool_use",
-					"tool_name":      toolName,
-					"tool_input":     toolInput,
-					"tool_use_id":    toolUseID,
-					"db_message_id":  toolMsg.ID,
+					"session_id":    sessionID,
+					"content_type":  "tool_use",
+					"tool_name":     toolName,
+					"tool_input":    toolInput,
+					"tool_use_id":   toolUseID,
+					"db_message_id": toolMsg.ID,
 				})
 			}
 		}
@@ -247,7 +268,7 @@ func (s *ClaudeSessionService) handleStreamMessage(sessionID int, msg map[string
 		// Tool result message
 		if toolUseID, ok := msg["tool_use_id"].(string); ok {
 			content := msg["content"]
-			
+
 			// Save tool result message
 			toolMsg := &models.ChatMessage{
 				SessionID:   sessionID,
@@ -259,11 +280,11 @@ func (s *ClaudeSessionService) handleStreamMessage(sessionID int, msg map[string
 			if err := s.chatRepo.Create(toolMsg); err == nil {
 				// Broadcast tool result
 				s.eventBroadcaster.BroadcastEvent("claude_output", 0, map[string]interface{}{
-					"session_id":     sessionID,
-					"content_type":   "tool_result",
-					"tool_use_id":    toolUseID,
-					"tool_content":   content,
-					"db_message_id":  toolMsg.ID,
+					"session_id":    sessionID,
+					"content_type":  "tool_result",
+					"tool_use_id":   toolUseID,
+					"tool_content":  content,
+					"db_message_id": toolMsg.ID,
 				})
 			}
 		}
@@ -273,17 +294,144 @@ func (s *ClaudeSessionService) handleStreamMessage(sessionID int, msg map[string
 // handleError handles errors during Claude execution
 func (s *ClaudeSessionService) handleError(sessionID int, err error) {
 	fmt.Printf("Claude error for session %d: %v\n", sessionID, err)
-	
+
 	// Update session status
 	if err := s.sessionRepo.UpdateActivityStatus(sessionID, string(models.ActivityStatusIdle)); err != nil {
 		fmt.Printf("Failed to update session status: %v\n", err)
 	}
-	
+
 	// Broadcast error
 	s.eventBroadcaster.BroadcastEvent("claude_error", 0, map[string]interface{}{
 		"session_id": sessionID,
 		"error":      err.Error(),
 	})
+}
+
+// handleAssistantMessage handles assistant messages in the new format
+func (s *ClaudeSessionService) handleAssistantMessage(sessionID int, msg map[string]interface{}, assistantMessageID *int) {
+	message, ok := msg["message"].(map[string]interface{})
+	if !ok {
+		fmt.Printf("No message field in assistant message\n")
+		return
+	}
+
+	content, ok := message["content"].([]interface{})
+	if !ok {
+		fmt.Printf("No content field in assistant message\n")
+		return
+	}
+
+	// Process each content block
+	for _, block := range content {
+		blockMap, ok := block.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		blockType, _ := blockMap["type"].(string)
+
+		switch blockType {
+		case "text":
+			text, _ := blockMap["text"].(string)
+			if text != "" {
+				// Always create new assistant message for each message event
+				// (Claude sends complete messages, not deltas)
+				newMsg := &models.ChatMessage{
+					SessionID: sessionID,
+					Role:      "assistant",
+					Content:   text,
+				}
+				if err := s.chatRepo.Create(newMsg); err == nil {
+					*assistantMessageID = newMsg.ID
+					fmt.Printf("Created assistant message with ID: %d, content: %s\n", newMsg.ID, text)
+					
+					// Broadcast the text
+					s.eventBroadcaster.BroadcastEvent("claude_output", 0, map[string]interface{}{
+						"session_id":    sessionID,
+						"content_type":  "text",
+						"output":        text,
+						"is_chunk":      false,
+						"db_message_id": newMsg.ID,
+					})
+				} else {
+					fmt.Printf("Failed to create assistant message: %v\n", err)
+				}
+			}
+
+		case "tool_use":
+			toolName, _ := blockMap["name"].(string)
+			toolUseID, _ := blockMap["id"].(string)
+			toolInput := blockMap["input"]
+
+			// Save tool use message
+			toolMsg := &models.ChatMessage{
+				SessionID: sessionID,
+				Role:      "tool_use",
+				Content:   "",
+				ToolName:  toolName,
+				ToolInput: toolInput,
+				ToolUseID: toolUseID,
+			}
+			if err := s.chatRepo.Create(toolMsg); err == nil {
+				fmt.Printf("Created tool_use message: %s with input: %+v\n", toolName, toolInput)
+				// Broadcast tool use
+				s.eventBroadcaster.BroadcastEvent("claude_output", 0, map[string]interface{}{
+					"session_id":    sessionID,
+					"content_type":  "tool_use",
+					"tool_name":     toolName,
+					"tool_input":    toolInput,
+					"tool_use_id":   toolUseID,
+					"db_message_id": toolMsg.ID,
+				})
+				fmt.Printf("Broadcasted tool_use event for %s\n", toolName)
+			}
+		}
+	}
+}
+
+// handleToolResultMessage handles tool result messages
+func (s *ClaudeSessionService) handleToolResultMessage(sessionID int, msg map[string]interface{}) {
+	message, ok := msg["message"].(map[string]interface{})
+	if !ok {
+		return
+	}
+
+	content, ok := message["content"].([]interface{})
+	if !ok {
+		return
+	}
+
+	for _, item := range content {
+		itemMap, ok := item.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		if itemMap["type"] == "tool_result" {
+			toolUseID, _ := itemMap["tool_use_id"].(string)
+			toolContent := itemMap["content"]
+
+			// Save tool result message
+			toolMsg := &models.ChatMessage{
+				SessionID:   sessionID,
+				Role:        "tool_result",
+				Content:     "",
+				ToolUseID:   toolUseID,
+				ToolContent: toolContent,
+			}
+			if err := s.chatRepo.Create(toolMsg); err == nil {
+				fmt.Printf("Created tool_result message\n")
+				// Broadcast tool result
+				s.eventBroadcaster.BroadcastEvent("claude_output", 0, map[string]interface{}{
+					"session_id":    sessionID,
+					"content_type":  "tool_result",
+					"tool_use_id":   toolUseID,
+					"tool_content":  toolContent,
+					"db_message_id": toolMsg.ID,
+				})
+			}
+		}
+	}
 }
 
 // GetChatHistory retrieves chat history for a session

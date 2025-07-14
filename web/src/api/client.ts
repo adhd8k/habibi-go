@@ -2,13 +2,8 @@ import axios from 'axios'
 import type {
   Project,
   Session,
-  Agent,
-  AgentCommand,
-  AgentStatus,
   CreateProjectRequest,
   CreateSessionRequest,
-  CreateAgentRequest,
-  ExecuteCommandRequest,
 } from '../types'
 
 // Get auth credentials from localStorage or environment
@@ -110,28 +105,9 @@ export interface DiffFile {
   diff: string
 }
 
-// Agents API
-export const agentsApi = {
-  list: (sessionId?: number) => 
-    api.get<Agent[]>('/agents', { params: { session_id: sessionId } }),
-  get: (id: number) => api.get<Agent>(`/agents/${id}`),
-  create: (data: CreateAgentRequest) => api.post<Agent>('/agents', data),
-  status: (id: number) => api.get<AgentStatus>(`/agents/${id}/status`),
-  stop: (id: number) => api.post(`/agents/${id}/stop`),
-  restart: (id: number) => api.post<Agent>(`/agents/${id}/restart`),
-  execute: (data: ExecuteCommandRequest) => 
-    api.post<AgentCommand>(`/agents/${data.agent_id}/execute`, { command: data.command }),
-  logs: (id: number, since?: string) => 
-    api.get<string[]>(`/agents/${id}/logs`, { params: { since } }),
-  chatHistory: (id: number, limit?: number) =>
-    api.get<{ messages: ChatMessage[] }>(`/agents/${id}/chat`, { params: { limit } }),
-  deleteChatHistory: (id: number) =>
-    api.delete(`/agents/${id}/chat`),
-}
-
 export interface ChatMessage {
   id: number
-  agent_id: number
+  session_id: number
   role: 'user' | 'assistant' | 'system' | 'tool_use' | 'tool_result'
   content: string
   created_at: string

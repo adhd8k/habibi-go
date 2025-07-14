@@ -6,73 +6,112 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"habibi-go/internal/database/repositories"
+	"habibi-go/internal/models"
 )
 
 type ChatHandler struct {
-	chatRepo *repositories.ChatMessageRepository
+	chatRepo    *repositories.ChatMessageV2Repository
+	sessionRepo *repositories.SessionRepository
 }
 
-func NewChatHandler(chatRepo *repositories.ChatMessageRepository) *ChatHandler {
+func NewChatHandler(chatRepo *repositories.ChatMessageV2Repository, sessionRepo *repositories.SessionRepository) *ChatHandler {
 	return &ChatHandler{
-		chatRepo: chatRepo,
+		chatRepo:    chatRepo,
+		sessionRepo: sessionRepo,
 	}
 }
 
-// GetAgentChatHistory returns chat history for an agent
-func (h *ChatHandler) GetAgentChatHistory(c *gin.Context) {
-	agentID, err := strconv.Atoi(c.Param("id"))
+func (h *ChatHandler) GetSessionChatHistory(c *gin.Context) {
+	sessionIDStr := c.Param("id")
+	sessionID, err := strconv.Atoi(sessionIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "Invalid agent ID",
-			"success": false,
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid session ID"})
 		return
 	}
-	
-	// Get limit from query param, default to 100
-	limit := 100
-	if limitStr := c.Query("limit"); limitStr != "" {
-		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
-			limit = l
-		}
-	}
-	
-	messages, err := h.chatRepo.GetByAgentID(agentID, limit)
+
+	messages, err := h.chatRepo.GetBySessionID(sessionID, 100) // Get last 100 messages
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error":   err.Error(),
-			"success": false,
-		})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get chat history"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{
-		"messages": messages,
-		"success":  true,
+		"data":    messages,
+		"success": true,
 	})
 }
 
-// DeleteAgentChatHistory deletes all chat history for an agent
-func (h *ChatHandler) DeleteAgentChatHistory(c *gin.Context) {
-	agentID, err := strconv.Atoi(c.Param("id"))
+func (h *ChatHandler) DeleteSessionChatHistory(c *gin.Context) {
+	sessionIDStr := c.Param("id")
+	sessionID, err := strconv.Atoi(sessionIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "Invalid agent ID",
-			"success": false,
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid session ID"})
 		return
 	}
-	
-	if err := h.chatRepo.DeleteByAgentID(agentID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error":   err.Error(),
-			"success": false,
-		})
+
+	err = h.chatRepo.DeleteBySessionID(sessionID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete chat history"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Chat history deleted successfully",
+		"success": true,
+		"message": "Chat history deleted",
+	})
+}
+
+func (h *ChatHandler) SendChatMessage(c *gin.Context) {
+	sessionIDStr := c.Param("id")
+	sessionID, err := strconv.Atoi(sessionIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid session ID"})
+		return
+	}
+
+	var request struct {
+		Content string `json:"content" binding:"required"`
+		Role    string `json:"role"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Default role to user if not specified
+	if request.Role == "" {
+		request.Role = "user"
+	}
+
+	// Validate role
+	if request.Role != "user" && request.Role != "assistant" && request.Role != "system" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid role"})
+		return
+	}
+
+	// Check if session exists
+	_, err = h.sessionRepo.GetByID(sessionID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
+		return
+	}
+
+	// Create message
+	message := &models.ChatMessage{
+		SessionID: sessionID,
+		Role:      request.Role,
+		Content:   request.Content,
+	}
+
+	// Save message
+	if err := h.chatRepo.Create(message); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save message"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"data":    message,
 		"success": true,
 	})
 }

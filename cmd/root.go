@@ -35,7 +35,6 @@ func init() {
 	rootCmd.AddCommand(serverCmd)
 	rootCmd.AddCommand(projectCmd)
 	rootCmd.AddCommand(sessionCmd)
-	rootCmd.AddCommand(agentCmd)
 	rootCmd.AddCommand(configCmd)
 }
 

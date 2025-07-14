@@ -4,7 +4,6 @@ import { websocketMiddleware } from './middleware/websocket'
 import authReducer from '../features/auth/slice/authSlice'
 import projectsReducer from '../features/projects/slice/projectsSlice'
 import sessionsReducer from '../features/sessions/slice/sessionsSlice'
-import agentsReducer from '../features/agents/slice/agentsSlice'
 import { baseApi } from '../services/api/baseApi'
 
 export const store = configureStore({
@@ -12,7 +11,6 @@ export const store = configureStore({
     auth: authReducer,
     projects: projectsReducer,
     sessions: sessionsReducer,
-    agents: agentsReducer,
     [baseApi.reducerPath]: baseApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>

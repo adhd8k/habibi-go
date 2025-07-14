@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { sessionsApi, agentsApi } from '../api/client'
+import { sessionsApi } from '../api/client'
 import { useAppStore } from '../store'
 import { Session, CreateSessionRequest } from '../types'
 
@@ -44,17 +44,8 @@ export function SessionManager() {
       // Extract session data from response
       const session = (response as any).data || response
       
-      // Automatically start a Claude agent for the new session
-      try {
-        const agentResponse = await agentsApi.create({
-          session_id: session.id,
-          agent_type: 'claude-code',
-          command: 'claude' // Will use the path from config
-        })
-        console.log('Claude agent started:', agentResponse.data)
-      } catch (error) {
-        console.error('Failed to start Claude agent:', error)
-      }
+      // Set the new session as current
+      setCurrentSession(session)
     },
   })
 

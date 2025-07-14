@@ -1,7 +1,7 @@
 export class WebSocketClient {
   private ws: WebSocket | null = null
   private reconnectTimeout: NodeJS.Timeout | null = null
-  private messageHandlers: Map<string, (data: any) => void> = new Map()
+  private messageHandlers: Map<string, Set<(data: any) => void>> = new Map()
   private subscribedAgents: Set<number> = new Set()
   private reconnectAttempts = 0
   private maxReconnectAttempts = 10
@@ -36,10 +36,20 @@ export class WebSocketClient {
     this.ws.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data)
-        const handler = this.messageHandlers.get(message.type)
-        if (handler) {
-          // Pass the full message to handlers, not just data
-          handler(message)
+        console.log('WebSocket received message:', message)
+        const handlers = this.messageHandlers.get(message.type)
+        if (handlers && handlers.size > 0) {
+          console.log(`Found ${handlers.size} handler(s) for message type:`, message.type)
+          // Call all registered handlers
+          handlers.forEach(handler => {
+            try {
+              handler(message)
+            } catch (error) {
+              console.error('Error in WebSocket handler:', error)
+            }
+          })
+        } else {
+          console.log('No handler found for message type:', message.type)
         }
       } catch (error) {
         console.error('Failed to parse WebSocket message:', error)
@@ -93,21 +103,40 @@ export class WebSocketClient {
   }
 
   send(data: any) {
+    console.log('WebSocket send called with data:', data)
+    console.log('WebSocket state:', this.ws?.readyState)
     if (this.ws?.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify(data))
+      const message = JSON.stringify(data)
+      console.log('Sending WebSocket message:', message)
+      this.ws.send(message)
     } else {
-      console.error('WebSocket is not connected')
+      console.error('WebSocket is not connected, state:', this.ws?.readyState)
       // Try to connect if not connected
       this.connect()
     }
   }
 
   on(event: string, handler: (data: any) => void) {
-    this.messageHandlers.set(event, handler)
+    if (!this.messageHandlers.has(event)) {
+      this.messageHandlers.set(event, new Set())
+    }
+    const handlers = this.messageHandlers.get(event)!
+    handlers.add(handler)
+    console.log(`Added handler for ${event}, total handlers: ${handlers.size}`)
   }
 
-  off(event: string) {
-    this.messageHandlers.delete(event)
+  off(event: string, handler?: (data: any) => void) {
+    const handlers = this.messageHandlers.get(event)
+    if (handlers) {
+      if (handler) {
+        handlers.delete(handler)
+        console.log(`Removed specific handler for ${event}, remaining: ${handlers.size}`)
+      } else {
+        // Remove all handlers for this event if no specific handler provided
+        this.messageHandlers.delete(event)
+        console.log(`Removed all handlers for ${event}`)
+      }
+    }
   }
 
   disconnect() {
@@ -122,6 +151,14 @@ export class WebSocketClient {
     this.subscribedAgents.clear()
     this.reconnectAttempts = 0
     this.isConnecting = false
+  }
+
+  isConnected() {
+    return this.ws?.readyState === WebSocket.OPEN
+  }
+
+  getReadyState() {
+    return this.ws?.readyState
   }
 }
 

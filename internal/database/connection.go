@@ -59,6 +59,13 @@ func (db *DB) columnExists(table, column string) bool {
 	return err == nil && count > 0
 }
 
+func (db *DB) tableExists(tableName string) bool {
+	query := `SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name = ?`
+	var count int
+	err := db.QueryRow(query, tableName).Scan(&count)
+	return err == nil && count > 0
+}
+
 // Helper function to add column if it doesn't exist
 func (db *DB) addColumnIfNotExists(table, column, columnDef string) error {
 	if !db.columnExists(table, column) {
@@ -98,46 +105,6 @@ func (db *DB) RunMigrations() error {
 			FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
 			UNIQUE(project_id, name)
 		)`,
-		`CREATE TABLE IF NOT EXISTS agents (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			session_id INTEGER NOT NULL,
-			agent_type TEXT NOT NULL,
-			pid INTEGER,
-			status TEXT DEFAULT 'starting' CHECK(status IN ('starting', 'running', 'stopped', 'failed')),
-			config TEXT DEFAULT '{}',
-			command TEXT NOT NULL,
-			working_directory TEXT NOT NULL,
-			communication_method TEXT DEFAULT 'stdio',
-			input_pipe_path TEXT,
-			output_pipe_path TEXT,
-			last_heartbeat DATETIME,
-			resource_usage TEXT DEFAULT '{}',
-			started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-			stopped_at DATETIME,
-			FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
-		)`,
-		`CREATE TABLE IF NOT EXISTS agent_commands (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			agent_id INTEGER NOT NULL,
-			command_text TEXT NOT NULL,
-			response_text TEXT,
-			status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'completed', 'failed')),
-			execution_time_ms INTEGER,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-			completed_at DATETIME,
-			FOREIGN KEY (agent_id) REFERENCES agents(id) ON DELETE CASCADE
-		)`,
-		`CREATE TABLE IF NOT EXISTS agent_files (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			agent_id INTEGER NOT NULL,
-			filename TEXT NOT NULL,
-			file_path TEXT NOT NULL,
-			file_size INTEGER,
-			mime_type TEXT,
-			direction TEXT CHECK(direction IN ('upload', 'download')),
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-			FOREIGN KEY (agent_id) REFERENCES agents(id) ON DELETE CASCADE
-		)`,
 		`CREATE TABLE IF NOT EXISTS events (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			event_type TEXT NOT NULL,
@@ -146,22 +113,22 @@ func (db *DB) RunMigrations() error {
 			data TEXT DEFAULT '{}',
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 		)`,
-		`CREATE INDEX IF NOT EXISTS idx_sessions_project_id ON sessions(project_id)`,
-		`CREATE INDEX IF NOT EXISTS idx_agents_session_id ON agents(session_id)`,
-		`CREATE INDEX IF NOT EXISTS idx_agent_commands_agent_id ON agent_commands(agent_id)`,
-		`CREATE INDEX IF NOT EXISTS idx_agent_files_agent_id ON agent_files(agent_id)`,
-		`CREATE INDEX IF NOT EXISTS idx_events_created_at ON events(created_at)`,
-		`CREATE INDEX IF NOT EXISTS idx_events_entity ON events(entity_type, entity_id)`,
-		// Add chat messages table
 		`CREATE TABLE IF NOT EXISTS chat_messages (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			agent_id INTEGER NOT NULL,
+			session_id INTEGER NOT NULL,
 			role TEXT NOT NULL CHECK(role IN ('user', 'assistant', 'system', 'tool_use', 'tool_result')),
 			content TEXT NOT NULL,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-			FOREIGN KEY (agent_id) REFERENCES agents(id) ON DELETE CASCADE
+			tool_name TEXT,
+			tool_input TEXT,
+			tool_use_id TEXT,
+			tool_content TEXT,
+			FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
 		)`,
-		`CREATE INDEX IF NOT EXISTS idx_chat_messages_agent_id ON chat_messages(agent_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_sessions_project_id ON sessions(project_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_events_created_at ON events(created_at)`,
+		`CREATE INDEX IF NOT EXISTS idx_events_entity ON events(entity_type, entity_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_chat_messages_session_id ON chat_messages(session_id)`,
 	}
 	
 	for i, migration := range migrations {
@@ -173,10 +140,6 @@ func (db *DB) RunMigrations() error {
 	// Add columns if they don't exist (for existing databases)
 	if err := db.addColumnIfNotExists("projects", "setup_command", "TEXT"); err != nil {
 		return fmt.Errorf("failed to add setup_command column: %w", err)
-	}
-	
-	if err := db.addColumnIfNotExists("agents", "claude_session_id", "TEXT"); err != nil {
-		return fmt.Errorf("failed to add claude_session_id column: %w", err)
 	}
 	
 	// Add missing session columns
@@ -197,37 +160,11 @@ func (db *DB) RunMigrations() error {
 		return fmt.Errorf("failed to add last_viewed_at column: %w", err)
 	}
 	
-	// Add tool metadata columns for chat messages
-	if err := db.addColumnIfNotExists("chat_messages", "tool_name", "TEXT"); err != nil {
-		return fmt.Errorf("failed to add tool_name column: %w", err)
-	}
-	
-	if err := db.addColumnIfNotExists("chat_messages", "tool_input", "TEXT"); err != nil {
-		return fmt.Errorf("failed to add tool_input column: %w", err)
-	}
-	
-	if err := db.addColumnIfNotExists("chat_messages", "tool_use_id", "TEXT"); err != nil {
-		return fmt.Errorf("failed to add tool_use_id column: %w", err)
-	}
-	
-	if err := db.addColumnIfNotExists("chat_messages", "tool_content", "TEXT"); err != nil {
-		return fmt.Errorf("failed to add tool_content column: %w", err)
-	}
-	
-	// Fix the role constraint for existing databases
-	// SQLite doesn't support ALTER TABLE to modify constraints, so we need to recreate the table
-	if err := db.fixChatMessagesRoleConstraint(); err != nil {
-		return fmt.Errorf("failed to fix chat messages role constraint: %w", err)
-	}
+	// Note: tool metadata columns are now included in the base chat_messages table creation
 	
 	// Fix the session status constraint to include 'closed'
 	if err := db.fixSessionStatusConstraint(); err != nil {
 		return fmt.Errorf("failed to fix session status constraint: %w", err)
-	}
-	
-	// Simplify agent architecture - migrate to session-based chat
-	if err := db.simplifyAgentArchitecture(); err != nil {
-		return fmt.Errorf("failed to simplify agent architecture: %w", err)
 	}
 	
 	return nil
@@ -487,25 +424,30 @@ func (db *DB) simplifyAgentArchitecture() error {
 	}
 	
 	if tableExists > 0 {
-		// Copy existing chat messages, linking to sessions through agents
-		_, err = tx.Exec(`
-			INSERT INTO chat_messages_v2 (id, session_id, role, content, created_at, tool_name, tool_input, tool_use_id, tool_content)
-			SELECT 
-				cm.id,
-				a.session_id,
-				cm.role,
-				cm.content,
-				cm.created_at,
-				cm.tool_name,
-				cm.tool_input,
-				cm.tool_use_id,
-				cm.tool_content
-			FROM chat_messages cm
-			JOIN agents a ON cm.agent_id = a.id
-		`)
-		if err != nil {
-			fmt.Printf("Warning: Failed to migrate chat messages: %v\n", err)
-			// Continue anyway - might be no data to migrate
+		// Only migrate if the agent_id column exists and agents table exists
+		if db.columnExists("chat_messages", "agent_id") && db.tableExists("agents") {
+			_, err = tx.Exec(`
+				INSERT INTO chat_messages_v2 (id, session_id, role, content, created_at, tool_name, tool_input, tool_use_id, tool_content)
+				SELECT 
+					cm.id,
+					a.session_id,
+					cm.role,
+					cm.content,
+					cm.created_at,
+					cm.tool_name,
+					cm.tool_input,
+					cm.tool_use_id,
+					cm.tool_content
+				FROM chat_messages cm
+				JOIN agents a ON cm.agent_id = a.id
+				WHERE a.session_id IS NOT NULL
+			`)
+			if err != nil {
+				fmt.Printf("Warning: Failed to migrate chat messages: %v\n", err)
+				// Continue anyway - might be no data to migrate
+			}
+		} else {
+			fmt.Println("Skipping chat message migration - no compatible data found")
 		}
 		
 		// Drop old chat_messages table

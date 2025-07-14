@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -20,17 +19,20 @@ var upgrader = websocket.Upgrader{
 }
 
 type WebSocketHandler struct {
-	hub         *Hub
-	agentService *services.AgentService
-	commService  *services.AgentCommService
+	hub           *Hub
+	claudeService *services.ClaudeSessionService
 }
 
-func NewWebSocketHandler(agentService *services.AgentService, commService *services.AgentCommService) *WebSocketHandler {
-	return &WebSocketHandler{
-		hub:          NewHub(),
-		agentService: agentService,
-		commService:  commService,
+func NewWebSocketHandler(claudeService *services.ClaudeSessionService) *WebSocketHandler {
+	handler := &WebSocketHandler{
+		hub:           NewHub(),
+		claudeService: claudeService,
 	}
+	
+	// Set the event broadcaster
+	claudeService.SetEventBroadcaster(handler)
+	
+	return handler
 }
 
 func (h *WebSocketHandler) StartHub() {
@@ -45,15 +47,14 @@ func (h *WebSocketHandler) HandleWebSocket(c *gin.Context) {
 	}
 	
 	client := &Client{
-		hub:      h.hub,
-		conn:     conn,
-		send:     make(chan []byte, 256),
-		handler:  h,
+		hub:     h.hub,
+		conn:    conn,
+		send:    make(chan []byte, 256),
+		handler: h,
 	}
 	
 	client.hub.register <- client
 	
-	// Start goroutines for reading and writing
 	go client.writePump()
 	go client.readPump()
 }
@@ -112,32 +113,38 @@ const (
 	writeWait      = 10 * time.Second
 	pongWait       = 60 * time.Second
 	pingPeriod     = (pongWait * 9) / 10
-	maxMessageSize = 512
+	maxMessageSize = 32768 // Increased from 512 to 32KB
 )
 
 func (c *Client) readPump() {
 	defer func() {
+		log.Printf("Client readPump exiting")
 		c.hub.unregister <- c
 		c.conn.Close()
 	}()
 	
+	log.Printf("Client readPump started")
+	
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.conn.SetPongHandler(func(string) error {
+		log.Printf("Received pong")
 		c.conn.SetReadDeadline(time.Now().Add(pongWait))
 		return nil
 	})
 	
 	for {
+		log.Printf("Waiting for WebSocket message...")
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
+			log.Printf("ReadMessage error: %v", err)
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("WebSocket error: %v", err)
 			}
 			break
 		}
 		
-		// Handle incoming message
+		log.Printf("ReadMessage successful, handling message")
 		c.handleMessage(message)
 	}
 }
@@ -185,165 +192,69 @@ func (c *Client) writePump() {
 }
 
 type WSMessage struct {
-	Type    string      `json:"type"`
-	AgentID int         `json:"agent_id,omitempty"`
-	Command string      `json:"command,omitempty"`
-	Data    interface{} `json:"data,omitempty"`
+	Type      string      `json:"type"`
+	SessionID interface{} `json:"session_id,omitempty"`
+	Data      interface{} `json:"data,omitempty"`
 }
 
 func (c *Client) handleMessage(message []byte) {
+	log.Printf("Received WebSocket message: %s", string(message))
+	
 	var msg WSMessage
 	if err := json.Unmarshal(message, &msg); err != nil {
+		log.Printf("Failed to unmarshal message: %v", err)
 		c.sendError(fmt.Sprintf("Invalid message format: %v", err))
 		return
 	}
 	
+	log.Printf("Parsed message type: %s", msg.Type)
+	
 	switch msg.Type {
-	case "agent_command":
-		c.handleAgentCommand(msg)
 	case "session_chat":
 		c.handleSessionChat(msg)
-	case "agent_logs_subscribe":
-		c.handleAgentLogsSubscribe(msg)
-	case "agent_status_request":
-		c.handleAgentStatusRequest(msg)
 	case "ping":
 		c.sendMessage(WSMessage{Type: "pong"})
 	default:
+		log.Printf("Unknown message type: %s", msg.Type)
 		c.sendError(fmt.Sprintf("Unknown message type: %s", msg.Type))
 	}
 }
 
 func (c *Client) handleSessionChat(msg WSMessage) {
+	log.Printf("Received session_chat message: %+v", msg)
+	
 	sessionID, ok := msg.Data.(map[string]interface{})["session_id"].(float64)
 	if !ok || sessionID == 0 {
+		log.Printf("Session ID error: %v", msg.Data)
 		c.sendError("Session ID is required")
 		return
 	}
 	
-	command, ok := msg.Data.(map[string]interface{})["command"].(string)
-	if !ok || command == "" {
-		c.sendError("Command is required")
+	message, ok := msg.Data.(map[string]interface{})["message"].(string)
+	if !ok || message == "" {
+		log.Printf("Message error: %v", msg.Data)
+		c.sendError("Message is required")
 		return
 	}
 	
-	agentID := 0
-	if id, ok := msg.Data.(map[string]interface{})["agent_id"].(float64); ok {
-		agentID = int(id)
-	}
+	log.Printf("Sending message to Claude service for session %d: %s", int(sessionID), message)
 	
-	// Get or create Claude agent for this session
-	agent, err := c.handler.agentService.GetOrCreateClaudeAgent(int(sessionID), agentID)
-	if err != nil {
-		c.sendError(fmt.Sprintf("Failed to get or create agent: %v", err))
-		return
-	}
-	
-	// Send the message
-	if err := c.handler.commService.SendClaudeMessage(agent.ID, command); err != nil {
+	// Send message via Claude service
+	if err := c.handler.claudeService.SendMessage(int(sessionID), message); err != nil {
+		log.Printf("Claude service error: %v", err)
 		c.sendError(fmt.Sprintf("Failed to send message: %v", err))
 		return
 	}
 	
-	// Send acknowledgment with agent info
-	c.sendMessage(WSMessage{
-		Type: "session_chat_started",
-		Data: map[string]interface{}{
-			"session_id": int(sessionID),
-			"agent_id":   agent.ID,
-			"status":     "sent",
-		},
-	})
-}
-
-func (c *Client) handleAgentCommand(msg WSMessage) {
-	if msg.AgentID == 0 {
-		c.sendError("Agent ID is required")
-		return
-	}
-	
-	if msg.Command == "" {
-		c.sendError("Command is required")
-		return
-	}
-	
-	// First ensure the agent is running
-	agent, err := c.handler.agentService.GetOrRestartAgent(msg.AgentID)
-	if err != nil {
-		c.sendError(fmt.Sprintf("Failed to ensure agent is running: %v", err))
-		return
-	}
-	
-	// Send command to agent
-	command, err := c.handler.commService.SendCommand(agent.ID, msg.Command)
-	if err != nil {
-		c.sendError(fmt.Sprintf("Failed to send command: %v", err))
-		return
-	}
+	log.Printf("Message sent successfully, sending acknowledgment")
 	
 	// Send acknowledgment
 	c.sendMessage(WSMessage{
-		Type:    "command_sent",
-		AgentID: msg.AgentID,
+		Type: "chat_sent",
 		Data: map[string]interface{}{
-			"command_id": command.ID,
+			"session_id": int(sessionID),
 			"status":     "sent",
 		},
-	})
-}
-
-func (c *Client) handleAgentLogsSubscribe(msg WSMessage) {
-	if msg.AgentID == 0 {
-		c.sendError("Agent ID is required")
-		return
-	}
-	
-	// Start streaming logs for this agent
-	logStream, err := c.handler.commService.StreamAgentOutput(msg.AgentID)
-	if err != nil {
-		c.sendError(fmt.Sprintf("Failed to stream logs: %v", err))
-		return
-	}
-	
-	// Start goroutine to forward logs
-	go func() {
-		for log := range logStream {
-			c.sendMessage(WSMessage{
-				Type:    "agent_log",
-				AgentID: msg.AgentID,
-				Data: map[string]interface{}{
-					"message":   log,
-					"timestamp": time.Now(),
-				},
-			})
-		}
-	}()
-	
-	// Send subscription confirmation
-	c.sendMessage(WSMessage{
-		Type:    "logs_subscribed",
-		AgentID: msg.AgentID,
-		Data:    map[string]string{"status": "subscribed"},
-	})
-}
-
-func (c *Client) handleAgentStatusRequest(msg WSMessage) {
-	if msg.AgentID == 0 {
-		c.sendError("Agent ID is required")
-		return
-	}
-	
-	// Get agent status
-	status, err := c.handler.agentService.GetAgentStatus(msg.AgentID)
-	if err != nil {
-		c.sendError(fmt.Sprintf("Failed to get agent status: %v", err))
-		return
-	}
-	
-	c.sendMessage(WSMessage{
-		Type:    "agent_status",
-		AgentID: msg.AgentID,
-		Data:    status,
 	})
 }
 
@@ -369,12 +280,27 @@ func (c *Client) sendError(message string) {
 	})
 }
 
-// BroadcastEvent broadcasts an event to all connected clients
+// Implement EventBroadcaster interface
 func (h *WebSocketHandler) BroadcastEvent(eventType string, agentID int, data interface{}) {
 	msg := WSMessage{
-		Type:    eventType,
-		AgentID: agentID,
-		Data:    data,
+		Type: eventType,
+		Data: data,
+	}
+	
+	// For session-based events, extract session_id from data
+	if dataMap, ok := data.(map[string]interface{}); ok {
+		if sessionID, exists := dataMap["session_id"]; exists {
+			msg.SessionID = sessionID
+		}
+		
+		// Special logging for TodoWrite
+		if eventType == "claude_output" {
+			if contentType, ok := dataMap["content_type"].(string); ok && contentType == "tool_use" {
+				if toolName, ok := dataMap["tool_name"].(string); ok && toolName == "TodoWrite" {
+					log.Printf("TODOWRITE BROADCAST: %+v", dataMap)
+				}
+			}
+		}
 	}
 	
 	msgData, err := json.Marshal(msg)
@@ -383,6 +309,7 @@ func (h *WebSocketHandler) BroadcastEvent(eventType string, agentID int, data in
 		return
 	}
 	
+	log.Printf("Broadcasting WebSocket message: %s", string(msgData))
 	h.hub.broadcast <- msgData
 }
 
@@ -402,10 +329,4 @@ func (h *WebSocketHandler) BroadcastSessionUpdate(session interface{}) {
 	}
 	
 	h.hub.broadcast <- msgData
-}
-
-// Helper function to get agent ID from URL parameter
-func getAgentIDFromPath(c *gin.Context) (int, error) {
-	idStr := c.Param("id")
-	return strconv.Atoi(idStr)
 }
