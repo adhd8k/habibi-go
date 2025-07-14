@@ -1,8 +1,24 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { sessionsApi } from '../api/client'
 import { useAppStore } from '../store'
 import { Session, CreateSessionRequest } from '../types'
+import { useSessionTodos } from '../hooks/useSessionTodos'
+import { wsClient } from '../api/websocket'
+
+// Component to show in-progress task for a session
+function SessionInProgressTask({ sessionId }: { sessionId: number }) {
+  const { inProgressTask } = useSessionTodos(sessionId)
+  
+  if (!inProgressTask) return null
+  
+  return (
+    <div className="text-xs text-blue-600 mt-1 flex items-center gap-1">
+      <span className="animate-pulse">🔄</span>
+      <span className="truncate">{inProgressTask}</span>
+    </div>
+  )
+}
 
 export function SessionManager() {
   const queryClient = useQueryClient()
@@ -14,6 +30,19 @@ export function SessionManager() {
     base_branch: 'main',
   })
   const [showBranchSuggestions, setShowBranchSuggestions] = useState(false)
+  const [, setUpdateTrigger] = useState(0)
+
+  // Listen for todo updates to trigger re-renders
+  useEffect(() => {
+    const handleTodoUpdate = () => {
+      setUpdateTrigger(prev => prev + 1)
+    }
+    
+    wsClient.on('claude_output', handleTodoUpdate)
+    return () => {
+      wsClient.off('claude_output', handleTodoUpdate)
+    }
+  }, [])
 
   const { data: sessions, isLoading } = useQuery({
     queryKey: ['sessions', currentProject?.id],
@@ -194,6 +223,7 @@ export function SessionManager() {
                     <div>
                       <div className="font-medium">{session.name}</div>
                       <div className="text-sm text-gray-600">{session.branch_name}</div>
+                      <SessionInProgressTask sessionId={session.id} />
                     </div>
                     {/* Activity indicator */}
                     {session.activity_status && session.activity_status !== 'idle' && (
