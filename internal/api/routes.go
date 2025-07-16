@@ -5,11 +5,12 @@ import (
 	"io/fs"
 	"net/http"
 	"strings"
-	
-	"github.com/gin-gonic/gin"
+
 	"habibi-go/internal/api/handlers"
 	"habibi-go/internal/api/middleware"
 	"habibi-go/internal/config"
+
+	"github.com/gin-gonic/gin"
 )
 
 type Router struct {
@@ -23,8 +24,8 @@ type Router struct {
 }
 
 func NewRouter(
-	projectHandler *handlers.ProjectHandler, 
-	sessionHandler *handlers.SessionHandler, 
+	projectHandler *handlers.ProjectHandler,
+	sessionHandler *handlers.SessionHandler,
 	websocketHandler *handlers.WebSocketHandler,
 	chatHandler *handlers.ChatHandler,
 	terminalHandler *handlers.TerminalHandler,
@@ -50,15 +51,15 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 	// Apply middleware
 	engine.Use(middleware.CORS())
 	engine.Use(middleware.Logger())
-	
+
 	// Apply auth middleware if configured
 	if r.authConfig != nil {
 		engine.Use(middleware.BasicAuth(r.authConfig))
 	}
-	
+
 	// API routes
 	api := engine.Group("/api")
-	
+
 	// Projects routes
 	projects := api.Group("/projects")
 	{
@@ -71,7 +72,7 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 		projects.POST("/discover", r.projectHandler.DiscoverProjects)
 		projects.GET("/stats", r.projectHandler.GetProjectStats)
 	}
-	
+
 	// Sessions routes
 	sessions := api.Group("/sessions")
 	{
@@ -92,30 +93,30 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 		sessions.POST("/:id/merge-to-original", r.sessionHandler.MergeSessionToOriginal)
 		sessions.POST("/:id/close", r.sessionHandler.CloseSession)
 		sessions.POST("/:id/open-editor", r.sessionHandler.OpenWithEditor)
-		
+
 		// Chat history for sessions
 		sessions.GET("/:id/chat", r.chatHandler.GetSessionChatHistory)
 		sessions.DELETE("/:id/chat", r.chatHandler.DeleteSessionChatHistory)
 		sessions.POST("/:id/chat", r.chatHandler.SendChatMessage)
 	}
-	
+
 	// WebSocket endpoint
 	api.GET("/ws", r.websocketHandler.HandleWebSocket)
-	
+
 	// Terminal WebSocket endpoint
 	api.GET("/terminal/:sessionId", r.terminalHandler.HandleTerminalWebSocket)
-	
+
 	// WebSocket endpoint (also available on root for compatibility)
 	engine.GET("/ws", r.websocketHandler.HandleWebSocket)
-	
+
 	// Health check
 	api.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
-			"status": "healthy",
+			"status":    "healthy",
 			"timestamp": "2024-01-01T00:00:00Z",
 		})
 	})
-	
+
 	// API v1 routes (for frontend compatibility)
 	v1 := engine.Group("/api/v1")
 	{
@@ -131,7 +132,7 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 			v1Projects.POST("/discover", r.projectHandler.DiscoverProjects)
 			v1Projects.GET("/stats", r.projectHandler.GetProjectStats)
 		}
-		
+
 		// Sessions routes
 		v1Sessions := v1.Group("/sessions")
 		{
@@ -149,9 +150,10 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 			v1Sessions.GET("/:id/chat", r.chatHandler.GetSessionChatHistory)
 			v1Sessions.DELETE("/:id/chat", r.chatHandler.DeleteSessionChatHistory)
 			v1Sessions.POST("/:id/chat", r.chatHandler.SendChatMessage)
+			v1Sessions.POST("/:id/open-editor", r.sessionHandler.OpenWithEditor)
 		}
 	}
-	
+
 	// Serve static files if webAssets is set
 	if r.webAssets != (embed.FS{}) {
 		// Get the sub filesystem for web/dist
@@ -159,10 +161,10 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 		if err == nil {
 			// Get assets subdirectory
 			assetsFS, _ := fs.Sub(distFS, "assets")
-			
+
 			// Serve static files from embedded filesystem
 			engine.StaticFS("/assets", http.FS(assetsFS))
-			
+
 			// Serve index.html for root
 			engine.GET("/", func(c *gin.Context) {
 				data, err := fs.ReadFile(distFS, "index.html")
@@ -172,14 +174,14 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 				}
 				c.Data(200, "text/html; charset=utf-8", data)
 			})
-			
+
 			// Serve index.html for any non-API/asset routes (SPA support)
 			engine.NoRoute(func(c *gin.Context) {
 				path := c.Request.URL.Path
 				// Don't serve index.html for API routes, WebSocket, or assets
-				if !strings.HasPrefix(path, "/api") && 
-				   !strings.HasPrefix(path, "/ws") &&
-				   !strings.HasPrefix(path, "/assets") {
+				if !strings.HasPrefix(path, "/api") &&
+					!strings.HasPrefix(path, "/ws") &&
+					!strings.HasPrefix(path, "/assets") {
 					data, err := fs.ReadFile(distFS, "index.html")
 					if err != nil {
 						c.String(500, "Failed to load index.html")
