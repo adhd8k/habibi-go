@@ -838,3 +838,67 @@ func (s *SessionService) OpenWithEditor(id int) error {
 
 	return nil
 }
+
+// RunSessionStartupScript runs the project's startup script for a specific session
+func (s *SessionService) RunSessionStartupScript(id int) (string, error) {
+	session, err := s.sessionRepo.GetByID(id)
+	if err != nil {
+		return "", fmt.Errorf("failed to get session: %w", err)
+	}
+
+	project, err := s.projectRepo.GetByID(session.ProjectID)
+	if err != nil {
+		return "", fmt.Errorf("failed to get project: %w", err)
+	}
+
+	if project.SetupCommand == "" {
+		return "", fmt.Errorf("no startup script configured for this project")
+	}
+
+	// Check if this is an SSH project
+	isSSHProject := project.RepositoryURL != "" && strings.HasPrefix(project.RepositoryURL, "ssh:")
+
+	var output string
+	if isSSHProject && s.hasRemoteSetupCommand(project) {
+		// Run remote setup command
+		output, err = s.sshService.ExecuteSetupCommand(project, session.WorktreePath)
+		if err != nil {
+			return "", fmt.Errorf("remote setup command failed: %w", err)
+		}
+	} else {
+		// Run local setup command with environment variables
+		envVars := map[string]string{
+			"PROJECT_PATH":  project.Path,
+			"WORKTREE_PATH": session.WorktreePath,
+			"SESSION_NAME":  session.Name,
+			"BRANCH_NAME":   session.BranchName,
+		}
+		
+		cmd := exec.Command("sh", "-c", project.SetupCommand)
+		cmd.Dir = session.WorktreePath
+		
+		// Set up environment variables
+		cmd.Env = os.Environ()
+		for key, value := range envVars {
+			cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", key, value))
+		}
+		
+		outputBytes, err := cmd.CombinedOutput()
+		if err != nil {
+			return string(outputBytes), fmt.Errorf("setup command failed: %w", err)
+		}
+		output = string(outputBytes)
+	}
+
+	// Create event for running startup script
+	event := models.NewSessionEvent("session_ran_startup_script", session.ID, map[string]interface{}{
+		"success": true,
+		"output":  output,
+	})
+
+	if err := s.eventRepo.Create(event); err != nil {
+		fmt.Printf("Failed to create startup script event: %v\n", err)
+	}
+
+	return output, nil
+}

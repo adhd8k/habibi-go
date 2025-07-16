@@ -217,3 +217,30 @@ func (h *ProjectHandler) GetProjectStats(c *gin.Context) {
 		"data":    stats,
 	})
 }
+
+// RunStartupScript runs the project's startup script in the main project directory
+func (h *ProjectHandler) RunStartupScript(c *gin.Context) {
+	projectID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "Invalid project ID",
+		})
+		return
+	}
+	
+	output, err := h.projectService.RunProjectStartupScript(projectID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Startup script executed successfully",
+		"output":  output,
+	})
+}

@@ -555,3 +555,30 @@ func (h *SessionHandler) OpenWithEditor(c *gin.Context) {
 		"message": "Editor opened successfully",
 	})
 }
+
+// RunStartupScript runs the project's startup script for a specific session
+func (h *SessionHandler) RunStartupScript(c *gin.Context) {
+	sessionID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "Invalid session ID",
+		})
+		return
+	}
+	
+	output, err := h.sessionService.RunSessionStartupScript(sessionID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Startup script executed successfully",
+		"output":  output,
+	})
+}
