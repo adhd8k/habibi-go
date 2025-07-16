@@ -530,3 +530,28 @@ func (h *SessionHandler) GetProjectSessions(c *gin.Context) {
 		"data":    sessions,
 	})
 }
+
+// OpenWithEditor opens the session's worktree in the configured editor
+func (h *SessionHandler) OpenWithEditor(c *gin.Context) {
+	sessionID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "Invalid session ID",
+		})
+		return
+	}
+	
+	if err := h.sessionService.OpenWithEditor(sessionID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Editor opened successfully",
+	})
+}

@@ -140,6 +140,14 @@ export const sessionsApi = baseApi.injectEndpoints({
         { type: 'Session', id: 'LIST' },
       ],
     }),
+
+    openWithEditor: builder.mutation<void, number>({
+      query: (id) => ({
+        url: `/sessions/${id}/open-editor`,
+        method: 'POST',
+      }),
+      // No cache invalidation needed for this action
+    }),
   }),
 })
 
@@ -155,4 +163,5 @@ export const {
   useMergeSessionMutation,
   useMergeSessionToOriginalMutation,
   useCloseSessionMutation,
+  useOpenWithEditorMutation,
 } = sessionsApi

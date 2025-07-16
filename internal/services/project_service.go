@@ -57,10 +57,9 @@ func (s *ProjectService) CreateProject(req *models.CreateProjectRequest) (*model
 		}
 	}
 	
-	// Check if it's a git repository
-	gitPath := filepath.Join(expandedPath, ".git")
-	if _, err := os.Stat(gitPath); os.IsNotExist(err) {
-		// Initialize git repository
+	// Check if it's already a git repository
+	if !s.isGitRepository(expandedPath) {
+		// Initialize git repository only if it's not already one
 		if err := s.initializeGitRepo(expandedPath); err != nil {
 			return nil, fmt.Errorf("failed to initialize git repository: %w", err)
 		}
@@ -314,6 +313,13 @@ func expandPath(path string) (string, error) {
 		return filepath.Join(home, path[1:]), nil
 	}
 	return filepath.Abs(path)
+}
+
+// isGitRepository checks if the given path is already a git repository
+func (s *ProjectService) isGitRepository(path string) bool {
+	cmd := exec.Command("git", "rev-parse", "--git-dir")
+	cmd.Dir = path
+	return cmd.Run() == nil
 }
 
 // initializeGitRepo initializes a new git repository with initial commit

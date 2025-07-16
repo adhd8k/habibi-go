@@ -95,6 +95,7 @@ export const sessionsApi = {
     api.post(`/sessions/${id}/merge`, { target_branch: targetBranch }),
   mergeToOriginal: (id: number) => api.post(`/sessions/${id}/merge-to-original`),
   close: (id: number) => api.post(`/sessions/${id}/close`),
+  openWithEditor: (id: number) => api.post(`/sessions/${id}/open-editor`),
 }
 
 export interface DiffFile {

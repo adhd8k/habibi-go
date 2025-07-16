@@ -808,3 +808,33 @@ func (s *SessionService) hasRemoteSetupCommand(project *models.Project) bool {
 	}
 	return config.RemoteSetupCmd != ""
 }
+
+// OpenWithEditor opens the session's worktree in the configured editor
+func (s *SessionService) OpenWithEditor(id int) error {
+	session, err := s.sessionRepo.GetByID(id)
+	if err != nil {
+		return fmt.Errorf("failed to get session: %w", err)
+	}
+
+	// For now, hardcoded to use Cursor editor
+	// TODO: Make this configurable via project settings
+	cmd := exec.Command("cursor", session.WorktreePath)
+	
+	// Start the command but don't wait for it to complete
+	// This allows the editor to open in the background
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("failed to open editor: %w", err)
+	}
+
+	// Create open editor event
+	event := models.NewSessionEvent("session_opened_editor", session.ID, map[string]interface{}{
+		"editor": "cursor",
+		"path":   session.WorktreePath,
+	})
+
+	if err := s.eventRepo.Create(event); err != nil {
+		fmt.Printf("Failed to create open editor event: %v\n", err)
+	}
+
+	return nil
+}

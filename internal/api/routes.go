@@ -91,6 +91,7 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 		sessions.POST("/:id/merge", r.sessionHandler.MergeSession)
 		sessions.POST("/:id/merge-to-original", r.sessionHandler.MergeSessionToOriginal)
 		sessions.POST("/:id/close", r.sessionHandler.CloseSession)
+		sessions.POST("/:id/open-editor", r.sessionHandler.OpenWithEditor)
 		
 		// Chat history for sessions
 		sessions.GET("/:id/chat", r.chatHandler.GetSessionChatHistory)
