@@ -145,7 +145,7 @@ func (s *SessionService) CreateSession(req *models.CreateSessionRequest) (*model
 	}
 	
 	// Run setup command if defined
-	if project.SetupCommand != "" || (isSSHProject && s.hasRemoteSetupCommand(project)) {
+	if (project.SetupCommand != nil && *project.SetupCommand != "") || (isSSHProject && s.hasRemoteSetupCommand(project)) {
 		fmt.Printf("Running setup command for session %s\n", session.Name)
 		if isSSHProject {
 			// Run remote setup command
@@ -163,7 +163,7 @@ func (s *SessionService) CreateSession(req *models.CreateSessionRequest) (*model
 				"SESSION_NAME":  session.Name,
 				"BRANCH_NAME":   session.BranchName,
 			}
-			if err := s.runSetupCommand(project.SetupCommand, worktreePath, envVars); err != nil {
+			if err := s.runSetupCommand(*project.SetupCommand, worktreePath, envVars); err != nil {
 				fmt.Printf("Warning: setup command failed: %v\n", err)
 			}
 		}
@@ -851,7 +851,7 @@ func (s *SessionService) RunSessionStartupScript(id int) (string, error) {
 		return "", fmt.Errorf("failed to get project: %w", err)
 	}
 
-	if project.SetupCommand == "" {
+	if project.SetupCommand == nil || *project.SetupCommand == "" {
 		return "", fmt.Errorf("no startup script configured for this project")
 	}
 
@@ -874,7 +874,7 @@ func (s *SessionService) RunSessionStartupScript(id int) (string, error) {
 			"BRANCH_NAME":   session.BranchName,
 		}
 		
-		cmd := exec.Command("sh", "-c", project.SetupCommand)
+		cmd := exec.Command("sh", "-c", *project.SetupCommand)
 		cmd.Dir = session.WorktreePath
 		
 		// Set up environment variables

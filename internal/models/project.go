@@ -12,7 +12,7 @@ type Project struct {
 	Path          string                 `json:"path" db:"path" binding:"required"`
 	RepositoryURL string                 `json:"repository_url" db:"repository_url"`
 	DefaultBranch string                 `json:"default_branch" db:"default_branch"`
-	SetupCommand  string                 `json:"setup_command" db:"setup_command"`
+	SetupCommand  *string                `json:"setup_command" db:"setup_command"`
 	Config        map[string]interface{} `json:"config" db:"config"`
 	CreatedAt     time.Time              `json:"created_at" db:"created_at"`
 	UpdatedAt     time.Time              `json:"updated_at" db:"updated_at"`
@@ -36,11 +36,11 @@ type ProjectConfig struct {
 }
 
 type CreateProjectRequest struct {
-	Name          string `json:"name" binding:"required"`
-	Path          string `json:"path" binding:"required"`
-	RepositoryURL string `json:"repository_url"`
-	DefaultBranch string `json:"default_branch"`
-	SetupCommand  string `json:"setup_command"`
+	Name          string  `json:"name" binding:"required"`
+	Path          string  `json:"path" binding:"required"`
+	RepositoryURL string  `json:"repository_url"`
+	DefaultBranch string  `json:"default_branch"`
+	SetupCommand  *string `json:"setup_command"`
 }
 
 type UpdateProjectRequest struct {
@@ -48,7 +48,7 @@ type UpdateProjectRequest struct {
 	Path          string                 `json:"path"`
 	RepositoryURL string                 `json:"repository_url"`
 	DefaultBranch string                 `json:"default_branch"`
-	SetupCommand  string                 `json:"setup_command"`
+	SetupCommand  *string                `json:"setup_command"`
 	Config        map[string]interface{} `json:"config"`
 }
 

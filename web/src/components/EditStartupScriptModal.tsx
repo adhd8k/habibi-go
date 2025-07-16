@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Modal } from './ui/Modal'
 import { useUpdateProjectMutation } from '../features/projects/api/projectsApi'
-import { Project } from '../types'
+import { Project } from '../shared/types/schemas'
 
 interface EditStartupScriptModalProps {
   isOpen: boolean
@@ -15,7 +15,7 @@ export function EditStartupScriptModal({ isOpen, onClose, project }: EditStartup
 
   useEffect(() => {
     if (project) {
-      setScript(project.setup_command || '')
+      setScript(project.setup_command ?? '')
     }
   }, [project])
 

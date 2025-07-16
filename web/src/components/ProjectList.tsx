@@ -6,6 +6,7 @@ import { Project, CreateProjectRequest } from '../types'
 import { AddSSHProjectForm } from './AddSSHProjectForm'
 import { DropdownMenu } from './ui/DropdownMenu'
 import { EditStartupScriptModal } from './EditStartupScriptModal'
+import { EditProjectModal } from './EditProjectModal'
 
 export function ProjectList() {
   const queryClient = useQueryClient()
@@ -18,6 +19,7 @@ export function ProjectList() {
     setup_command: '',
   })
   const [editScriptProject, setEditScriptProject] = useState<Project | null>(null)
+  const [editProject, setEditProject] = useState<Project | null>(null)
   
   const { data: projects, isLoading, error } = useQuery({
     queryKey: ['projects'],
@@ -244,15 +246,24 @@ export function ProjectList() {
                 )}
               </div>
             </button>
-            <div className="absolute top-3 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute top-3 right-2 opacity-40 group-hover:opacity-100 transition-opacity">
               <DropdownMenu
                 items={[
+                  {
+                    label: 'Edit Project',
+                    onClick: () => setEditProject(project),
+                    icon: (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    )
+                  },
                   {
                     label: 'Edit Startup Script',
                     onClick: () => setEditScriptProject(project),
                     icon: (
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                     )
                   },
@@ -281,6 +292,12 @@ export function ProjectList() {
         isOpen={!!editScriptProject}
         onClose={() => setEditScriptProject(null)}
         project={editScriptProject}
+      />
+      
+      <EditProjectModal
+        isOpen={!!editProject}
+        onClose={() => setEditProject(null)}
+        project={editProject}
       />
     </div>
   )

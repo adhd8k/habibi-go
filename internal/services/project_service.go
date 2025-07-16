@@ -182,7 +182,7 @@ func (s *ProjectService) UpdateProject(id int, req *models.UpdateProjectRequest)
 		project.DefaultBranch = req.DefaultBranch
 	}
 	
-	if req.SetupCommand != "" {
+	if req.SetupCommand != nil {
 		project.SetupCommand = req.SetupCommand
 	}
 	
@@ -362,12 +362,12 @@ func (s *ProjectService) RunProjectStartupScript(id int) (string, error) {
 		return "", fmt.Errorf("failed to get project: %w", err)
 	}
 
-	if project.SetupCommand == "" {
+	if project.SetupCommand == nil || *project.SetupCommand == "" {
 		return "", fmt.Errorf("no startup script configured for this project")
 	}
 
 	// Run the setup command in the project directory
-	cmd := exec.Command("sh", "-c", project.SetupCommand)
+	cmd := exec.Command("sh", "-c", *project.SetupCommand)
 	cmd.Dir = project.Path
 	
 	// Set up environment variables
