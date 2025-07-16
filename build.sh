@@ -36,6 +36,7 @@ build_platform() {
     
     echo -e "${YELLOW}🔨 Building for $GOOS/$GOARCH...${NC}"
     
+    
     GOOS=$GOOS GOARCH=$GOARCH go build -ldflags="$LDFLAGS" -o "$OUTPUT" main.go
     
     # Make executable (for non-Windows)
@@ -60,8 +61,6 @@ build_platform "darwin" "amd64" "bin/habibi-go-darwin-amd64"
 # macOS Apple Silicon
 build_platform "darwin" "arm64" "bin/habibi-go-darwin-arm64"
 
-# Windows AMD64
-build_platform "windows" "amd64" "bin/habibi-go-windows-amd64.exe"
 
 # Create version file
 echo "$VERSION" > bin/VERSION

@@ -88,12 +88,11 @@ EOF
 create_archive "habibi-go-linux-amd64" "linux-amd64"
 create_archive "habibi-go-darwin-amd64" "darwin-amd64"
 create_archive "habibi-go-darwin-arm64" "darwin-arm64"
-create_archive "habibi-go-windows-amd64.exe" "windows-amd64"
 
 # Create checksums
 echo -e "${BLUE}🔐 Creating checksums...${NC}"
 cd "$RELEASE_DIR"
-shasum -a 256 *.tar.gz *.zip > "habibi-go-$VERSION-checksums.txt"
+shasum -a 256 *.tar.gz > "habibi-go-$VERSION-checksums.txt"
 cd - > /dev/null
 
 # Create release notes template
