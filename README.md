@@ -1,197 +1,187 @@
-# 🤖 Habibi-Go - Agentic Coding Management Platform
+# 🚀 Habibi-Go
 
-A unified platform for managing AI coding agents across projects and sessions with multi-interface access (web UI, CLI, Slack bot).
+<p align="center">
+  <strong>AI-Powered Development Environment Manager</strong>
+</p>
 
-## ✅ Implementation Status
+<p align="center">
+  A modern development environment manager that seamlessly integrates with Claude Code to provide intelligent, isolated workspaces for your projects. Manage multiple AI coding sessions across different branches with a beautiful web interface.
+</p>
 
-- **Phase 1: Core Backend Foundation** - ✅ COMPLETED
-- **Phase 2: Session Management & Git Integration** - ✅ COMPLETED  
-- **Phase 3: Agent Orchestration** - ✅ COMPLETED
-- **Phase 4: React Web UI** - ✅ COMPLETED
-- **Phase 5: Build System & Deployment** - 🔄 In Progress
+<p align="center">
+  <img src="https://img.shields.io/badge/Go-1.23+-00ADD8?style=flat&logo=go" alt="Go Version">
+  <img src="https://img.shields.io/badge/React-18+-61DAFB?style=flat&logo=react" alt="React Version">
+  <img src="https://img.shields.io/badge/TypeScript-5+-3178C6?style=flat&logo=typescript" alt="TypeScript Version">
+  <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License">
+</p>
 
-### 🎯 Features Implemented
+## ✨ Features
 
-- ✅ **SQLite Database** with modernc.org/sqlite (pure Go, no CGO)
-- ✅ **Project Management** - Full CRUD operations for projects
-- ✅ **Session Management** - Complete session lifecycle with Git worktrees
-- ✅ **Git Integration** - Worktree creation, branch switching, status monitoring
-- ✅ **Agent Orchestration** - Start, stop, and control AI coding agents
-- ✅ **Process Management** - Monitor and manage agent processes
-- ✅ **Real-time Communication** - WebSocket support for live agent output
-- ✅ **React Web UI** - Modern interface with TypeScript and Tailwind CSS
-- ✅ **Configuration System** - YAML config with environment variable support
-- ✅ **REST API** - Complete API for projects, sessions, and agents
-- ✅ **CLI Interface** - Cobra-based command-line tool
-- ✅ **Database Migrations** - Automated schema management
-- ✅ **Event System** - Audit trail for all operations
+### 🎯 Core Features
+- **🤖 Claude Code Integration** - Seamlessly manage Claude Code instances across multiple projects
+- **📁 Project Management** - Organize and track all your development projects in one place
+- **🌳 Git Worktree Sessions** - Create isolated development environments for different features/branches
+- **💬 Real-time Chat Interface** - Interactive chat with Claude including tool use visualization
+- **🖥️ Integrated Terminal** - Full terminal access with xterm.js for each session
+- **🔄 Session Persistence** - Resume conversations and maintain context across sessions
+- **📊 Activity Tracking** - Monitor session activity with visual indicators and notifications
 
-### 🚀 Quick Start
+### 🛠️ Technical Features
+- **Pure Go Backend** - No CGO dependencies, built with Gin framework
+- **React + TypeScript Frontend** - Modern, responsive UI with Tailwind CSS
+- **SQLite Database** - Lightweight, embedded database with automatic migrations
+- **WebSocket Support** - Real-time streaming of Claude responses
+- **RESTful API** - Complete API for all operations
+- **CLI Interface** - Powerful command-line tools built with Cobra
 
-1. **Install dependencies:**
+## 📋 Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+1. **Claude Code** (required)
+   ```bash
+   # Install Claude Code CLI
+   npm install -g @anthropic/claude-cli
+   
+   # Configure Claude Code with your API key
+   claude login
+   ```
+
+2. **For Development** (optional)
+   - **Go** 1.23 or higher - [Install Go](https://golang.org/doc/install)
+   - **Node.js** 18+ and npm - [Install Node.js](https://nodejs.org/)
+
+## 🚀 Quick Start
+
+### Option 1: Download Pre-built Binary (Recommended)
+
+1. Download the latest release for your platform from the [Releases](https://github.com/yourusername/habibi-go/releases) page
+
+2. Make it executable (Linux/macOS):
+   ```bash
+   chmod +x habibi-go-<platform>
+   ```
+
+3. Run the application:
+   ```bash
+   ./habibi-go-<platform> server
+   ```
+
+4. Open your browser at http://localhost:8080
+
+### Option 2: Build from Source
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/habibi-go.git
+   cd habibi-go
+   ```
+
+2. Install dependencies:
    ```bash
    make deps
    ```
 
-2. **Build and run:**
+3. Build and run:
    ```bash
    make build
-   make run
+   ./bin/habibi-go server
    ```
 
-3. **Access the web UI:**
-   Open http://localhost:8080 in your browser
+4. Open your browser at http://localhost:8080
 
-### 💻 Development
+## 🏗️ Building
 
-For development with hot-reload:
+### Build for Current Platform
 ```bash
-make dev
+make build
 ```
 
-This starts:
-- Vite dev server on http://localhost:3000
-- Go server on http://localhost:8080
-
-### 📋 Testing
-
-For detailed testing instructions, see [TESTING.md](TESTING.md).
-
-Quick test all features:
+### Build for All Platforms
 ```bash
-make test-all
+make cross-compile
 ```
 
-### 🔧 CLI Commands
+This creates binaries for:
+- Linux (amd64): `bin/habibi-go-linux-amd64`
+- macOS (Intel): `bin/habibi-go-darwin-amd64`
+- macOS (Apple Silicon): `bin/habibi-go-darwin-arm64`
+- Windows: `bin/habibi-go-windows-amd64.exe`
+
+### Custom Build
+```bash
+# Linux
+GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o habibi-go-linux main.go
+
+# macOS (Intel)
+GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o habibi-go-macos-intel main.go
+
+# macOS (Apple Silicon)
+GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o habibi-go-macos-arm64 main.go
+
+# Windows
+GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o habibi-go-windows.exe main.go
+```
+
+## 💻 Usage
+
+### Web Interface
+
+1. Start the server:
+   ```bash
+   habibi-go server
+   ```
+
+2. Open http://localhost:8080 in your browser
+
+3. Create a new project or import existing ones
+
+4. Start a new session to begin coding with Claude
+
+### CLI Commands
 
 #### Project Management
 ```bash
 # List all projects
-./habibi-go project list
+habibi-go project list
 
-# Create new project
-./habibi-go project create <name> <path> [--repo <url>] [--branch <branch>]
+# Create a new project
+habibi-go project create <name> <path>
 
-# Show project details
-./habibi-go project show <name>
-
-# Delete project
-./habibi-go project delete <name>
+# Import existing git repository
+habibi-go project create <name> <path> --repo <git-url>
 
 # Auto-discover projects
-./habibi-go project discover ~/workspace [--auto-create]
-```
-
-#### Server Management
-```bash
-# Start server
-./habibi-go server [--port 8080] [--host localhost] [--dev]
-
-# Show configuration
-./habibi-go config show
+habibi-go project discover ~/workspace --auto-create
 ```
 
 #### Session Management
 ```bash
-# List all sessions
-./habibi-go session list
+# Create a new session
+habibi-go session create <project-name> <session-name> <branch-name>
 
-# List sessions for a project
-./habibi-go session list myapp
+# List sessions
+habibi-go session list
 
-# Create new session
-./habibi-go session create <project-name> <session-name> <branch-name>
-
-# Show session details
-./habibi-go session show <session-id>
-
-# Activate session
-./habibi-go session activate <session-id>
-
-# Delete session
-./habibi-go session delete <session-id>
-
-# Sync session with remote
-./habibi-go session sync <session-id>
-
-# Clean up stopped sessions
-./habibi-go session cleanup [project-name]
+# Activate a session
+habibi-go session activate <session-id>
 ```
 
-### 🌐 API Endpoints
+## 🔧 Configuration
 
-#### Projects
-- `GET /api/projects` - List all projects
-- `POST /api/projects` - Create new project
-- `GET /api/projects/{id}` - Get project details
-- `PUT /api/projects/{id}` - Update project
-- `DELETE /api/projects/{id}` - Delete project
-- `POST /api/projects/discover` - Auto-discover projects
+Configuration can be set via:
+1. Configuration file: `~/.habibi-go/config.yaml`
+2. Environment variables
+3. Command-line flags
 
-#### Sessions
-- `GET /api/sessions` - List all sessions
-- `POST /api/sessions` - Create new session
-- `GET /api/sessions/{id}` - Get session details
-- `PUT /api/sessions/{id}` - Update session
-- `DELETE /api/sessions/{id}` - Delete session
-- `POST /api/sessions/{id}/activate` - Activate session
-- `GET /api/sessions/{id}/status` - Get session status
-- `POST /api/sessions/{id}/sync` - Sync session with remote
-- `POST /api/sessions/cleanup` - Clean up stopped sessions
-- `GET /api/projects/{id}/sessions` - Get sessions for project
-
-#### System
-- `GET /api/health` - Health check
-- `GET /api/projects/stats` - Project statistics
-- `GET /api/sessions/stats` - Session statistics
-
-### 📁 Project Structure
-
-```
-habibi-go/
-├── cmd/                      # CLI commands (Cobra)
-│   ├── root.go              # Root command setup
-│   ├── server.go            # Web server command
-│   ├── project.go           # Project management commands
-│   ├── session.go           # Session commands (Phase 2)
-│   └── agent.go             # Agent commands (Phase 3)
-├── internal/
-│   ├── api/                 # REST API
-│   │   ├── handlers/        # HTTP handlers
-│   │   ├── middleware/      # CORS, logging, auth
-│   │   └── routes.go        # Route definitions
-│   ├── models/              # Data models
-│   │   ├── project.go       # Project model
-│   │   ├── session.go       # Session model (Phase 2)
-│   │   ├── agent.go         # Agent model (Phase 3)
-│   │   └── event.go         # Event model
-│   ├── services/            # Business logic
-│   │   └── project_service.go
-│   ├── database/            # Database layer
-│   │   ├── connection.go    # DB connection & migrations
-│   │   └── repositories/    # Data access layer
-│   └── config/              # Configuration management
-├── web/                     # React frontend (Phase 4)
-│   └── dist/               # Built frontend assets
-├── configs/                 # Configuration files
-└── bin/                    # Built binaries
-```
-
-### ⚙️ Configuration
-
-Configuration is managed via YAML files. Default locations:
-- `./config.yaml`
-- `./configs/config.yaml`
-- `~/.habibi-go/config.yaml`
-
-Example configuration:
+### Example Configuration
 ```yaml
 server:
   host: "localhost"
   port: 8080
 
 database:
-  path: "~/.habibi-go/data.db"
+  path: "~/.habibi-go/habibi.db"
 
 projects:
   default_directory: "~/projects"
@@ -202,100 +192,166 @@ logging:
   format: "json"
 ```
 
-### 🔧 Agent Management
+### Environment Variables
+- `HABIBI_GO_HOME`: Override default data directory (default: `~/.habibi-go`)
+- `HABIBI_GO_PORT`: Server port (default: 8080)
+- `HABIBI_GO_HOST`: Server host (default: localhost)
 
-```bash
-# List agents
-./habibi-go agent list [session-id]
+## 🤝 Contributing
 
-# Start agent
-./habibi-go agent start <session-id> <agent-type> <command>
+This project was developed entirely with AI assistance, and we encourage using AI tools for contributions!
 
-# Stop agent
-./habibi-go agent stop <agent-id>
+### Development Setup
 
-# Execute command
-./habibi-go agent exec <agent-id> <command>
+1. Fork and clone the repository
+2. Install dependencies:
+   ```bash
+   make deps
+   ```
 
-# View agent status
-./habibi-go agent status <agent-id>
+3. Start development mode with hot-reload:
+   ```bash
+   make dev
+   ```
 
-# View agent logs
-./habibi-go agent logs <agent-id> [--follow]
+### Using AI for Contributions
+
+We recommend using Claude Code or Cursor for development:
+
+1. **Claude Code Integration**
+   - The project includes a `CLAUDE.md` file with context for Claude
+   - Use Claude Code for implementing features and fixing bugs
+
+2. **Cursor Rules** (coming soon)
+   - `.cursorrules` file will be added for Cursor IDE integration
+
+3. **AI Development Guidelines**
+   - Let AI understand the codebase through the CLAUDE.md file
+   - Use AI to maintain consistent code style
+   - Leverage AI for writing tests and documentation
+
+### Submitting Changes
+
+1. Create a feature branch
+2. Make your changes (preferably with AI assistance)
+3. Run tests: `make test`
+4. Submit a Pull Request
+
+## 📁 Project Structure
+
+```
+habibi-go/
+├── cmd/                    # CLI commands
+├── internal/               # Core application code
+│   ├── api/               # HTTP handlers and routes
+│   ├── database/          # Database layer
+│   ├── models/            # Data models
+│   └── services/          # Business logic
+├── web/                   # React frontend
+│   ├── src/
+│   │   ├── components/    # React components
+│   │   ├── api/          # API client
+│   │   ├── hooks/        # Custom hooks
+│   │   └── types/        # TypeScript types
+│   └── dist/             # Built frontend
+├── CLAUDE.md             # AI context file
+├── Makefile              # Build automation
+└── README.md             # This file
 ```
 
-### 🌐 API Endpoints
+## 🧪 Testing
 
-#### API v1 (Frontend Compatible)
-- Projects: `/api/v1/projects`
-- Sessions: `/api/v1/sessions`
-- Agents: `/api/v1/agents`
-- WebSocket: `/ws`
-
-See [TESTING.md](TESTING.md) for detailed API examples.
-
-### 📊 Database Schema
-
-The application uses SQLite with the following core tables:
-- `projects` - Project definitions and metadata
-- `sessions` - Development sessions with git worktrees
-- `agents` - Running agent instances
-- `events` - Audit trail of all operations
-
-### 🛠️ Development
-
+Run all tests:
 ```bash
-# Install dependencies
-go mod download
-
-# Build application
-go build -o bin/habibi-go main.go
-
-# Run in development mode
-go run main.go server --dev
-
-# Cross-compile for other platforms
-GOOS=linux GOARCH=amd64 go build -o bin/habibi-go-linux main.go
+make test
 ```
 
-### 🛠️ Development
-
+Test specific features:
 ```bash
-# Install dependencies
-make deps
+# Backend tests
+go test ./...
 
-# Development mode with hot reload
-make dev
-
-# Build for production
-make build
-
-# Cross-compile for all platforms
-make cross-compile
-
-# Clean build artifacts
-make clean
-
-# Reset database
-make db-reset
+# Frontend tests
+cd web && npm test
 ```
 
-### 📦 Deployment
+## 🚨 Troubleshooting
 
-The application builds into a single binary with embedded web assets:
+### Common Issues
 
-```bash
-# Build production binary
-make build
+1. **Port already in use**
+   ```bash
+   # Use a different port
+   habibi-go server --port 8081
+   ```
 
-# Run in production
-./bin/habibi-go server --port 8080
+2. **Database issues**
+   ```bash
+   # Reset database
+   make db-reset
+   ```
+
+3. **Claude Code not found**
+   - Ensure Claude Code is installed: `npm install -g @anthropic/claude-cli`
+   - Verify installation: `which claude`
+
+## 📊 Monitoring
+
+The application provides built-in monitoring:
+- Health check endpoint: `GET /api/health`
+- Project statistics: `GET /api/projects/stats`
+- Session statistics: `GET /api/sessions/stats`
+
+## 🔒 Security
+
+- All user inputs are validated and sanitized
+- File paths are restricted to project directories
+- No credentials or secrets are stored in the codebase
+- Uses secure WebSocket connections for real-time features
+
+## 📄 License
+
+This project is licensed under the MIT License - see below for details:
+
+```
+MIT License
+
+Copyright (c) 2024 Habibi-Go Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 ```
 
-### 🤝 Contributing
+## 🙏 Acknowledgments
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+- Built with ❤️ using AI assistance
+- Powered by [Claude](https://claude.ai) from Anthropic
+- UI components inspired by modern development tools
+- Community feedback and contributions
 
-### 📄 License
+## 🔗 Links
 
-MIT License - see LICENSE file for details.
+- [Documentation](https://github.com/yourusername/habibi-go/wiki)
+- [Issue Tracker](https://github.com/yourusername/habibi-go/issues)
+- [Discussions](https://github.com/yourusername/habibi-go/discussions)
+
+---
+
+<p align="center">
+Made with 🤖 by AI and humans working together
+</p>

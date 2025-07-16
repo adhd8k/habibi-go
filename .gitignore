@@ -84,3 +84,6 @@ coverage.txt
 # Vendor directory
 vendor/habibi-go
 .habibi-worktrees/
+
+# Release artifacts
+releases/
