@@ -2,6 +2,10 @@ Let's Create a release and publish to github
 
 Release version is #$ARGUMENTS
 
+Run the release.sh script with version as argument 
+
+eg: ./release.sh {VERSION}
+
 Next steps:
 
 1. Create a tag with the version
