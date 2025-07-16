@@ -25,12 +25,12 @@ func (r *ProjectRepository) Create(project *models.Project) error {
 	}
 	
 	query := `
-		INSERT INTO projects (name, path, repository_url, default_branch, config, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO projects (name, path, repository_url, default_branch, config, setup_command, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 	`
 	
 	result, err := r.db.Exec(query, project.Name, project.Path, project.RepositoryURL, 
-		project.DefaultBranch, configStr, project.CreatedAt, project.UpdatedAt)
+		project.DefaultBranch, configStr, project.SetupCommand, project.CreatedAt, project.UpdatedAt)
 	if err != nil {
 		return fmt.Errorf("failed to create project: %w", err)
 	}
@@ -46,7 +46,7 @@ func (r *ProjectRepository) Create(project *models.Project) error {
 
 func (r *ProjectRepository) GetByID(id int) (*models.Project, error) {
 	query := `
-		SELECT id, name, path, repository_url, default_branch, config, created_at, updated_at
+		SELECT id, name, path, repository_url, default_branch, config, setup_command, created_at, updated_at
 		FROM projects
 		WHERE id = ?
 	`
@@ -56,7 +56,7 @@ func (r *ProjectRepository) GetByID(id int) (*models.Project, error) {
 	
 	err := r.db.QueryRow(query, id).Scan(
 		&project.ID, &project.Name, &project.Path, &project.RepositoryURL,
-		&project.DefaultBranch, &configStr, &project.CreatedAt, &project.UpdatedAt,
+		&project.DefaultBranch, &configStr, &project.SetupCommand, &project.CreatedAt, &project.UpdatedAt,
 	)
 	
 	if err != nil {
@@ -75,7 +75,7 @@ func (r *ProjectRepository) GetByID(id int) (*models.Project, error) {
 
 func (r *ProjectRepository) GetByName(name string) (*models.Project, error) {
 	query := `
-		SELECT id, name, path, repository_url, default_branch, config, created_at, updated_at
+		SELECT id, name, path, repository_url, default_branch, config, setup_command, created_at, updated_at
 		FROM projects
 		WHERE name = ?
 	`
@@ -85,7 +85,7 @@ func (r *ProjectRepository) GetByName(name string) (*models.Project, error) {
 	
 	err := r.db.QueryRow(query, name).Scan(
 		&project.ID, &project.Name, &project.Path, &project.RepositoryURL,
-		&project.DefaultBranch, &configStr, &project.CreatedAt, &project.UpdatedAt,
+		&project.DefaultBranch, &configStr, &project.SetupCommand, &project.CreatedAt, &project.UpdatedAt,
 	)
 	
 	if err != nil {
@@ -104,7 +104,7 @@ func (r *ProjectRepository) GetByName(name string) (*models.Project, error) {
 
 func (r *ProjectRepository) GetAll() ([]*models.Project, error) {
 	query := `
-		SELECT id, name, path, repository_url, default_branch, config, created_at, updated_at
+		SELECT id, name, path, repository_url, default_branch, config, setup_command, created_at, updated_at
 		FROM projects
 		ORDER BY name
 	`
@@ -123,7 +123,7 @@ func (r *ProjectRepository) GetAll() ([]*models.Project, error) {
 		
 		err := rows.Scan(
 			&project.ID, &project.Name, &project.Path, &project.RepositoryURL,
-			&project.DefaultBranch, &configStr, &project.CreatedAt, &project.UpdatedAt,
+			&project.DefaultBranch, &configStr, &project.SetupCommand, &project.CreatedAt, &project.UpdatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan project: %w", err)
@@ -149,12 +149,12 @@ func (r *ProjectRepository) Update(project *models.Project) error {
 	
 	query := `
 		UPDATE projects
-		SET name = ?, path = ?, repository_url = ?, default_branch = ?, config = ?, updated_at = ?
+		SET name = ?, path = ?, repository_url = ?, default_branch = ?, config = ?, setup_command = ?, updated_at = ?
 		WHERE id = ?
 	`
 	
 	result, err := r.db.Exec(query, project.Name, project.Path, project.RepositoryURL,
-		project.DefaultBranch, configStr, project.UpdatedAt, project.ID)
+		project.DefaultBranch, configStr, project.SetupCommand, project.UpdatedAt, project.ID)
 	if err != nil {
 		return fmt.Errorf("failed to update project: %w", err)
 	}

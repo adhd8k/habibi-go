@@ -71,6 +71,7 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 		projects.GET("/:id/sessions", r.sessionHandler.GetProjectSessions)
 		projects.POST("/discover", r.projectHandler.DiscoverProjects)
 		projects.GET("/stats", r.projectHandler.GetProjectStats)
+		projects.POST("/:id/run-startup-script", r.projectHandler.RunStartupScript)
 	}
 
 	// Sessions routes
@@ -93,6 +94,7 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 		sessions.POST("/:id/merge-to-original", r.sessionHandler.MergeSessionToOriginal)
 		sessions.POST("/:id/close", r.sessionHandler.CloseSession)
 		sessions.POST("/:id/open-editor", r.sessionHandler.OpenWithEditor)
+		sessions.POST("/:id/run-startup-script", r.sessionHandler.RunStartupScript)
 
 		// Chat history for sessions
 		sessions.GET("/:id/chat", r.chatHandler.GetSessionChatHistory)
@@ -131,6 +133,7 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 			v1Projects.GET("/:id/sessions", r.sessionHandler.GetProjectSessions)
 			v1Projects.POST("/discover", r.projectHandler.DiscoverProjects)
 			v1Projects.GET("/stats", r.projectHandler.GetProjectStats)
+			v1Projects.POST("/:id/run-startup-script", r.projectHandler.RunStartupScript)
 		}
 
 		// Sessions routes
@@ -151,6 +154,7 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 			v1Sessions.DELETE("/:id/chat", r.chatHandler.DeleteSessionChatHistory)
 			v1Sessions.POST("/:id/chat", r.chatHandler.SendChatMessage)
 			v1Sessions.POST("/:id/open-editor", r.sessionHandler.OpenWithEditor)
+			v1Sessions.POST("/:id/run-startup-script", r.sessionHandler.RunStartupScript)
 		}
 	}
 

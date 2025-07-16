@@ -354,3 +354,40 @@ func (s *ProjectService) initializeGitRepo(path string) error {
 	
 	return nil
 }
+
+// RunProjectStartupScript runs the project's startup script in the main project directory
+func (s *ProjectService) RunProjectStartupScript(id int) (string, error) {
+	project, err := s.projectRepo.GetByID(id)
+	if err != nil {
+		return "", fmt.Errorf("failed to get project: %w", err)
+	}
+
+	if project.SetupCommand == "" {
+		return "", fmt.Errorf("no startup script configured for this project")
+	}
+
+	// Run the setup command in the project directory
+	cmd := exec.Command("sh", "-c", project.SetupCommand)
+	cmd.Dir = project.Path
+	
+	// Set up environment variables
+	cmd.Env = os.Environ()
+	cmd.Env = append(cmd.Env, fmt.Sprintf("PROJECT_PATH=%s", project.Path))
+	
+	outputBytes, err := cmd.CombinedOutput()
+	if err != nil {
+		return string(outputBytes), fmt.Errorf("setup command failed: %w", err)
+	}
+
+	// Create event for running startup script
+	event := models.NewProjectEvent("project_ran_startup_script", project.ID, map[string]interface{}{
+		"success": true,
+		"output":  string(outputBytes),
+	})
+
+	if err := s.eventRepo.Create(event); err != nil {
+		fmt.Printf("Failed to create startup script event: %v\n", err)
+	}
+
+	return string(outputBytes), nil
+}

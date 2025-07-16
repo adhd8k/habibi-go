@@ -148,6 +148,14 @@ export const sessionsApi = baseApi.injectEndpoints({
       }),
       // No cache invalidation needed for this action
     }),
+
+    runStartupScript: builder.mutation<{ output: string }, number>({
+      query: (id) => ({
+        url: `/sessions/${id}/run-startup-script`,
+        method: 'POST',
+      }),
+      // No cache invalidation needed for this action
+    }),
   }),
 })
 
@@ -164,4 +172,5 @@ export const {
   useMergeSessionToOriginalMutation,
   useCloseSessionMutation,
   useOpenWithEditorMutation,
+  useRunStartupScriptMutation,
 } = sessionsApi
