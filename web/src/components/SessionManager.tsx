@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState, useEffect } from 'react'
-import { sessionsApi } from '../api/client'
+import { sessionsApi, projectsApi } from '../api/client'
 import { useAppStore } from '../store'
 import { Session, CreateSessionRequest } from '../types'
 import { useSessionTodos } from '../hooks/useSessionTodos'
@@ -61,6 +61,20 @@ export function SessionManager() {
       return Array.isArray(response.data) ? response.data : []
     },
     enabled: !!currentProject,
+  })
+
+  const { data: branches } = useQuery({
+    queryKey: ['branches', currentProject?.id],
+    queryFn: async () => {
+      if (!currentProject) return { local: [], remote: [] }
+      const response = await projectsApi.getBranches(currentProject.id)
+      const data = response.data as any
+      if (data && data.data) {
+        return data.data
+      }
+      return response.data
+    },
+    enabled: !!currentProject && showCreateForm,
   })
 
   const createMutation = useMutation({
@@ -163,21 +177,55 @@ export function SessionManager() {
               onBlur={() => setTimeout(() => setShowBranchSuggestions(false), 200)}
               className="w-full p-2 border rounded"
             />
-            {showBranchSuggestions && (
+            {showBranchSuggestions && branches && (
               <div className="absolute z-10 w-full mt-1 bg-white border rounded shadow-lg max-h-48 overflow-y-auto">
-                {['main', 'master', 'develop', 'staging', 'production'].map(branch => (
-                  <button
-                    key={branch}
-                    type="button"
-                    onClick={() => {
-                      setNewSession({ ...newSession, base_branch: branch })
-                      setShowBranchSuggestions(false)
-                    }}
-                    className="w-full text-left px-3 py-2 hover:bg-gray-100"
-                  >
-                    {branch}
-                  </button>
-                ))}
+                {branches.local.length > 0 && (
+                  <>
+                    <div className="px-3 py-1 text-xs font-semibold text-gray-500 bg-gray-50">
+                      Local Branches
+                    </div>
+                    {branches.local.map((branch: string) => (
+                      <button
+                        key={`local-${branch}`}
+                        type="button"
+                        onClick={() => {
+                          setNewSession({ ...newSession, base_branch: branch })
+                          setShowBranchSuggestions(false)
+                        }}
+                        className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center gap-2"
+                      >
+                        <span className="text-blue-600">●</span>
+                        {branch}
+                      </button>
+                    ))}
+                  </>
+                )}
+                {branches.remote.length > 0 && (
+                  <>
+                    <div className="px-3 py-1 text-xs font-semibold text-gray-500 bg-gray-50">
+                      Remote Branches
+                    </div>
+                    {branches.remote.map((branch: string) => (
+                      <button
+                        key={`remote-${branch}`}
+                        type="button"
+                        onClick={() => {
+                          setNewSession({ ...newSession, base_branch: branch })
+                          setShowBranchSuggestions(false)
+                        }}
+                        className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center gap-2"
+                      >
+                        <span className="text-green-600">●</span>
+                        {branch}
+                      </button>
+                    ))}
+                  </>
+                )}
+                {branches.local.length === 0 && branches.remote.length === 0 && (
+                  <div className="px-3 py-2 text-sm text-gray-500">
+                    No branches found
+                  </div>
+                )}
               </div>
             )}
             <p className="text-xs text-gray-500 mt-1">

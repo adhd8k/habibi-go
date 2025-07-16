@@ -77,6 +77,7 @@ export const projectsApi = {
   create: (data: CreateProjectRequest) => api.post<Project>('/projects', data),
   update: (id: number, data: Partial<Project>) => api.put<Project>(`/projects/${id}`, data),
   delete: (id: number) => api.delete(`/projects/${id}`),
+  getBranches: (id: number) => api.get<{ local: string[], remote: string[] }>(`/projects/${id}/branches`),
 }
 
 // Sessions API

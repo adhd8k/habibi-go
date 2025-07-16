@@ -304,6 +304,37 @@ func (s *ProjectService) GetProjectStats() (map[string]interface{}, error) {
 	return stats, nil
 }
 
+func (s *ProjectService) GetProjectBranches(projectID int) (map[string][]string, error) {
+	// Get project
+	project, err := s.projectRepo.GetByID(projectID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get project: %w", err)
+	}
+	
+	if project == nil {
+		return nil, fmt.Errorf("project not found")
+	}
+	
+	// Get local branches
+	localBranches, err := s.gitService.gitUtil.GetLocalBranches(project.Path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get local branches: %w", err)
+	}
+	
+	// Get remote branches
+	remoteBranches, err := s.gitService.gitUtil.GetRemoteBranches(project.Path)
+	if err != nil {
+		// If no remote, just return local branches
+		remoteBranches = []string{}
+	}
+	
+	// Return as a map with local and remote branches
+	return map[string][]string{
+		"local":  localBranches,
+		"remote": remoteBranches,
+	}, nil
+}
+
 func expandPath(path string) (string, error) {
 	if path[0] == '~' {
 		home, err := os.UserHomeDir()
