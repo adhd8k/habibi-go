@@ -244,3 +244,29 @@ func (h *ProjectHandler) RunStartupScript(c *gin.Context) {
 		"output":  output,
 	})
 }
+
+func (h *ProjectHandler) GetProjectBranches(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "Invalid project ID",
+		})
+		return
+	}
+	
+	branches, err := h.projectService.GetProjectBranches(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    branches,
+	})
+}
