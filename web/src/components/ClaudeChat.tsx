@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { playNotificationSound, getNotificationsEnabled } from '../utils/notifications'
 import { useAppStore } from '../store'
+import { TaskDrawer } from './TaskDrawer'
 
 interface Message {
   id: string
@@ -23,6 +24,7 @@ export function ClaudeChat() {
   const [input, setInput] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
   const [showToolMessages, setShowToolMessages] = useState(false)
+  const [showTaskDrawer, setShowTaskDrawer] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
@@ -335,15 +337,26 @@ export function ClaudeChat() {
     <div className="flex flex-col h-full w-full max-w-full overflow-hidden">
       <div className="border-b border-gray-200 dark:border-gray-700 p-2 flex justify-between items-center bg-gray-50 dark:bg-gray-800">
         <h3 className="font-medium text-gray-900 dark:text-gray-100">Claude Chat</h3>
-        <button
-          onClick={() => setShowToolMessages(!showToolMessages)}
-          className={`text-xs px-2 py-1 rounded ${showToolMessages
-            ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-            : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
-            }`}
-        >
-          {showToolMessages ? 'Hide Tools' : 'Show Tools'}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowToolMessages(!showToolMessages)}
+            className={`text-xs px-2 py-1 rounded ${showToolMessages
+              ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+              }`}
+          >
+            {showToolMessages ? 'Hide Tools' : 'Show Tools'}
+          </button>
+          <button
+            onClick={() => setShowTaskDrawer(!showTaskDrawer)}
+            className={`text-xs px-2 py-1 rounded ${showTaskDrawer
+              ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+              }`}
+          >
+            Tasks
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4 w-full max-w-full">
@@ -528,6 +541,11 @@ export function ClaudeChat() {
           </button>
         </div>
       </div>
+
+      <TaskDrawer
+        isOpen={showTaskDrawer}
+        onClose={() => setShowTaskDrawer(false)}
+      />
     </div>
   )
 }

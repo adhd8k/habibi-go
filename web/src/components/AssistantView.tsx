@@ -1,6 +1,5 @@
 import { useAppStore } from '../store'
 import { ClaudeChat } from './ClaudeChat'
-import { TodoList } from './TodoList'
 
 export function AssistantView() {
   const { currentSession } = useAppStore()
@@ -14,19 +13,8 @@ export function AssistantView() {
   }
 
   return (
-    <div className="h-full w-full flex flex-col">
-      {/* Top section with Todo List */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-h-64 overflow-y-auto">
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Claude's Tasks</h3>
-          <TodoList />
-        </div>
-      </div>
-
-      {/* Chat area below */}
-      <div className="flex-1 overflow-hidden">
-        <ClaudeChat />
-      </div>
+    <div className="h-full w-full">
+      <ClaudeChat />
     </div>
   )
 }
