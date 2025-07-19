@@ -26,3 +26,12 @@
 .prose blockquote {
   @apply border-l-4 border-gray-300 pl-4 italic;
 }
+
+/* Dark mode prose overrides */
+.dark .prose blockquote {
+  @apply border-gray-600;
+}
+
+.dark .prose pre {
+  @apply bg-gray-900 text-gray-100;
+}

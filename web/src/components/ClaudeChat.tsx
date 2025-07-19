@@ -322,7 +322,7 @@ export function ClaudeChat() {
 
   if (!currentSession) {
     return (
-      <div className="h-full flex items-center justify-center text-gray-500">
+      <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
         <div className="text-center">
           <p className="text-lg mb-2">No session selected</p>
           <p className="text-sm">Select a session to start chatting with Claude</p>
@@ -333,14 +333,14 @@ export function ClaudeChat() {
 
   return (
     <div className="flex flex-col h-full w-full max-w-full overflow-hidden">
-      <div className="border-b p-2 flex justify-between items-center bg-gray-50">
-        <h3 className="font-medium">Claude Chat</h3>
+      <div className="border-b border-gray-200 dark:border-gray-700 p-2 flex justify-between items-center bg-gray-50 dark:bg-gray-800">
+        <h3 className="font-medium text-gray-900 dark:text-gray-100">Claude Chat</h3>
         <button
           onClick={() => setShowToolMessages(!showToolMessages)}
           className={`text-xs px-2 py-1 rounded ${
             showToolMessages 
-              ? 'bg-blue-100 text-blue-700' 
-              : 'bg-gray-100 text-gray-600'
+              ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' 
+              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
           }`}
         >
           {showToolMessages ? 'Hide Tools' : 'Show Tools'}
@@ -349,7 +349,7 @@ export function ClaudeChat() {
       
       <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4 w-full max-w-full">
         {filteredMessages.length === 0 && (
-          <div className="text-center text-gray-500 mt-8">
+          <div className="text-center text-gray-500 dark:text-gray-400 mt-8">
             <p className="text-lg mb-2">Start a conversation with Claude</p>
             <p className="text-sm">Type a message below to begin</p>
           </div>
@@ -364,7 +364,7 @@ export function ClaudeChat() {
                 <div className="flex justify-center my-2">
                   <button
                     onClick={() => setShowToolMessages(true)}
-                    className="text-xs text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full transition-colors"
+                    className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 px-3 py-1 rounded-full transition-colors"
                   >
                     🔧 {hiddenToolCount} tool {hiddenToolCount === 1 ? 'action' : 'actions'} hidden
                   </button>
@@ -380,12 +380,12 @@ export function ClaudeChat() {
                 <div
                   className={`max-w-lg min-w-0 w-auto rounded-lg p-3 overflow-hidden word-wrap break-words ${
                     message.role === 'user'
-                      ? 'bg-blue-500 text-white'
+                      ? 'bg-blue-500 dark:bg-blue-600 text-white'
                       : message.role === 'tool_use'
-                      ? 'bg-amber-50 border border-amber-200 text-amber-900'
+                      ? 'bg-amber-50 dark:bg-amber-900 border border-amber-200 dark:border-amber-700 text-amber-900 dark:text-amber-100'
                       : message.role === 'tool_result'  
-                      ? 'bg-green-50 border border-green-200 text-green-900'
-                      : 'bg-gray-100 text-gray-900'
+                      ? 'bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 text-green-900 dark:text-green-100'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
                   }`}
                   style={{ 
                     maxWidth: '28rem', 
@@ -399,11 +399,11 @@ export function ClaudeChat() {
                   ) : message.role === 'tool_use' ? (
                     <div>
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs font-medium bg-amber-200 px-2 py-1 rounded">🔧 Tool Use</span>
+                        <span className="text-xs font-medium bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-100 px-2 py-1 rounded">🔧 Tool Use</span>
                         <span className="font-medium">{message.toolName}</span>
                       </div>
                       {message.toolInput && (
-                        <div className="text-xs bg-amber-100 p-2 rounded overflow-hidden">
+                        <div className="text-xs bg-amber-100 dark:bg-amber-800 text-amber-900 dark:text-amber-100 p-2 rounded overflow-hidden">
                           <pre className="whitespace-pre-wrap break-words overflow-wrap-anywhere">
                             {JSON.stringify(message.toolInput, null, 2)}
                           </pre>
@@ -413,10 +413,10 @@ export function ClaudeChat() {
                   ) : message.role === 'tool_result' ? (
                     <div>
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs font-medium bg-green-200 px-2 py-1 rounded">✅ Tool Result</span>
+                        <span className="text-xs font-medium bg-green-200 dark:bg-green-800 text-green-900 dark:text-green-100 px-2 py-1 rounded">✅ Tool Result</span>
                       </div>
                       {message.toolContent && (
-                        <div className="text-xs bg-green-100 p-2 rounded overflow-hidden max-h-48">
+                        <div className="text-xs bg-green-100 dark:bg-green-800 text-green-900 dark:text-green-100 p-2 rounded overflow-hidden max-h-48">
                           <pre className="whitespace-pre-wrap break-words overflow-wrap-anywhere overflow-y-auto">
                             {typeof message.toolContent === 'string' 
                               ? message.toolContent 
@@ -431,18 +431,18 @@ export function ClaudeChat() {
                         remarkPlugins={[remarkGfm]}
                         components={{
                           pre: ({ ...props }) => (
-                            <div className="bg-gray-800 text-gray-100 p-2 rounded overflow-hidden text-sm">
+                            <div className="bg-gray-800 dark:bg-gray-900 text-gray-100 p-2 rounded overflow-hidden text-sm">
                               <pre className="whitespace-pre-wrap text-xs" {...props} />
                             </div>
                           ),
                           code: ({ className, children, ...props }) => {
                             const match = /language-(\w+)/.exec(className || '')
                             return match ? (
-                              <code className="bg-gray-800 text-gray-100 text-xs" {...props}>
+                              <code className="bg-gray-800 dark:bg-gray-900 text-gray-100 text-xs" {...props}>
                                 {children}
                               </code>
                             ) : (
-                              <code className="bg-gray-200 px-1 rounded text-xs" {...props}>
+                              <code className="bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-1 rounded text-xs" {...props}>
                                 {children}
                               </code>
                             )
@@ -454,10 +454,10 @@ export function ClaudeChat() {
                     </div>
                   )}
                   <div className={`text-xs mt-1 ${
-                    message.role === 'user' ? 'text-blue-100' : 
-                    message.role === 'tool_use' ? 'text-amber-600' :
-                    message.role === 'tool_result' ? 'text-green-600' :
-                    'text-gray-500'
+                    message.role === 'user' ? 'text-blue-100 dark:text-blue-200' : 
+                    message.role === 'tool_use' ? 'text-amber-600 dark:text-amber-400' :
+                    message.role === 'tool_result' ? 'text-green-600 dark:text-green-400' :
+                    'text-gray-500 dark:text-gray-400'
                   }`}>
                     {message.timestamp.toLocaleTimeString()}
                   </div>
@@ -480,7 +480,7 @@ export function ClaudeChat() {
             <div className="flex justify-center my-2">
               <button
                 onClick={() => setShowToolMessages(true)}
-                className="text-xs text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full transition-colors"
+                className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 px-3 py-1 rounded-full transition-colors"
               >
                 🔧 {count} tool {count === 1 ? 'action' : 'actions'} hidden
               </button>
@@ -490,11 +490,11 @@ export function ClaudeChat() {
         
         {isProcessing && (
           <div className="flex justify-start">
-            <div className="bg-gray-100 text-gray-900 rounded-lg p-3">
+            <div className="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg p-3">
               <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
               </div>
             </div>
           </div>
@@ -503,7 +503,7 @@ export function ClaudeChat() {
         <div ref={messagesEndRef} />
       </div>
       
-      <div className="border-t p-4">
+      <div className="border-t border-gray-200 dark:border-gray-700 p-4">
         <div className="flex gap-2">
           <input
             type="text"
@@ -512,7 +512,7 @@ export function ClaudeChat() {
             onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
             placeholder="Type your message..."
             disabled={isProcessing}
-            className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 disabled:opacity-50 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
           />
           <button
             onClick={handleSend}

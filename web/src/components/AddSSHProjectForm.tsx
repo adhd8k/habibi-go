@@ -90,85 +90,85 @@ Available variables:
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700">Project Name</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Project Name</label>
         <input
           type="text"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
           required
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">SSH Host</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">SSH Host</label>
         <input
           type="text"
           value={formData.ssh_host}
           onChange={(e) => setFormData({ ...formData, ssh_host: e.target.value })}
           placeholder="user@hostname"
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
           required
         />
-        <p className="mt-1 text-sm text-gray-500">Format: user@hostname</p>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Format: user@hostname</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">SSH Port</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">SSH Port</label>
           <input
             type="number"
             value={formData.ssh_port}
             onChange={(e) => setFormData({ ...formData, ssh_port: parseInt(e.target.value) || 22 })}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">SSH Key Path</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">SSH Key Path</label>
           <input
             type="text"
             value={formData.ssh_key_path}
             onChange={(e) => setFormData({ ...formData, ssh_key_path: e.target.value })}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
             required
           />
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">Remote Project Path</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Remote Project Path</label>
         <input
           type="text"
           value={formData.remote_project_path}
           onChange={(e) => setFormData({ ...formData, remote_project_path: e.target.value })}
           placeholder="/home/user/projects/myproject"
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
           required
         />
-        <p className="mt-1 text-sm text-gray-500">Full path to the project on the remote server</p>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Full path to the project on the remote server</p>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">Default Branch</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Default Branch</label>
         <input
           type="text"
           value={formData.default_branch}
           onChange={(e) => setFormData({ ...formData, default_branch: e.target.value })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">Environment Variables</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Environment Variables</label>
         <div className="mt-1 space-y-2">
           {Object.entries(formData.environment_vars).map(([key, value]) => (
             <div key={key} className="flex items-center gap-2">
-              <span className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">{key}={value}</span>
+              <span className="text-sm font-mono bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2 py-1 rounded">{key}={value}</span>
               <button
                 type="button"
                 onClick={() => removeEnvironmentVar(key)}
-                className="text-red-600 hover:text-red-700 text-sm"
+                className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm"
               >
                 Remove
               </button>
@@ -180,19 +180,19 @@ Available variables:
               value={envVarInput.key}
               onChange={(e) => setEnvVarInput({ ...envVarInput, key: e.target.value })}
               placeholder="KEY"
-              className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="flex-1 rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
             />
             <input
               type="text"
               value={envVarInput.value}
               onChange={(e) => setEnvVarInput({ ...envVarInput, value: e.target.value })}
               placeholder="value"
-              className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="flex-1 rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
             />
             <button
               type="button"
               onClick={addEnvironmentVar}
-              className="px-3 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+              className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600"
             >
               Add
             </button>
@@ -201,22 +201,22 @@ Available variables:
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">Remote Setup Command</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Remote Setup Command</label>
         <textarea
           value={formData.remote_setup_cmd}
           onChange={(e) => setFormData({ ...formData, remote_setup_cmd: e.target.value })}
           rows={3}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
           placeholder="Commands to run when setting up a new session"
         />
-        <p className="mt-1 text-sm text-gray-500 whitespace-pre-wrap">{setupCommandHint}</p>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 whitespace-pre-wrap">{setupCommandHint}</p>
       </div>
 
       <div className="flex justify-end gap-2">
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+          className="px-4 py-2 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600"
         >
           Cancel
         </button>

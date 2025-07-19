@@ -7,7 +7,7 @@ export function AssistantView() {
 
   if (!currentSession) {
     return (
-      <div className="p-4 text-gray-500">
+      <div className="p-4 text-gray-500 dark:text-gray-400">
         Select a session to start chatting
       </div>
     )
@@ -16,9 +16,9 @@ export function AssistantView() {
   return (
     <div className="h-full flex flex-col">
       {/* Top section with Todo List */}
-      <div className="p-4 border-b">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="max-h-64 overflow-y-auto">
-          <h3 className="text-sm font-semibold text-gray-700 mb-2">Claude's Tasks</h3>
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Claude's Tasks</h3>
           <TodoList />
         </div>
       </div>

@@ -249,7 +249,7 @@ export function Terminal() {
 
   if (!currentSession) {
     return (
-      <div className="h-full flex items-center justify-center text-gray-500">
+      <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
         <div className="text-center">
           <p className="text-lg mb-2">No session selected</p>
           <p className="text-sm">Select a session to use the terminal</p>
@@ -260,11 +260,11 @@ export function Terminal() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="p-4 border-b bg-gray-50">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold">Terminal</h2>
-            <p className="text-sm text-gray-600">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Terminal</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               Session: {currentSession.name} • {currentSession.worktree_path}
             </p>
           </div>
@@ -276,7 +276,7 @@ export function Terminal() {
                 connectionStatus === 'error' ? 'bg-red-500' :
                 'bg-gray-500'
               }`} />
-              <span className="text-xs text-gray-600">
+              <span className="text-xs text-gray-600 dark:text-gray-400">
                 {connectionStatus === 'connected' ? 'Connected' :
                  connectionStatus === 'connecting' ? 'Connecting...' :
                  connectionStatus === 'error' ? 'Error' :
@@ -295,7 +295,7 @@ export function Terminal() {
             
             <button
               onClick={() => clearActiveTerminal()}
-              className="text-sm px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
+              className="text-sm px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100"
             >
               Clear
             </button>

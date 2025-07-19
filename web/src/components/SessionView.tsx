@@ -13,13 +13,13 @@ export function SessionView() {
   const [activeTab, setActiveTab] = useState<TabType>('assistant')
   const { currentSession } = useAppStore()
   const { data: diffStats } = useDiffStats(currentSession?.id)
-  
+
   // Enable real-time session updates
   useSessionActivity()
 
   if (!currentSession) {
     return (
-      <div className="h-full flex items-center justify-center text-gray-500">
+      <div className="h-full w-full flex items-center justify-center text-gray-500 dark:text-gray-400">
         <div className="text-center">
           <p className="text-lg mb-2">No session selected</p>
           <p className="text-sm">Select or create a session to get started</p>
@@ -36,9 +36,9 @@ export function SessionView() {
       <span>
         Branch Changes
         <span className="ml-2 text-xs">
-          ({diffStats.filesChanged} {diffStats.filesChanged === 1 ? 'file' : 'files'}, 
-          <span className="text-green-600"> +{diffStats.additions}</span>,
-          <span className="text-red-600"> -{diffStats.deletions}</span>)
+          ({diffStats.filesChanged} {diffStats.filesChanged === 1 ? 'file' : 'files'},
+          <span className="text-green-600 dark:text-green-400"> +{diffStats.additions}</span>,
+          <span className="text-red-600 dark:text-red-400"> -{diffStats.deletions}</span>)
         </span>
       </span>
     )
@@ -46,9 +46,9 @@ export function SessionView() {
 
   const tabs = [
     { id: 'assistant' as TabType, label: 'Assistant', icon: '💬' },
-    { 
-      id: 'diffs' as TabType, 
-      label: getDiffLabel(), 
+    {
+      id: 'diffs' as TabType,
+      label: getDiffLabel(),
       icon: '📝',
       hasChanges: diffStats && diffStats.filesChanged > 0
     },
@@ -59,7 +59,7 @@ export function SessionView() {
   return (
     <div className="h-full flex flex-col">
       {/* Tab Headers */}
-      <div className="border-b border-gray-200 overflow-x-auto">
+      <div className="border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
         <nav className="flex -mb-px min-w-full">
           {tabs.map((tab) => (
             <button
@@ -68,8 +68,8 @@ export function SessionView() {
               className={`
                 px-3 sm:px-6 py-3 text-xs sm:text-sm font-medium transition-colors flex items-center whitespace-nowrap flex-shrink-0
                 ${activeTab === tab.id
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent'
+                  ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600 border-b-2 border-transparent'
                 }
               `}
             >

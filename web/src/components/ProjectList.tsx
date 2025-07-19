@@ -20,7 +20,7 @@ export function ProjectList() {
   })
   const [editScriptProject, setEditScriptProject] = useState<Project | null>(null)
   const [editProject, setEditProject] = useState<Project | null>(null)
-  
+
   const { data: projects, isLoading, error } = useQuery({
     queryKey: ['projects'],
     queryFn: async () => {
@@ -68,7 +68,7 @@ export function ProjectList() {
 
   const handleCreateProject = () => {
     if (!newProject.name || !newProject.path) return
-    
+
     createMutation.mutate({
       name: newProject.name,
       path: newProject.path,
@@ -80,8 +80,8 @@ export function ProjectList() {
     return (
       <div className="p-4">
         <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
         </div>
       </div>
     )
@@ -89,7 +89,7 @@ export function ProjectList() {
 
   if (error) {
     return (
-      <div className="p-4 text-red-600">
+      <div className="p-4 text-red-600 dark:text-red-400">
         Failed to load projects
       </div>
     )
@@ -98,7 +98,7 @@ export function ProjectList() {
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold">Projects</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Projects</h2>
         <div className="flex gap-2">
           <button
             onClick={() => {
@@ -122,13 +122,13 @@ export function ProjectList() {
       </div>
 
       {showCreateForm && (
-        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+        <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
           <input
             type="text"
             placeholder="Project name"
             value={newProject.name}
             onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
-            className="w-full p-2 border rounded mb-2"
+            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded mb-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
           />
           <div className="relative mb-2">
             <input
@@ -136,7 +136,7 @@ export function ProjectList() {
               placeholder="Project path (e.g., /home/user/myproject)"
               value={newProject.path}
               onChange={(e) => setNewProject({ ...newProject, path: e.target.value })}
-              className="w-full p-2 pr-10 border rounded"
+              className="w-full p-2 pr-10 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
             />
             <button
               type="button"
@@ -145,7 +145,7 @@ export function ProjectList() {
                 // This is just a hint to the user that they can browse
                 alert('Please enter the full path to your project directory.\n\nExample:\n/home/user/projects/myproject\n\nNote: Browser security prevents automatic folder browsing.')
               }}
-              className="absolute right-2 top-2 p-1 text-gray-500 hover:text-gray-700"
+              className="absolute right-2 top-2 p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
               title="Browse for folder"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -154,17 +154,17 @@ export function ProjectList() {
             </button>
           </div>
           <div className="mb-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Setup Script (optional)
             </label>
             <textarea
               placeholder="#!/bin/bash\n# This script runs when creating a new session\n# Available variables:\n# $PROJECT_PATH - Main project directory\n# $WORKTREE_PATH - Session worktree directory\n# $SESSION_NAME - Name of the session\n# $BRANCH_NAME - Git branch name\n\n# Example:\ncp $PROJECT_PATH/.env $WORKTREE_PATH/.env"
               value={newProject.setup_command}
               onChange={(e) => setNewProject({ ...newProject, setup_command: e.target.value })}
-              className="w-full p-2 border rounded font-mono text-sm"
+              className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded font-mono text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
               rows={6}
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               This script will be executed each time a new session is created
             </p>
           </div>
@@ -181,7 +181,7 @@ export function ProjectList() {
                 setShowCreateForm(false)
                 setNewProject({ name: '', path: '', setup_command: '' })
               }}
-              className="px-3 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 text-sm"
+              className="px-3 py-1 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-400 dark:hover:bg-gray-500 text-sm"
             >
               Cancel
             </button>
@@ -190,9 +190,9 @@ export function ProjectList() {
       )}
 
       {showSSHForm && (
-        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-          <h3 className="text-lg font-semibold mb-3">Add SSH Project</h3>
-          <AddSSHProjectForm 
+        <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-gray-100">Add SSH Project</h3>
+          <AddSSHProjectForm
             onSuccess={() => {
               setShowSSHForm(false)
             }}
@@ -205,7 +205,7 @@ export function ProjectList() {
 
       <div className="space-y-2">
         {projects?.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
             <p className="mb-2">No projects yet</p>
             <p className="text-sm">Click "New Project" to get started</p>
           </div>
@@ -214,24 +214,24 @@ export function ProjectList() {
           <div key={project.id} className="relative group">
             <button
               onClick={() => handleSelectProject(project)}
-              className={`w-full text-left p-3 rounded-lg transition-colors ${
-                currentProject?.id === project.id
-                  ? 'bg-blue-100 border-blue-500 border'
-                  : 'bg-gray-50 hover:bg-gray-100 border-gray-200 border'
-              }`}
+              className={`w-full text-left p-3 rounded-lg transition-colors ${currentProject?.id === project.id
+                ? 'bg-blue-100 dark:bg-blue-900 border-blue-500 dark:border-blue-700 dark:hover:bg-blue-800 border'
+                : 'bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 border-gray-200 dark:border-gray-600 border'
+                }`
+              }
             >
               <div className="pr-8">
-                <div className="font-medium flex items-center gap-2">
+                <div className="font-medium flex items-center gap-2 text-gray-900 dark:text-gray-100">
                   {project.name}
                   {project.config?.ssh_host && (
-                    <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">SSH</span>
+                    <span className="text-xs bg-purple-100 text-purple-700 :bgpx-2 py-1 rounded">SSH</span>
                   )}
                 </div>
-                <div className="text-sm text-gray-600 truncate">
+                <div className="text-sm text-gray-600 dark:text-gray-300 truncate">
                   {project.config?.ssh_host ? (
                     <>
-                      <span className="text-purple-600">{project.config.ssh_host}</span>
-                      <span className="text-gray-500">:</span>
+                      <span className="text-purple-600 dark:text-purple-400">{project.config.ssh_host}</span>
+                      <span className="text-gray-500 dark:text-gray-400">:</span>
                       <span>{project.path}</span>
                     </>
                   ) : (
@@ -239,7 +239,7 @@ export function ProjectList() {
                   )}
                 </div>
                 {project.config?.current_branch && (
-                  <div className="text-xs text-blue-600 mt-1 flex items-center">
+                  <div className="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center">
                     <span className="mr-1">🌿</span>
                     {project.config.current_branch}
                   </div>
@@ -287,13 +287,13 @@ export function ProjectList() {
           </div>
         ))}
       </div>
-      
+
       <EditStartupScriptModal
         isOpen={!!editScriptProject}
         onClose={() => setEditScriptProject(null)}
         project={editScriptProject}
       />
-      
+
       <EditProjectModal
         isOpen={!!editProject}
         onClose={() => setEditProject(null)}

@@ -68,13 +68,13 @@ export function EditStartupScriptModal({ isOpen, onClose, project }: EditStartup
           </button>
           <button
             onClick={handleRunScript}
-            className="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-500"
+            className="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-500"
           >
             Run Script
           </button>
           <button
             onClick={onClose}
-            className="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-500"
+            className="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-500"
           >
             Cancel
           </button>
@@ -83,10 +83,10 @@ export function EditStartupScriptModal({ isOpen, onClose, project }: EditStartup
     >
       <div className="space-y-4">
         <div>
-          <p className="text-sm text-gray-600 mb-2">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
             This script runs when creating new sessions. Available environment variables:
           </p>
-          <ul className="text-xs text-gray-500 list-disc list-inside mb-4">
+          <ul className="text-xs text-gray-500 dark:text-gray-400 list-disc list-inside mb-4">
             <li>$PROJECT_PATH - Main project directory</li>
             <li>$WORKTREE_PATH - Session worktree directory</li>
             <li>$SESSION_NAME - Name of the session</li>
@@ -96,7 +96,7 @@ export function EditStartupScriptModal({ isOpen, onClose, project }: EditStartup
         <textarea
           value={script}
           onChange={(e) => setScript(e.target.value)}
-          className="w-full h-64 px-3 py-2 text-sm font-mono border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full h-64 px-3 py-2 text-sm font-mono border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
           placeholder="#!/bin/bash&#10;# Example: Install dependencies&#10;npm install&#10;&#10;# Copy environment file&#10;cp .env.example .env"
         />
       </div>

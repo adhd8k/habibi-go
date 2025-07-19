@@ -34,7 +34,7 @@ export function ProjectListView({
     return (
       <div className="p-4">
         <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+          <div className="h-4 bg-gray-200 bgrounded w-3/4 mb-2"></div>
           <div className="h-4 bg-gray-200 rounded w-1/2"></div>
         </div>
       </div>
@@ -52,7 +52,7 @@ export function ProjectListView({
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold">Projects</h2>
+        <h2 className="text-lg font-semibold dark:text-gray-100">Projects</h2>
         <div className="flex gap-2">
           <button
             onClick={() => {
@@ -76,8 +76,8 @@ export function ProjectListView({
       </div>
 
       {showCreateForm && (
-        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-          <CreateProjectForm 
+        <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 dark:border-gray-600 rounded-lg">
+          <CreateProjectForm
             onSuccess={() => setShowCreateForm(false)}
             onCancel={() => setShowCreateForm(false)}
           />
@@ -85,8 +85,8 @@ export function ProjectListView({
       )}
 
       {showSSHForm && (
-        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-          <h3 className="text-lg font-semibold mb-3">Add SSH Project</h3>
+        <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 dark:border-gray-600 rounded-lg">
+          <h3 className="text-lg font-semibold mb-3 dark:text-gray-100">Add SSH Project</h3>
           <AddSSHProjectForm
             onSuccess={() => setShowSSHForm(false)}
             onCancel={() => setShowSSHForm(false)}
@@ -101,25 +101,24 @@ export function ProjectListView({
             <p className="text-sm">Click "New Project" to get started</p>
           </div>
         )}
-        
+
         {projects.map((project) => (
           <div key={project.id} className="relative group">
             <button
               onClick={() => onSelectProject(project)}
-              className={`w-full text-left p-3 rounded-lg transition-colors ${
-                currentProject?.id === project.id
-                  ? 'bg-blue-100 border-blue-500 border'
-                  : 'bg-gray-50 hover:bg-gray-100 border-gray-200 border'
-              }`}
+              className={`w-full text-left p-3 rounded-lg transition-colors ${currentProject?.id === project.id
+                ? 'bg-blue-100 dark:bg-gray-700 border-blue-500 border'
+                : 'bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 border-gray-200 dark:border-gray-600 border'
+                }`}
             >
               <div className="pr-8">
-                <div className="font-medium flex items-center gap-2">
+                <div className="font-medium flex items-center gap-2 text-gray-800 dark:text-gray-100">
                   {project.name}
                   {project.config?.ssh_host && (
                     <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">SSH</span>
                   )}
                 </div>
-                <div className="text-sm text-gray-600 truncate">
+                <div className="text-sm text-gray-600 dark:text-gray-100 truncate">
                   {project.config?.ssh_host ? (
                     <>
                       <span className="text-purple-600">{project.config.ssh_host}</span>
@@ -179,13 +178,13 @@ export function ProjectListView({
           </div>
         ))}
       </div>
-      
+
       <EditProjectModal
         isOpen={!!editProject}
         onClose={() => setEditProject(null)}
         project={editProject}
       />
-      
+
       <EditStartupScriptModal
         isOpen={!!editScriptProject}
         onClose={() => setEditScriptProject(null)}

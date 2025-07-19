@@ -15,10 +15,10 @@ import { StoreSync } from '../shared/components/StoreSync'
 function Dashboard() {
   return (
     <div className="h-full flex flex-col lg:flex-row gap-4 lg:gap-6 p-4 lg:p-6">
-      <div className="w-full lg:w-96 bg-white rounded-lg shadow-sm flex-shrink-0">
+      <div className="w-full lg:w-96 bg-white rounded-lg shadow-sm flex-shrink-0 dark:bg-gray-800">
         <SessionManager />
       </div>
-      <div className="flex-1 bg-white rounded-lg shadow-sm flex min-h-0">
+      <div className="flex-1 bg-white rounded-lg shadow-sm flex min-h-0 dark:bg-gray-800">
         <SessionView />
       </div>
     </div>
@@ -34,11 +34,11 @@ function AppContent() {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
       const host = window.location.host
       const credentials = selectCredentials(store.getState())
-      
+
       if (credentials) {
         return `${protocol}//${credentials.username}:${credentials.password}@${host}/ws`
       }
-      
+
       return `${protocol}//${host}/ws`
     }
 
@@ -57,8 +57,8 @@ function AppContent() {
       <Layout
         sidebar={
           <div className="h-full flex flex-col">
-            <div className="p-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold">Navigation</h2>
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-lg font-semibold dark:text-gray-100">Navigation</h2>
             </div>
             <div className="flex-1 overflow-y-auto">
               <ProjectListContainer />

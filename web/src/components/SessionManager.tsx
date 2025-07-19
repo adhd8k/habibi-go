@@ -15,7 +15,7 @@ function SessionInProgressTask({ sessionId }: { sessionId: number }) {
   if (!inProgressTask) return null
   
   return (
-    <div className="text-xs text-blue-600 mt-1 flex items-center gap-1">
+    <div className="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1">
       <span className="animate-pulse">🔄</span>
       <span className="truncate">{inProgressTask}</span>
     </div>
@@ -130,7 +130,7 @@ export function SessionManager() {
 
   if (!currentProject) {
     return (
-      <div className="p-4 text-gray-500">
+      <div className="p-4 text-gray-500 dark:text-gray-400">
         Select a project to view sessions
       </div>
     )
@@ -139,7 +139,7 @@ export function SessionManager() {
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold">Sessions</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Sessions</h2>
         <button
           onClick={() => setShowCreateForm(!showCreateForm)}
           className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
@@ -149,23 +149,23 @@ export function SessionManager() {
       </div>
 
       {showCreateForm && (
-        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+        <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
           <input
             type="text"
             placeholder="Session name"
             value={newSession.session_name}
             onChange={(e) => setNewSession({ ...newSession, session_name: e.target.value })}
-            className="w-full p-2 border rounded mb-2"
+            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded mb-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
           />
           <input
             type="text"
             placeholder="Branch name"
             value={newSession.branch_name}
             onChange={(e) => setNewSession({ ...newSession, branch_name: e.target.value })}
-            className="w-full p-2 border rounded mb-2"
+            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded mb-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
           />
           <div className="relative mb-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Base Branch
             </label>
             <input
@@ -175,13 +175,13 @@ export function SessionManager() {
               onChange={(e) => setNewSession({ ...newSession, base_branch: e.target.value })}
               onFocus={() => setShowBranchSuggestions(true)}
               onBlur={() => setTimeout(() => setShowBranchSuggestions(false), 200)}
-              className="w-full p-2 border rounded"
+              className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
             />
             {showBranchSuggestions && branches && (
-              <div className="absolute z-10 w-full mt-1 bg-white border rounded shadow-lg max-h-48 overflow-y-auto">
+              <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg max-h-48 overflow-y-auto">
                 {branches.local.length > 0 && (
                   <>
-                    <div className="px-3 py-1 text-xs font-semibold text-gray-500 bg-gray-50">
+                    <div className="px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700">
                       Local Branches
                     </div>
                     {branches.local.map((branch: string) => (
@@ -192,9 +192,9 @@ export function SessionManager() {
                           setNewSession({ ...newSession, base_branch: branch })
                           setShowBranchSuggestions(false)
                         }}
-                        className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center gap-2"
+                        className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-900 dark:text-gray-100"
                       >
-                        <span className="text-blue-600">●</span>
+                        <span className="text-blue-600 dark:text-blue-400">●</span>
                         {branch}
                       </button>
                     ))}
@@ -202,7 +202,7 @@ export function SessionManager() {
                 )}
                 {branches.remote.length > 0 && (
                   <>
-                    <div className="px-3 py-1 text-xs font-semibold text-gray-500 bg-gray-50">
+                    <div className="px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700">
                       Remote Branches
                     </div>
                     {branches.remote.map((branch: string) => (
@@ -213,22 +213,22 @@ export function SessionManager() {
                           setNewSession({ ...newSession, base_branch: branch })
                           setShowBranchSuggestions(false)
                         }}
-                        className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center gap-2"
+                        className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-900 dark:text-gray-100"
                       >
-                        <span className="text-green-600">●</span>
+                        <span className="text-green-600 dark:text-green-400">●</span>
                         {branch}
                       </button>
                     ))}
                   </>
                 )}
                 {branches.local.length === 0 && branches.remote.length === 0 && (
-                  <div className="px-3 py-2 text-sm text-gray-500">
+                  <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
                     No branches found
                   </div>
                 )}
               </div>
             )}
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               The branch to create your new branch from
             </p>
           </div>
@@ -245,7 +245,7 @@ export function SessionManager() {
                 setShowCreateForm(false)
                 setNewSession({ session_name: '', branch_name: '', base_branch: 'main' })
               }}
-              className="px-3 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 text-sm"
+              className="px-3 py-1 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-400 dark:hover:bg-gray-500 text-sm"
             >
               Cancel
             </button>
@@ -255,8 +255,8 @@ export function SessionManager() {
 
       {isLoading ? (
         <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
         </div>
       ) : (
         <div className="space-y-2">
@@ -274,15 +274,15 @@ export function SessionManager() {
                 }}
                 className={`w-full text-left p-3 rounded-lg transition-colors ${
                   currentSession?.id === session.id
-                    ? 'bg-green-100 border-green-500 border'
-                    : 'bg-gray-50 hover:bg-gray-100 border-gray-200 border'
+                    ? 'bg-green-100 dark:bg-green-900 border-green-500 border'
+                    : 'bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 border-gray-200 dark:border-gray-600 border'
                 }`}
               >
                 <div className="flex justify-between items-start pr-8">
                   <div className="flex items-center gap-2">
                     <div>
-                      <div className="font-medium">{session.name}</div>
-                      <div className="text-sm text-gray-600">{session.branch_name}</div>
+                      <div className="font-medium text-gray-900 dark:text-gray-100">{session.name}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-300">{session.branch_name}</div>
                       <SessionInProgressTask sessionId={session.id} />
                     </div>
                     {/* Activity indicator */}
@@ -296,9 +296,9 @@ export function SessionManager() {
                     )}
                   </div>
                   <span className={`text-xs px-2 py-1 rounded ${
-                    session.status === 'active' ? 'bg-green-200 text-green-800' :
-                    session.status === 'paused' ? 'bg-yellow-200 text-yellow-800' :
-                    'bg-gray-200 text-gray-800'
+                    session.status === 'active' ? 'bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200' :
+                    session.status === 'paused' ? 'bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200' :
+                    'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
                   }`}>
                     {session.status}
                   </span>
