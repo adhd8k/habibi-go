@@ -5,18 +5,30 @@ import { store } from './store'
 import { useAppDispatch } from './hooks'
 import { websocketConnect } from './middleware/websocket'
 import { AuthModal } from '../features/auth/components/AuthModal'
-import { ProjectListContainer } from '../features/projects/components/ProjectListContainer'
 import { Layout } from '../components/Layout'
+import { ProjectManager } from '../components/ProjectManager'
 import { SessionManager } from '../components/SessionManager'
 import { SessionView } from '../components/SessionView'
 import { selectCredentials } from '../features/auth/slice/authSlice'
 import { StoreSync } from '../shared/components/StoreSync'
+import { useAppStore } from '../store'
 
 function Dashboard() {
+  const { currentProject } = useAppStore()
+
   return (
     <div className="h-full flex flex-col lg:flex-row gap-4 lg:gap-6 p-4 lg:p-6">
-      <div className="w-full lg:w-96 bg-white rounded-lg shadow-sm flex-shrink-0 dark:bg-gray-800">
-        <SessionManager />
+      <div className="w-full lg:w-96 bg-white rounded-lg shadow-sm flex-shrink-0 dark:bg-gray-800 flex flex-col">
+        <div className={`transition-all duration-300 ease-in-out ${currentProject ? 'flex-shrink-0' : 'flex-1'}`}>
+          <ProjectManager />
+        </div>
+        <div className={`transition-all duration-300 ease-in-out overflow-hidden ${
+          currentProject 
+            ? 'flex-1 border-t border-gray-200 dark:border-gray-700' 
+            : 'max-h-0 opacity-0'
+        }`}>
+          <SessionManager />
+        </div>
       </div>
       <div className="flex-1 bg-white rounded-lg shadow-sm flex min-h-0 dark:bg-gray-800">
         <SessionView />
@@ -54,18 +66,7 @@ function AppContent() {
     <>
       <StoreSync />
       <AuthModal />
-      <Layout
-        sidebar={
-          <div className="h-full flex flex-col">
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-semibold dark:text-gray-100">Navigation</h2>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              <ProjectListContainer />
-            </div>
-          </div>
-        }
-      >
+      <Layout>
         <Routes>
           <Route path="/" element={<Dashboard />} />
         </Routes>

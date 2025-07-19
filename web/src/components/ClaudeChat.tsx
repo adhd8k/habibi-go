@@ -81,20 +81,20 @@ export function ClaudeChat() {
         console.log('Processing claude_output for session:', currentSession.id)
         const data = message.data
         const contentType = data.content_type || 'text'
-        
+
         setMessages(prev => {
           switch (contentType) {
             case 'text': {
               const output = data.output
               const isChunk = data.is_chunk !== false // Default to true for backward compatibility
               const dbMessageId = data.db_message_id
-              
+
               if (!output) return prev
-              
+
               // If this is a chunk, append to last assistant message
               if (isChunk) {
                 const lastMessage = prev[prev.length - 1]
-                
+
                 if (lastMessage && lastMessage.role === 'assistant') {
                   return [
                     ...prev.slice(0, -1),
@@ -104,7 +104,7 @@ export function ClaudeChat() {
                     }
                   ]
                 }
-                
+
                 // Start a new assistant message
                 return [
                   ...prev,
@@ -140,7 +140,7 @@ export function ClaudeChat() {
                 }
               }
             }
-            
+
             case 'tool_use': {
               return [
                 ...prev,
@@ -155,7 +155,7 @@ export function ClaudeChat() {
                 }
               ]
             }
-            
+
             case 'tool_result': {
               return [
                 ...prev,
@@ -169,43 +169,43 @@ export function ClaudeChat() {
                 }
               ]
             }
-            
+
             default:
               return prev
           }
         })
       }
     }
-    
+
     const handleResponseComplete = (message: any) => {
       if (message.data && message.data.session_id === currentSession?.id) {
         setIsProcessing(false)
-        
+
         // Play notification sound when Claude responds
         if (getNotificationsEnabled()) {
           playNotificationSound()
         }
       }
     }
-    
+
     const handleNewMessage = (message: any) => {
       if (message.data && message.data.session_id === currentSession.id && message.data.message) {
         const { role, content, id, created_at, tool_name, tool_input, tool_use_id, tool_content } = message.data.message
-        
+
         setMessages(prev => {
           // For user messages, check if already exists to prevent duplicates
           if (role === 'user') {
-            const exists = prev.some(m => m.content === content && m.role === 'user' && 
+            const exists = prev.some(m => m.content === content && m.role === 'user' &&
               Math.abs(new Date(m.timestamp).getTime() - Date.now()) < 5000) // within 5 seconds
             if (exists) return prev
           }
-          
+
           // For assistant messages, check if we already have it from streaming
           if (role === 'assistant') {
             const exists = prev.some(m => m.role === 'assistant' && m.id === id?.toString())
             if (exists) return prev
           }
-          
+
           return [...prev, {
             id: id?.toString() || Date.now().toString(),
             role: role as 'user' | 'assistant' | 'tool_use' | 'tool_result',
@@ -219,7 +219,7 @@ export function ClaudeChat() {
         })
       }
     }
-    
+
     // Register handlers
     console.log('Registering WebSocket handlers for session:', currentSession.id)
     wsClient.on('claude_output', handleClaudeOutput)
@@ -238,7 +238,7 @@ export function ClaudeChat() {
       if (!currentSession) {
         throw new Error('No session selected')
       }
-      
+
       // Immediately add user message to UI for instant feedback
       const userMessage: Message = {
         id: Date.now().toString(),
@@ -246,9 +246,9 @@ export function ClaudeChat() {
         content: message,
         timestamp: new Date()
       }
-      
+
       setMessages(prev => [...prev, userMessage])
-      
+
       // Send via WebSocket
       return new Promise((resolve, reject) => {
         const handleResponse = (msg: any) => {
@@ -262,10 +262,10 @@ export function ClaudeChat() {
             reject(new Error(msg.data?.error || 'Failed to send message'))
           }
         }
-        
+
         wsClient.on('chat_sent', handleResponse)
         wsClient.on('error', handleResponse)
-        
+
         // Send chat message
         wsClient.send({
           type: 'session_chat',
@@ -274,7 +274,7 @@ export function ClaudeChat() {
             message: message
           }
         })
-        
+
         // Timeout after 10 seconds
         setTimeout(() => {
           wsClient.off('chat_sent')
@@ -293,25 +293,25 @@ export function ClaudeChat() {
 
   const handleSend = () => {
     if (!input.trim() || isProcessing) return
-    
+
     const messageToSend = input.trim()
     sendMessage.mutate(messageToSend)
     setInput('')
   }
 
   // Filter messages based on show/hide tool messages setting
-  const filteredMessages = messages.filter(msg => 
+  const filteredMessages = messages.filter(msg =>
     showToolMessages || (msg.role !== 'tool_use' && msg.role !== 'tool_result')
   )
-  
+
   // Count hidden tool messages between visible messages
   const getHiddenToolCount = (index: number): number => {
     if (showToolMessages) return 0
-    
+
     let count = 0
     const startIndex = index === 0 ? 0 : messages.indexOf(filteredMessages[index - 1]) + 1
     const endIndex = messages.indexOf(filteredMessages[index])
-    
+
     for (let i = startIndex; i < endIndex; i++) {
       if (messages[i].role === 'tool_use' || messages[i].role === 'tool_result') {
         count++
@@ -337,16 +337,15 @@ export function ClaudeChat() {
         <h3 className="font-medium text-gray-900 dark:text-gray-100">Claude Chat</h3>
         <button
           onClick={() => setShowToolMessages(!showToolMessages)}
-          className={`text-xs px-2 py-1 rounded ${
-            showToolMessages 
-              ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' 
-              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
-          }`}
+          className={`text-xs px-2 py-1 rounded ${showToolMessages
+            ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+            : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+            }`}
         >
           {showToolMessages ? 'Hide Tools' : 'Show Tools'}
         </button>
       </div>
-      
+
       <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4 w-full max-w-full">
         {filteredMessages.length === 0 && (
           <div className="text-center text-gray-500 dark:text-gray-400 mt-8">
@@ -354,10 +353,10 @@ export function ClaudeChat() {
             <p className="text-sm">Type a message below to begin</p>
           </div>
         )}
-        
+
         {filteredMessages.map((message, index) => {
           const hiddenToolCount = getHiddenToolCount(index)
-          
+
           return (
             <React.Fragment key={message.id}>
               {hiddenToolCount > 0 && !showToolMessages && (
@@ -371,26 +370,23 @@ export function ClaudeChat() {
                 </div>
               )}
               <div
-                className={`flex min-w-0 w-full max-w-full ${
-                  message.role === 'user' ? 'justify-end' : 
+                className={`flex min-w-0 w-full max-w-full ${message.role === 'user' ? 'justify-end' :
                   message.role === 'tool_use' || message.role === 'tool_result' ? 'justify-center' :
-                  'justify-start'
-                }`}
+                    'justify-start'
+                  }`}
               >
                 <div
-                  className={`max-w-lg min-w-0 w-auto rounded-lg p-3 overflow-hidden word-wrap break-words ${
-                    message.role === 'user'
-                      ? 'bg-blue-500 dark:bg-blue-600 text-white'
-                      : message.role === 'tool_use'
+                  className={`max-w-2xl min-w-0 w-auto rounded-lg p-3 overflow-hidden word-wrap break-words ${message.role === 'user'
+                    ? 'bg-blue-500 dark:bg-blue-600 text-white'
+                    : message.role === 'tool_use'
                       ? 'bg-amber-50 dark:bg-amber-900 border border-amber-200 dark:border-amber-700 text-amber-900 dark:text-amber-100'
-                      : message.role === 'tool_result'  
-                      ? 'bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 text-green-900 dark:text-green-100'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
-                  }`}
-                  style={{ 
-                    maxWidth: '28rem', 
-                    width: 'auto', 
-                    wordBreak: 'break-word', 
+                      : message.role === 'tool_result'
+                        ? 'bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 text-green-900 dark:text-green-100'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+                    }`}
+                  style={{
+                    width: 'auto',
+                    wordBreak: 'break-word',
                     overflowWrap: 'anywhere'
                   }}
                 >
@@ -403,8 +399,8 @@ export function ClaudeChat() {
                         <span className="font-medium">{message.toolName}</span>
                       </div>
                       {message.toolInput && (
-                        <div className="text-xs bg-amber-100 dark:bg-amber-800 text-amber-900 dark:text-amber-100 p-2 rounded overflow-hidden">
-                          <pre className="whitespace-pre-wrap break-words overflow-wrap-anywhere">
+                        <div className="text-xs bg-amber-100 dark:bg-amber-800 text-amber-900 dark:text-amber-100 p-2 rounded overflow-x-auto">
+                          <pre className="whitespace-pre-wrap break-words" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                             {JSON.stringify(message.toolInput, null, 2)}
                           </pre>
                         </div>
@@ -416,10 +412,10 @@ export function ClaudeChat() {
                         <span className="text-xs font-medium bg-green-200 dark:bg-green-800 text-green-900 dark:text-green-100 px-2 py-1 rounded">✅ Tool Result</span>
                       </div>
                       {message.toolContent && (
-                        <div className="text-xs bg-green-100 dark:bg-green-800 text-green-900 dark:text-green-100 p-2 rounded overflow-hidden max-h-48">
-                          <pre className="whitespace-pre-wrap break-words overflow-wrap-anywhere overflow-y-auto">
-                            {typeof message.toolContent === 'string' 
-                              ? message.toolContent 
+                        <div className="text-xs bg-green-100 dark:bg-green-800 text-green-900 dark:text-green-100 p-2 rounded overflow-x-auto max-h-48">
+                          <pre className="whitespace-pre-wrap break-words overflow-y-auto" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+                            {typeof message.toolContent === 'string'
+                              ? message.toolContent
                               : JSON.stringify(message.toolContent, null, 2)}
                           </pre>
                         </div>
@@ -427,22 +423,22 @@ export function ClaudeChat() {
                     </div>
                   ) : (
                     <div className="prose prose-sm max-w-none dark:prose-invert overflow-hidden">
-                      <ReactMarkdown 
+                      <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={{
                           pre: ({ ...props }) => (
-                            <div className="bg-gray-800 dark:bg-gray-900 text-gray-100 p-2 rounded overflow-hidden text-sm">
-                              <pre className="whitespace-pre-wrap text-xs" {...props} />
+                            <div className="bg-gray-800 dark:bg-gray-900 text-gray-100 p-2 rounded overflow-x-auto text-sm">
+                              <pre className="whitespace-pre-wrap text-xs break-words" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }} {...props} />
                             </div>
                           ),
                           code: ({ className, children, ...props }) => {
                             const match = /language-(\w+)/.exec(className || '')
                             return match ? (
-                              <code className="bg-gray-800 dark:bg-gray-900 text-gray-100 text-xs" {...props}>
+                              <code className="bg-gray-800 dark:bg-gray-900 text-gray-100 text-xs break-words" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }} {...props}>
                                 {children}
                               </code>
                             ) : (
-                              <code className="bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-1 rounded text-xs" {...props}>
+                              <code className="bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-1 rounded text-xs break-words" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }} {...props}>
                                 {children}
                               </code>
                             )
@@ -453,12 +449,11 @@ export function ClaudeChat() {
                       </ReactMarkdown>
                     </div>
                   )}
-                  <div className={`text-xs mt-1 ${
-                    message.role === 'user' ? 'text-blue-100 dark:text-blue-200' : 
+                  <div className={`text-xs mt-1 ${message.role === 'user' ? 'text-blue-100 dark:text-blue-200' :
                     message.role === 'tool_use' ? 'text-amber-600 dark:text-amber-400' :
-                    message.role === 'tool_result' ? 'text-green-600 dark:text-green-400' :
-                    'text-gray-500 dark:text-gray-400'
-                  }`}>
+                      message.role === 'tool_result' ? 'text-green-600 dark:text-green-400' :
+                        'text-gray-500 dark:text-gray-400'
+                    }`}>
                     {message.timestamp.toLocaleTimeString()}
                   </div>
                 </div>
@@ -466,7 +461,7 @@ export function ClaudeChat() {
             </React.Fragment>
           )
         })}
-        
+
         {/* Show hidden tools at the end if any */}
         {!showToolMessages && filteredMessages.length > 0 && (() => {
           const lastFilteredIndex = messages.indexOf(filteredMessages[filteredMessages.length - 1])
@@ -487,7 +482,7 @@ export function ClaudeChat() {
             </div>
           ) : null
         })()}
-        
+
         {isProcessing && (
           <div className="flex justify-start">
             <div className="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg p-3">
@@ -499,10 +494,10 @@ export function ClaudeChat() {
             </div>
           </div>
         )}
-        
+
         <div ref={messagesEndRef} />
       </div>
-      
+
       <div className="border-t border-gray-200 dark:border-gray-700 p-4">
         <div className="flex gap-2 items-end">
           <textarea

@@ -8,7 +8,6 @@ interface AppState {
   currentSession: Session | null
   
   // UI state
-  sidebarOpen: boolean
   isSessionLoading: boolean
   sessionError: string | null
   darkMode: boolean
@@ -19,7 +18,6 @@ interface AppState {
   // Actions
   setCurrentProject: (project: Project | null) => void
   setCurrentSession: (session: Session | null) => void
-  setSidebarOpen: (open: boolean) => void
   setSessionLoading: (loading: boolean) => void
   setSessionError: (error: string | null) => void
   setDarkMode: (enabled: boolean) => void
@@ -43,7 +41,6 @@ export const useAppStore = create<AppState>()(
     // Initial state
     currentProject: null,
     currentSession: null,
-    sidebarOpen: true,
     isSessionLoading: false,
     sessionError: null,
     darkMode: initializeDarkMode(),
@@ -60,7 +57,6 @@ export const useAppStore = create<AppState>()(
       }
     },
     
-    setSidebarOpen: (open) => set({ sidebarOpen: open }),
     setSessionLoading: (loading) => set({ isSessionLoading: loading }),
     setSessionError: (error) => set({ sessionError: error }),
     setDarkMode: (enabled) => {

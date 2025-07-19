@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { Layout } from './components/Layout'
-import { ProjectList } from './components/ProjectList'
 import { SessionManager } from './components/SessionManager'
 import { SessionView } from './components/SessionView'
 import { wsClient } from './api/websocket'
@@ -34,18 +33,7 @@ function App() {
   }, [])
 
   return (
-    <Layout
-      sidebar={
-        <div className="h-full flex flex-col">
-          <div className="p-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold">Navigation</h2>
-          </div>
-          <div className="flex-1 overflow-y-auto">
-            <ProjectList />
-          </div>
-        </div>
-      }
-    >
+    <Layout>
       <Routes>
         <Route path="/" element={<Dashboard />} />
       </Routes>

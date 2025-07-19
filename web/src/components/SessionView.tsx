@@ -60,7 +60,7 @@ export function SessionView() {
     <div className="h-full w-full flex flex-col">
       {/* Tab Headers */}
       <div className="border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
-        <nav className="flex -mb-px min-w-full">
+        <nav className="flex min-w-full">
           {tabs.map((tab) => (
             <button
               key={tab.id}

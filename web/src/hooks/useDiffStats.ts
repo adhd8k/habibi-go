@@ -19,6 +19,5 @@ export function useDiffStats(sessionId?: number) {
       return stats
     },
     enabled: !!sessionId,
-    refetchInterval: 5000, // Refresh every 5 seconds
   })
 }

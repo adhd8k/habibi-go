@@ -11,11 +11,11 @@ import { useRunStartupScriptMutation } from '../features/sessions/api/sessionsAp
 // Component to show in-progress task for a session
 function SessionInProgressTask({ sessionId }: { sessionId: number }) {
   const { inProgressTask } = useSessionTodos(sessionId)
-  
+
   if (!inProgressTask) return null
-  
+
   return (
-    <div className="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1">
+    <div className="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1 overflow-hidden">
       <span className="animate-pulse">🔄</span>
       <span className="truncate">{inProgressTask}</span>
     </div>
@@ -40,7 +40,7 @@ export function SessionManager() {
     const handleTodoUpdate = () => {
       setUpdateTrigger(prev => prev + 1)
     }
-    
+
     wsClient.on('claude_output', handleTodoUpdate)
     return () => {
       wsClient.off('claude_output', handleTodoUpdate)
@@ -86,10 +86,10 @@ export function SessionManager() {
       queryClient.invalidateQueries({ queryKey: ['sessions'] })
       setShowCreateForm(false)
       setNewSession({ session_name: '', branch_name: '', base_branch: 'main' })
-      
+
       // Extract session data from response
       const session = (response as any).data || response
-      
+
       // Set the new session as current
       setCurrentSession(session)
     },
@@ -119,7 +119,7 @@ export function SessionManager() {
 
   const handleCreateSession = () => {
     if (!currentProject || !newSession.session_name || !newSession.branch_name) return
-    
+
     createMutation.mutate({
       project_id: currentProject.id,
       name: newSession.session_name,
@@ -130,15 +130,17 @@ export function SessionManager() {
 
   if (!currentProject) {
     return (
-      <div className="p-4 text-gray-500 dark:text-gray-400">
-        Select a project to view sessions
+      <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+        <div className="text-sm">
+          Select a project above to view sessions
+        </div>
       </div>
     )
   }
 
   return (
     <div className="p-4">
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between mb-4">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Sessions</h2>
         <button
           onClick={() => setShowCreateForm(!showCreateForm)}
@@ -272,11 +274,10 @@ export function SessionManager() {
                     queryClient.invalidateQueries({ queryKey: ['sessions'] })
                   }
                 }}
-                className={`w-full text-left p-3 rounded-lg transition-colors ${
-                  currentSession?.id === session.id
-                    ? 'bg-green-100 dark:bg-green-900 border-green-500 border'
-                    : 'bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 border-gray-200 dark:border-gray-600 border'
-                }`}
+                className={`w-full text-left p-3 rounded-lg transition-colors ${currentSession?.id === session.id
+                  ? 'bg-green-100 dark:bg-green-900 border-green-500 border'
+                  : 'bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 border-gray-200 dark:border-gray-600 border'
+                  }`}
               >
                 <div className="flex justify-between items-start pr-8">
                   <div className="flex items-center gap-2">
@@ -287,19 +288,17 @@ export function SessionManager() {
                     </div>
                     {/* Activity indicator */}
                     {session.activity_status && session.activity_status !== 'idle' && (
-                      <div className={`w-2 h-2 rounded-full ${
-                        session.activity_status === 'streaming' ? 'bg-yellow-500 animate-pulse' :
+                      <div className={`w-2 h-2 rounded-full ${session.activity_status === 'streaming' ? 'bg-yellow-500 animate-pulse' :
                         session.activity_status === 'new' ? 'bg-green-500' :
-                        session.activity_status === 'viewed' ? 'bg-blue-500' :
-                        'bg-gray-400'
-                      }`} title={`Activity: ${session.activity_status}`} />
+                          session.activity_status === 'viewed' ? 'bg-blue-500' :
+                            'bg-gray-400'
+                        }`} title={`Activity: ${session.activity_status}`} />
                     )}
                   </div>
-                  <span className={`text-xs px-2 py-1 rounded ${
-                    session.status === 'active' ? 'bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200' :
+                  <span className={`text-xs px-2 py-1 rounded ${session.status === 'active' ? 'bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200' :
                     session.status === 'paused' ? 'bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200' :
-                    'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
-                  }`}>
+                      'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+                    }`}>
                     {session.status}
                   </span>
                 </div>
