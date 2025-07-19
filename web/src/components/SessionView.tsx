@@ -57,7 +57,7 @@ export function SessionView() {
   ]
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full w-full flex flex-col">
       {/* Tab Headers */}
       <div className="border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
         <nav className="flex -mb-px min-w-full">

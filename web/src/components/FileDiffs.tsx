@@ -56,7 +56,7 @@ export function FileDiffs() {
   const hasChanges = diffFiles.length > 0
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full w-full flex flex-col">
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex justify-between items-center">
           <div>
@@ -106,7 +106,7 @@ export function FileDiffs() {
                       text-xs px-2 py-1 rounded font-medium
                       ${file.status === 'added' ? 'bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200' :
                         file.status === 'deleted' ? 'bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-200' :
-                        'bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200'}
+                          'bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200'}
                     `}>
                       {file.status}
                     </span>

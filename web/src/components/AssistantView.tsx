@@ -14,7 +14,7 @@ export function AssistantView() {
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full w-full flex flex-col">
       {/* Top section with Todo List */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="max-h-64 overflow-y-auto">
@@ -22,7 +22,7 @@ export function AssistantView() {
           <TodoList />
         </div>
       </div>
-      
+
       {/* Chat area below */}
       <div className="flex-1 overflow-hidden">
         <ClaudeChat />
