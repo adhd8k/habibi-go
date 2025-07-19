@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { projectsApi } from '../api/client'
+import { projectsApi, sessionsApi } from '../api/client'
 import { useAppStore } from '../store'
 import { Project } from '../types'
 import { DropdownMenu } from './ui/DropdownMenu'
@@ -32,6 +32,38 @@ export function ProjectManager() {
       // Fallback to direct array if API format changes
       return Array.isArray(response.data) ? response.data : []
     },
+  })
+
+  // Fetch session counts for all projects
+  const { data: sessionCounts } = useQuery({
+    queryKey: ['session-counts', projects?.map((p: Project) => p.id)],
+    queryFn: async () => {
+      if (!projects || projects.length === 0) return {}
+      
+      const counts: Record<number, number> = {}
+      
+      // Fetch sessions for each project in parallel
+      const sessionPromises = projects.map(async (project: Project) => {
+        try {
+          const response = await sessionsApi.list(project.id)
+          const data = response.data as any
+          let sessions = []
+          if (data && data.data && Array.isArray(data.data)) {
+            sessions = data.data
+          } else if (Array.isArray(response.data)) {
+            sessions = response.data
+          }
+          counts[project.id] = sessions.length
+        } catch (error) {
+          console.error(`Failed to fetch sessions for project ${project.id}:`, error)
+          counts[project.id] = 0
+        }
+      })
+      
+      await Promise.all(sessionPromises)
+      return counts
+    },
+    enabled: !!projects && projects.length > 0,
   })
 
 
@@ -140,9 +172,23 @@ export function ProjectManager() {
                     )}
                   </div>
                   {project.config?.current_branch && (
-                    <div className="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center">
-                      <span className="mr-1">🌿</span>
-                      {project.config.current_branch}
+                    <div className="text-xs mt-1 flex items-center justify-between">
+                      <div className="flex items-center text-blue-600 dark:text-blue-400">
+                        <span className="mr-1">🌿</span>
+                        {project.config.current_branch}
+                      </div>
+                      {sessionCounts && (
+                        <div className="flex items-center text-gray-500 dark:text-gray-400">
+                          <span className="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
+                          {sessionCounts[project.id] || 0} session{(sessionCounts[project.id] || 0) !== 1 ? 's' : ''}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {!project.config?.current_branch && sessionCounts && (
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center">
+                      <span className="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
+                      {sessionCounts[project.id] || 0} session{(sessionCounts[project.id] || 0) !== 1 ? 's' : ''}
                     </div>
                   )}
                 </div>
