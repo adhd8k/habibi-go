@@ -73,6 +73,7 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 		projects.POST("/discover", r.projectHandler.DiscoverProjects)
 		projects.GET("/stats", r.projectHandler.GetProjectStats)
 		projects.POST("/:id/run-startup-script", r.projectHandler.RunStartupScript)
+		projects.GET("/file", r.projectHandler.GetProjectFile)
 	}
 
 	// Sessions routes
@@ -136,6 +137,7 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 			v1Projects.POST("/discover", r.projectHandler.DiscoverProjects)
 			v1Projects.GET("/stats", r.projectHandler.GetProjectStats)
 			v1Projects.POST("/:id/run-startup-script", r.projectHandler.RunStartupScript)
+			v1Projects.GET("/file", r.projectHandler.GetProjectFile)
 		}
 
 		// Sessions routes

@@ -1,8 +1,12 @@
 package handlers
 
 import (
+	"io/ioutil"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"habibi-go/internal/models"
@@ -269,4 +273,51 @@ func (h *ProjectHandler) GetProjectBranches(c *gin.Context) {
 		"success": true,
 		"data":    branches,
 	})
+}
+
+func (h *ProjectHandler) GetProjectFile(c *gin.Context) {
+	projectPath := c.Query("path")
+	filename := c.Query("file")
+	
+	if projectPath == "" || filename == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "Missing path or file parameter",
+		})
+		return
+	}
+
+	// Security: Only allow reading files in the project directory
+	// and prevent directory traversal attacks
+	if strings.Contains(filename, "..") || strings.Contains(filename, "/") || strings.Contains(filename, "\\") {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "Invalid filename",
+		})
+		return
+	}
+
+	filePath := filepath.Join(projectPath, filename)
+	
+	// Check if file exists and is readable
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		c.JSON(http.StatusNotFound, gin.H{
+			"success": false,
+			"error":   "File not found",
+		})
+		return
+	}
+
+	// Read file content
+	content, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   "Failed to read file",
+		})
+		return
+	}
+
+	// Return as plain text
+	c.Data(http.StatusOK, "text/plain; charset=utf-8", content)
 }

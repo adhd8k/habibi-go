@@ -177,18 +177,18 @@ export function ProjectManager() {
                         <span className="mr-1">🌿</span>
                         {project.config.current_branch}
                       </div>
-                      {sessionCounts && (
+                      {sessionCounts && (sessionCounts[project.id] || 0) > 0 && (
                         <div className="flex items-center text-gray-500 dark:text-gray-400">
                           <span className="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
-                          {sessionCounts[project.id] || 0} session{(sessionCounts[project.id] || 0) !== 1 ? 's' : ''}
+                          {sessionCounts[project.id]} session{sessionCounts[project.id] !== 1 ? 's' : ''}
                         </div>
                       )}
                     </div>
                   )}
-                  {!project.config?.current_branch && sessionCounts && (
+                  {!project.config?.current_branch && sessionCounts && (sessionCounts[project.id] || 0) > 0 && (
                     <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center">
                       <span className="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
-                      {sessionCounts[project.id] || 0} session{(sessionCounts[project.id] || 0) !== 1 ? 's' : ''}
+                      {sessionCounts[project.id]} session{sessionCounts[project.id] !== 1 ? 's' : ''}
                     </div>
                   )}
                 </div>

@@ -15,10 +15,10 @@ function SessionInProgressTask({ sessionId }: { sessionId: number }) {
   if (!inProgressTask) return null
 
   return (
-    <div className="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1 overflow-hidden">
+    <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1 overflow-hidden truncate">
       <span className="animate-pulse">🔄</span>
-      <span className="truncate">{inProgressTask}</span>
-    </div>
+      {inProgressTask.length > 25 ? inProgressTask.slice(0, 25) + '...' : inProgressTask}
+    </p>
   )
 }
 
@@ -289,11 +289,6 @@ export function SessionManager() {
               >
                 <div className="flex justify-between items-start pr-8">
                   <div className="flex items-center gap-2">
-                    <div>
-                      <div className="font-medium text-gray-900 dark:text-gray-100">{session.name}</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-300">{session.branch_name}</div>
-                      <SessionInProgressTask sessionId={session.id} />
-                    </div>
                     {/* Activity indicator */}
                     {session.activity_status && session.activity_status !== 'idle' && (
                       <div className={`w-2 h-2 rounded-full ${session.activity_status === 'streaming' ? 'bg-yellow-500 animate-pulse' :
@@ -302,13 +297,12 @@ export function SessionManager() {
                             'bg-gray-400'
                         }`} title={`Activity: ${session.activity_status}`} />
                     )}
+                    <div>
+                      <div className="font-medium text-gray-900 dark:text-gray-100">{session.name}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-300">{session.branch_name}</div>
+                      <SessionInProgressTask sessionId={session.id} />
+                    </div>
                   </div>
-                  <span className={`text-xs px-2 py-1 rounded ${session.status === 'active' ? 'bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200' :
-                    session.status === 'paused' ? 'bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200' :
-                      'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
-                    }`}>
-                    {session.status}
-                  </span>
                 </div>
               </button>
               <div className="absolute top-3 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
