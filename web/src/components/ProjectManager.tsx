@@ -16,6 +16,9 @@ export function ProjectManager() {
   const [showSSHModal, setShowSSHModal] = useState(false)
   const [editProject, setEditProject] = useState<Project | null>(null)
   const [editScriptProject, setEditScriptProject] = useState<Project | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [isCollapsed, setIsCollapsed] = useState(false)
+  const itemsPerPage = 5
 
   const { data: projects, isLoading } = useQuery({
     queryKey: ['projects'],
@@ -57,10 +60,33 @@ export function ProjectManager() {
     // We could optionally set the newly created project as current here
   }
 
+  // Calculate pagination
+  const displayProjects = isCollapsed && currentProject 
+    ? [currentProject] 
+    : (projects || [])
+  
+  const totalPages = Math.ceil(displayProjects.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentProjects = displayProjects.slice(startIndex, endIndex)
+
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Projects</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Projects</h2>
+          {currentProject && (
+            <button
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              title={isCollapsed ? "Show all projects" : "Show only active project"}
+            >
+              <svg className={`w-4 h-4 transition-transform ${isCollapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          )}
+        </div>
         <div className="flex gap-2">
           <button
             onClick={() => setShowCreateModal(true)}
@@ -85,7 +111,7 @@ export function ProjectManager() {
         </div>
       ) : (
         <div className="space-y-2">
-          {projects?.map((project: Project) => (
+          {currentProjects.map((project: Project) => (
             <div key={project.id} className="relative group">
               <button
                 onClick={() => handleProjectSelect(project)}
@@ -161,6 +187,29 @@ export function ProjectManager() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {!isCollapsed && totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 mt-4">
+          <button
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Previous
+          </button>
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            Page {currentPage} of {totalPages}
+          </span>
+          <button
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Next
+          </button>
         </div>
       )}
 

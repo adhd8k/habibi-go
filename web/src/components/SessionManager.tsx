@@ -34,6 +34,8 @@ export function SessionManager() {
   const [showBranchSuggestions, setShowBranchSuggestions] = useState(false)
   const [, setUpdateTrigger] = useState(0)
   const [runStartupScript] = useRunStartupScriptMutation()
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 5
 
   // Listen for todo updates to trigger re-renders
   useEffect(() => {
@@ -127,6 +129,12 @@ export function SessionManager() {
       base_branch: newSession.base_branch,
     })
   }
+
+  // Calculate pagination
+  const totalPages = Math.ceil((sessions?.length || 0) / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentSessions = sessions?.slice(startIndex, endIndex) || []
 
   if (!currentProject) {
     return (
@@ -262,7 +270,7 @@ export function SessionManager() {
         </div>
       ) : (
         <div className="space-y-2">
-          {sessions?.map((session: Session) => (
+          {currentSessions.map((session: Session) => (
             <div key={session.id} className="relative group">
               <button
                 onClick={() => {
@@ -354,6 +362,29 @@ export function SessionManager() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 mt-4">
+          <button
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Previous
+          </button>
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            Page {currentPage} of {totalPages}
+          </span>
+          <button
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Next
+          </button>
         </div>
       )}
     </div>
