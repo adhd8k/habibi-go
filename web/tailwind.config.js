@@ -6,7 +6,12 @@ module.exports = {
   ],
   darkMode: 'class',
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        sans: ['"Geist"', 'sans-serif'],
+        mono: ['"Geist+Mono"', 'monospace'],
+      },
+    },
   },
   plugins: [],
 }

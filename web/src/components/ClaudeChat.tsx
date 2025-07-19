@@ -18,6 +18,13 @@ interface Message {
   toolContent?: any
 }
 
+interface Todo {
+  content: string
+  status: 'pending' | 'in_progress' | 'completed'
+  priority: 'high' | 'medium' | 'low'
+  id: string
+}
+
 export function ClaudeChat() {
   const { currentSession } = useAppStore()
   const [messages, setMessages] = useState<Message[]>([])
@@ -25,6 +32,7 @@ export function ClaudeChat() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [showToolMessages, setShowToolMessages] = useState(false)
   const [showTaskDrawer, setShowTaskDrawer] = useState(false)
+  const [todos, setTodos] = useState<Todo[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
@@ -76,6 +84,44 @@ export function ClaudeChat() {
     }
 
     loadChatHistory()
+
+    // Load existing todos from chat history
+    const loadExistingTodos = async () => {
+      try {
+        const response = await fetch(`/api/v1/sessions/${currentSession.id}/chat`, {
+          headers: {
+            'Authorization': 'Basic ' + btoa('moe:jay')
+          }
+        })
+        if (response.ok) {
+          const data = await response.json()
+          if (data.data && Array.isArray(data.data)) {
+            // Find the most recent TodoWrite tool use
+            const todoMessages = data.data
+              .filter((msg: any) => msg.role === 'tool_use' && msg.tool_name === 'TodoWrite')
+              .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+            
+            if (todoMessages.length > 0) {
+              const latestTodos = todoMessages[0]
+              try {
+                const toolInput = typeof latestTodos.tool_input === 'string' 
+                  ? JSON.parse(latestTodos.tool_input) 
+                  : latestTodos.tool_input
+                if (toolInput?.todos && Array.isArray(toolInput.todos)) {
+                  setTodos(toolInput.todos)
+                }
+              } catch (error) {
+                console.error('Failed to parse existing todos:', error)
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load chat history for todos:', error)
+      }
+    }
+
+    loadExistingTodos()
 
     const handleClaudeOutput = (message: any) => {
       console.log('handleClaudeOutput called with message:', message)
@@ -144,6 +190,21 @@ export function ClaudeChat() {
             }
 
             case 'tool_use': {
+              // Handle TodoWrite tool for task tracking
+              if (data.tool_name === 'TodoWrite') {
+                try {
+                  let toolInput = data.tool_input
+                  if (typeof toolInput === 'string') {
+                    toolInput = JSON.parse(toolInput)
+                  }
+                  if (toolInput && toolInput.todos && Array.isArray(toolInput.todos)) {
+                    setTodos(toolInput.todos)
+                  }
+                } catch (error) {
+                  console.error('Failed to parse todo list from WebSocket:', error)
+                }
+              }
+
               return [
                 ...prev,
                 {
@@ -322,6 +383,13 @@ export function ClaudeChat() {
     return count
   }
 
+  // Calculate task counts
+  const todosByStatus = {
+    in_progress: todos.filter(t => t.status === 'in_progress'),
+    pending: todos.filter(t => t.status === 'pending'),
+    completed: todos.filter(t => t.status === 'completed')
+  }
+
   if (!currentSession) {
     return (
       <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
@@ -336,27 +404,37 @@ export function ClaudeChat() {
   return (
     <div className="flex flex-col h-full w-full max-w-full overflow-hidden">
       <div className="border-b border-gray-200 dark:border-gray-700 p-2 flex justify-between items-center bg-gray-50 dark:bg-gray-800">
-        <h3 className="font-medium text-gray-900 dark:text-gray-100">Claude Chat</h3>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowToolMessages(!showToolMessages)}
-            className={`text-xs px-2 py-1 rounded ${showToolMessages
-              ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
-              }`}
-          >
-            {showToolMessages ? 'Hide Tools' : 'Show Tools'}
-          </button>
+        <div className="flex items-center gap-3">
           <button
             onClick={() => setShowTaskDrawer(!showTaskDrawer)}
-            className={`text-xs px-2 py-1 rounded ${showTaskDrawer
+            className={`text-xs px-3 py-1 rounded font-medium ${showTaskDrawer
               ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
               : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
               }`}
           >
             Tasks
           </button>
+          <div className="flex gap-3 text-xs text-gray-600 dark:text-gray-300">
+            <span>
+              <span className="font-semibold text-blue-600 dark:text-blue-400">{todosByStatus.in_progress.length}</span> active
+            </span>
+            <span>
+              <span className="font-semibold text-gray-600 dark:text-gray-300">{todosByStatus.pending.length}</span> pending
+            </span>
+            <span>
+              <span className="font-semibold text-green-600 dark:text-green-400">{todosByStatus.completed.length}</span> done
+            </span>
+          </div>
         </div>
+        <button
+          onClick={() => setShowToolMessages(!showToolMessages)}
+          className={`text-xs px-2 py-1 rounded ${showToolMessages
+            ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+            : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+            }`}
+        >
+          {showToolMessages ? 'Hide Tools' : 'Show Tools'}
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4 w-full max-w-full">
