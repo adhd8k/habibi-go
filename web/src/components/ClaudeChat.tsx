@@ -6,6 +6,7 @@ import remarkGfm from 'remark-gfm'
 import { playNotificationSound, getNotificationsEnabled } from '../utils/notifications'
 import { useAppStore } from '../store'
 import { TaskDrawer } from './TaskDrawer'
+import { StopCircle, Send } from 'lucide-react'
 
 interface Message {
   id: string
@@ -251,6 +252,12 @@ export function ClaudeChat() {
       }
     }
 
+    const handleGenerationStopped = (message: any) => {
+      if (message.data && message.data.session_id === currentSession?.id) {
+        setIsProcessing(false)
+      }
+    }
+
     const handleNewMessage = (message: any) => {
       if (message.data && message.data.session_id === currentSession.id && message.data.message) {
         const { role, content, id, created_at, tool_name, tool_input, tool_use_id, tool_content } = message.data.message
@@ -287,11 +294,13 @@ export function ClaudeChat() {
     console.log('Registering WebSocket handlers for session:', currentSession.id)
     wsClient.on('claude_output', handleClaudeOutput)
     wsClient.on('claude_response_complete', handleResponseComplete)
+    wsClient.on('claude_generation_stopped', handleGenerationStopped)
     wsClient.on('new_chat_message', handleNewMessage)
 
     return () => {
       wsClient.off('claude_output', handleClaudeOutput)
       wsClient.off('claude_response_complete', handleResponseComplete)
+      wsClient.off('claude_generation_stopped', handleGenerationStopped)
       wsClient.off('new_chat_message', handleNewMessage)
     }
   }, [currentSession?.id])
@@ -360,6 +369,17 @@ export function ClaudeChat() {
     const messageToSend = input.trim()
     sendMessage.mutate(messageToSend)
     setInput('')
+  }
+
+  const handleStop = () => {
+    if (!currentSession || !isProcessing) return
+
+    wsClient.send({
+      type: 'stop_generation',
+      data: {
+        session_id: currentSession.id
+      }
+    })
   }
 
   // Filter messages based on show/hide tool messages setting
@@ -611,11 +631,25 @@ export function ClaudeChat() {
             }}
           />
           <button
-            onClick={handleSend}
-            disabled={!input.trim() || isProcessing}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed self-end"
+            onClick={isProcessing ? handleStop : handleSend}
+            disabled={!isProcessing && !input.trim()}
+            className={`px-4 py-2 rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed self-end flex items-center gap-2 ${
+              isProcessing 
+                ? 'bg-red-500 hover:bg-red-600 text-white' 
+                : 'bg-blue-500 hover:bg-blue-600 text-white'
+            }`}
           >
-            Send
+            {isProcessing ? (
+              <>
+                <StopCircle size={18} />
+                Stop
+              </>
+            ) : (
+              <>
+                <Send size={18} />
+                Send
+              </>
+            )}
           </button>
         </div>
       </div>
