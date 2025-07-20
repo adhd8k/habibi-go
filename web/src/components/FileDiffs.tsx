@@ -79,6 +79,10 @@ export function FileDiffs() {
         </div>
         {hasChanges && (
           <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            <span className="font-semibold">
+              {diffFiles.length} files
+            </span>
+            {' ('}
             <span className="text-green-600 dark:text-green-400">
               +{diffFiles.reduce((sum: number, f: DiffFile) => sum + f.additions, 0)}
             </span>
@@ -86,6 +90,7 @@ export function FileDiffs() {
             <span className="text-red-600 dark:text-red-400">
               -{diffFiles.reduce((sum: number, f: DiffFile) => sum + f.deletions, 0)}
             </span>
+            {') '}
           </div>
         )}
       </div>
