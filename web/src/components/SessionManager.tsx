@@ -1,12 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState, useEffect } from 'react'
-import { sessionsApi, projectsApi } from '../api/client'
+import { sessionsApi } from '../api/client'
 import { useAppStore } from '../store'
-import { Session, CreateSessionRequest } from '../types'
+import { Session } from '../types'
 import { useSessionTodos } from '../hooks/useSessionTodos'
 import { wsClient } from '../api/websocket'
 import { DropdownMenu } from './ui/DropdownMenu'
 import { useRunStartupScriptMutation } from '../features/sessions/api/sessionsApi'
+import { CreateSessionModal } from './CreateSessionModal'
 
 // Component to show in-progress task for a session
 function SessionInProgressTask({ sessionId }: { sessionId: number }) {
@@ -25,13 +26,7 @@ function SessionInProgressTask({ sessionId }: { sessionId: number }) {
 export function SessionManager() {
   const queryClient = useQueryClient()
   const { currentProject, currentSession, setCurrentSession } = useAppStore()
-  const [showCreateForm, setShowCreateForm] = useState(false)
-  const [newSession, setNewSession] = useState({
-    session_name: '',
-    branch_name: '',
-    base_branch: 'main',
-  })
-  const [showBranchSuggestions, setShowBranchSuggestions] = useState(false)
+  const [showCreateModal, setShowCreateModal] = useState(false)
   const [, setUpdateTrigger] = useState(0)
   const [runStartupScript] = useRunStartupScriptMutation()
   const [currentPage, setCurrentPage] = useState(1)
@@ -65,37 +60,6 @@ export function SessionManager() {
     enabled: !!currentProject,
   })
 
-  const { data: branches } = useQuery({
-    queryKey: ['branches', currentProject?.id],
-    queryFn: async () => {
-      if (!currentProject) return { local: [], remote: [] }
-      const response = await projectsApi.getBranches(currentProject.id)
-      const data = response.data as any
-      if (data && data.data) {
-        return data.data
-      }
-      return response.data
-    },
-    enabled: !!currentProject && showCreateForm,
-  })
-
-  const createMutation = useMutation({
-    mutationFn: async (data: CreateSessionRequest) => {
-      const response = await sessionsApi.create(data)
-      return response.data
-    },
-    onSuccess: async (response: any) => {
-      queryClient.invalidateQueries({ queryKey: ['sessions'] })
-      setShowCreateForm(false)
-      setNewSession({ session_name: '', branch_name: '', base_branch: 'main' })
-
-      // Extract session data from response
-      const session = (response as any).data || response
-
-      // Set the new session as current
-      setCurrentSession(session)
-    },
-  })
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -119,16 +83,6 @@ export function SessionManager() {
     },
   })
 
-  const handleCreateSession = () => {
-    if (!currentProject || !newSession.session_name || !newSession.branch_name) return
-
-    createMutation.mutate({
-      project_id: currentProject.id,
-      name: newSession.session_name,
-      branch_name: newSession.branch_name,
-      base_branch: newSession.base_branch,
-    })
-  }
 
   // Calculate pagination
   const totalPages = Math.ceil((sessions?.length || 0) / itemsPerPage)
@@ -151,117 +105,13 @@ export function SessionManager() {
       <div className="flex justify-between mb-4">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Sessions</h2>
         <button
-          onClick={() => setShowCreateForm(!showCreateForm)}
+          onClick={() => setShowCreateModal(true)}
           className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
         >
           New Session
         </button>
       </div>
 
-      {showCreateForm && (
-        <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-          <input
-            type="text"
-            placeholder="Session name"
-            value={newSession.session_name}
-            onChange={(e) => setNewSession({ ...newSession, session_name: e.target.value })}
-            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded mb-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-          />
-          <input
-            type="text"
-            placeholder="Branch name"
-            value={newSession.branch_name}
-            onChange={(e) => setNewSession({ ...newSession, branch_name: e.target.value })}
-            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded mb-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-          />
-          <div className="relative mb-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Base Branch
-            </label>
-            <input
-              type="text"
-              placeholder="Base branch (e.g., main)"
-              value={newSession.base_branch}
-              onChange={(e) => setNewSession({ ...newSession, base_branch: e.target.value })}
-              onFocus={() => setShowBranchSuggestions(true)}
-              onBlur={() => setTimeout(() => setShowBranchSuggestions(false), 200)}
-              className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-            />
-            {showBranchSuggestions && branches && (
-              <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg max-h-48 overflow-y-auto">
-                {branches.local.length > 0 && (
-                  <>
-                    <div className="px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700">
-                      Local Branches
-                    </div>
-                    {branches.local.map((branch: string) => (
-                      <button
-                        key={`local-${branch}`}
-                        type="button"
-                        onClick={() => {
-                          setNewSession({ ...newSession, base_branch: branch })
-                          setShowBranchSuggestions(false)
-                        }}
-                        className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-900 dark:text-gray-100"
-                      >
-                        <span className="text-blue-600 dark:text-blue-400">●</span>
-                        {branch}
-                      </button>
-                    ))}
-                  </>
-                )}
-                {branches.remote.length > 0 && (
-                  <>
-                    <div className="px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700">
-                      Remote Branches
-                    </div>
-                    {branches.remote.map((branch: string) => (
-                      <button
-                        key={`remote-${branch}`}
-                        type="button"
-                        onClick={() => {
-                          setNewSession({ ...newSession, base_branch: branch })
-                          setShowBranchSuggestions(false)
-                        }}
-                        className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-900 dark:text-gray-100"
-                      >
-                        <span className="text-green-600 dark:text-green-400">●</span>
-                        {branch}
-                      </button>
-                    ))}
-                  </>
-                )}
-                {branches.local.length === 0 && branches.remote.length === 0 && (
-                  <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
-                    No branches found
-                  </div>
-                )}
-              </div>
-            )}
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              The branch to create your new branch from
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={handleCreateSession}
-              disabled={createMutation.isPending}
-              className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm disabled:opacity-50"
-            >
-              Create
-            </button>
-            <button
-              onClick={() => {
-                setShowCreateForm(false)
-                setNewSession({ session_name: '', branch_name: '', base_branch: 'main' })
-              }}
-              className="px-3 py-1 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-400 dark:hover:bg-gray-500 text-sm"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
 
       {isLoading ? (
         <div className="animate-pulse">
@@ -380,6 +230,18 @@ export function SessionManager() {
             Next
           </button>
         </div>
+      )}
+
+      {/* Create Session Modal */}
+      {currentProject && (
+        <CreateSessionModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          projectId={currentProject.id}
+          onSuccess={(session) => {
+            setCurrentSession(session)
+          }}
+        />
       )}
     </div>
   )

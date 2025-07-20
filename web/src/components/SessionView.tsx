@@ -22,7 +22,7 @@ function ProjectReadme({ projectPath }: { projectPath: string }) {
         setLoading(true)
         // Try to read README.md first, then README.txt, then README
         const readmeFiles = ['README.md', 'README.txt', 'README', 'readme.md', 'readme.txt', 'readme']
-        
+
         for (const filename of readmeFiles) {
           try {
             const response = await fetch(`/api/projects/file?path=${encodeURIComponent(projectPath)}&file=${encodeURIComponent(filename)}`)
@@ -36,7 +36,7 @@ function ProjectReadme({ projectPath }: { projectPath: string }) {
             // Continue to next file
           }
         }
-        
+
         // No README found
         setReadmeContent(null)
       } catch (error) {
@@ -108,7 +108,7 @@ export function SessionView() {
     if (currentProject) {
       return <ProjectReadme projectPath={currentProject.path} />
     }
-    
+
     return (
       <div className="h-full w-full flex items-center justify-center text-gray-500 dark:text-gray-400">
         <div className="text-center">
