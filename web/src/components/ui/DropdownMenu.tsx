@@ -34,7 +34,7 @@ export function DropdownMenu({ items, trigger }: DropdownMenuProps) {
           e.stopPropagation()
           setIsOpen(!isOpen)
         }}
-        className="p-1 hover:bg-gray-100 rounded transition-colors"
+        className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors text-gray-600 dark:text-gray-400"
       >
         {trigger || (
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -44,7 +44,7 @@ export function DropdownMenu({ items, trigger }: DropdownMenuProps) {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200">
+        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50 border border-gray-200 dark:border-gray-700">
           <div className="py-1">
             {items.map((item, index) => (
               <button
@@ -54,8 +54,8 @@ export function DropdownMenu({ items, trigger }: DropdownMenuProps) {
                   item.onClick()
                   setIsOpen(false)
                 }}
-                className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2 ${
-                  item.danger ? 'text-red-600 hover:bg-red-50' : 'text-gray-700'
+                className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 ${
+                  item.danger ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900' : 'text-gray-700 dark:text-gray-200'
                 }`}
               >
                 {item.icon}

@@ -116,16 +116,16 @@ export function TodoList() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'text-green-700'
-      case 'in_progress': return 'text-blue-700'
-      case 'pending': return 'text-gray-600'
-      default: return 'text-gray-500'
+      case 'completed': return 'text-green-700 dark:text-green-400'
+      case 'in_progress': return 'text-blue-700 dark:text-blue-400'
+      case 'pending': return 'text-gray-600 dark:text-gray-300'
+      default: return 'text-gray-500 dark:text-gray-400'
     }
   }
 
   if (!currentSession) {
     return (
-      <div className="text-sm text-gray-500">
+      <div className="text-sm text-gray-500 dark:text-gray-400">
         <p>No session selected</p>
       </div>
     )
@@ -133,9 +133,9 @@ export function TodoList() {
 
   if (todos.length === 0) {
     return (
-      <div className="text-sm text-gray-500">
+      <div className="text-sm text-gray-500 dark:text-gray-400">
         <p className="mb-1">No tasks yet</p>
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-gray-400 dark:text-gray-500">
           Tasks appear when Claude uses TodoWrite
         </p>
       </div>
@@ -155,12 +155,12 @@ export function TodoList() {
         {/* In Progress */}
         {todosByStatus.in_progress.length > 0 && (
           <div className="mb-3">
-            <h4 className="text-xs font-medium text-gray-600 mb-1">In Progress</h4>
+            <h4 className="text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">In Progress</h4>
             <div className="space-y-1">
               {todosByStatus.in_progress.map((todo) => (
                 <div
                   key={todo.id}
-                  className="flex items-start gap-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs"
+                  className="flex items-start gap-2 p-2 bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded text-xs"
                 >
                   <span>{getStatusIcon(todo.status)}</span>
                   <div className="flex-1">
@@ -168,9 +168,9 @@ export function TodoList() {
                       {todo.content}
                     </p>
                     <span className={`text-xs ${
-                      todo.priority === 'high' ? 'text-red-600' :
-                      todo.priority === 'medium' ? 'text-yellow-600' :
-                      'text-green-600'
+                      todo.priority === 'high' ? 'text-red-600 dark:text-red-400' :
+                      todo.priority === 'medium' ? 'text-yellow-600 dark:text-yellow-400' :
+                      'text-green-600 dark:text-green-400'
                     }`}>
                       {todo.priority}
                     </span>
@@ -184,12 +184,12 @@ export function TodoList() {
         {/* Pending */}
         {todosByStatus.pending.length > 0 && (
           <div className="mb-3">
-            <h4 className="text-xs font-medium text-gray-600 mb-1">Pending</h4>
+            <h4 className="text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Pending</h4>
             <div className="space-y-1">
               {todosByStatus.pending.map((todo) => (
                 <div
                   key={todo.id}
-                  className="flex items-start gap-2 p-2 bg-gray-50 border border-gray-200 rounded text-xs"
+                  className="flex items-start gap-2 p-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-xs"
                 >
                   <span className="text-sm">{getStatusIcon(todo.status)}</span>
                   <div className="flex-1">
@@ -197,9 +197,9 @@ export function TodoList() {
                       {todo.content}
                     </p>
                     <span className={`text-xs ${
-                      todo.priority === 'high' ? 'text-red-600' :
-                      todo.priority === 'medium' ? 'text-yellow-600' :
-                      'text-green-600'
+                      todo.priority === 'high' ? 'text-red-600 dark:text-red-400' :
+                      todo.priority === 'medium' ? 'text-yellow-600 dark:text-yellow-400' :
+                      'text-green-600 dark:text-green-400'
                     }`}>
                       {todo.priority}
                     </span>
@@ -213,7 +213,7 @@ export function TodoList() {
         {/* Completed */}
         {todosByStatus.completed.length > 0 && (
           <div>
-            <h4 className="text-xs font-medium text-gray-600 mb-1">
+            <h4 className="text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">
               Completed ({todosByStatus.completed.length})
             </h4>
             <div className="space-y-1">
@@ -229,7 +229,7 @@ export function TodoList() {
                 </div>
               ))}
               {todosByStatus.completed.length > 2 && (
-                <p className="text-xs text-gray-400 pl-6">
+                <p className="text-xs text-gray-400 dark:text-gray-500 pl-6">
                   +{todosByStatus.completed.length - 2} more
                 </p>
               )}
@@ -238,16 +238,16 @@ export function TodoList() {
         )}
 
         {/* Compact Summary */}
-        <div className="mt-3 pt-2 border-t border-gray-200">
-          <div className="flex gap-3 text-xs text-gray-600">
+        <div className="mt-3 pt-2 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex gap-3 text-xs text-gray-600 dark:text-gray-300">
             <span>
-              <span className="font-semibold text-blue-600">{todosByStatus.in_progress.length}</span> active
+              <span className="font-semibold text-blue-600 dark:text-blue-400">{todosByStatus.in_progress.length}</span> active
             </span>
             <span>
-              <span className="font-semibold text-gray-600">{todosByStatus.pending.length}</span> pending
+              <span className="font-semibold text-gray-600 dark:text-gray-300">{todosByStatus.pending.length}</span> pending
             </span>
             <span>
-              <span className="font-semibold text-green-600">{todosByStatus.completed.length}</span> done
+              <span className="font-semibold text-green-600 dark:text-green-400">{todosByStatus.completed.length}</span> done
             </span>
           </div>
         </div>

@@ -7,11 +7,11 @@ export function Terminal() {
   const terminalRef = useRef<HTMLDivElement>(null)
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('connecting')
   const { currentSession } = useAppStore()
-  const { 
-    switchToSession, 
-    fitActiveTerminal, 
-    clearActiveTerminal, 
-    getActiveTerminal 
+  const {
+    switchToSession,
+    fitActiveTerminal,
+    clearActiveTerminal,
+    getActiveTerminal
   } = useTerminalManager()
 
   useEffect(() => {
@@ -19,15 +19,15 @@ export function Terminal() {
 
     // Switch to the terminal for this session
     const instance = switchToSession(currentSession.id, terminalRef.current)
-    
+
     // Connect to backend terminal websocket if not already connected
     if (!instance.ws || instance.ws.readyState !== WebSocket.OPEN) {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
       const wsUrl = `${protocol}//${window.location.host}/api/terminal/${currentSession.id}`
-      
+
       let reconnectAttempt = 0
       const maxReconnectAttempts = 5
-      
+
       const connectWebSocket = () => {
         setConnectionStatus('connecting')
         const newWs = new WebSocket(wsUrl)
@@ -35,7 +35,7 @@ export function Terminal() {
         setupWebSocket(newWs)
         return newWs
       }
-      
+
       const setupWebSocket = (wsInstance: WebSocket) => {
         wsInstance.onopen = () => {
           console.log('Terminal WebSocket connected')
@@ -71,15 +71,15 @@ export function Terminal() {
 
         wsInstance.onclose = (event) => {
           console.log('Terminal WebSocket disconnected, code:', event.code)
-          
+
           // If this was not a clean close and we haven't exceeded retry attempts
           if (event.code !== 1000 && reconnectAttempt < maxReconnectAttempts) {
             setConnectionStatus('connecting')
             reconnectAttempt++
             const delay = Math.min(1000 * Math.pow(2, reconnectAttempt - 1), 5000) // Exponential backoff, max 5s
-            
-            instance.terminal.write(`\r\n\x1b[33mConnection lost. Reconnecting in ${delay/1000}s... (attempt ${reconnectAttempt}/${maxReconnectAttempts})\x1b[0m\r\n`)
-            
+
+            instance.terminal.write(`\r\n\x1b[33mConnection lost. Reconnecting in ${delay / 1000}s... (attempt ${reconnectAttempt}/${maxReconnectAttempts})\x1b[0m\r\n`)
+
             setTimeout(() => {
               try {
                 connectWebSocket()
@@ -144,30 +144,30 @@ export function Terminal() {
       resizeObserver.disconnect()
     }
   }, [fitActiveTerminal])
-  
+
   const handleReconnect = () => {
     const instance = getActiveTerminal()
     if (!instance || !currentSession) return
-    
+
     // Close existing websocket
     if (instance.ws) {
       instance.ws.close(1000)
     }
-    
+
     instance.terminal.write('\r\n\x1b[36mReconnecting...\x1b[0m\r\n')
-    
+
     // Force reconnect by clearing the effect dependency
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     const wsUrl = `${protocol}//${window.location.host}/api/terminal/${currentSession.id}`
-    
+
     setConnectionStatus('connecting')
     const newWs = new WebSocket(wsUrl)
     instance.ws = newWs
-    
+
     // Set up the websocket handlers
     let reconnectAttempt = 0
     const maxReconnectAttempts = 5
-    
+
     const connectWebSocket = () => {
       setConnectionStatus('connecting')
       const ws = new WebSocket(wsUrl)
@@ -175,7 +175,7 @@ export function Terminal() {
       setupWebSocket(ws)
       return ws
     }
-    
+
     const setupWebSocket = (wsInstance: WebSocket) => {
       wsInstance.onopen = () => {
         console.log('Terminal WebSocket connected')
@@ -207,14 +207,14 @@ export function Terminal() {
 
       wsInstance.onclose = (event) => {
         console.log('Terminal WebSocket disconnected, code:', event.code)
-        
+
         if (event.code !== 1000 && reconnectAttempt < maxReconnectAttempts) {
           setConnectionStatus('connecting')
           reconnectAttempt++
           const delay = Math.min(1000 * Math.pow(2, reconnectAttempt - 1), 5000)
-          
-          instance.terminal.write(`\r\n\x1b[33mConnection lost. Reconnecting in ${delay/1000}s... (attempt ${reconnectAttempt}/${maxReconnectAttempts})\x1b[0m\r\n`)
-          
+
+          instance.terminal.write(`\r\n\x1b[33mConnection lost. Reconnecting in ${delay / 1000}s... (attempt ${reconnectAttempt}/${maxReconnectAttempts})\x1b[0m\r\n`)
+
           setTimeout(() => {
             try {
               connectWebSocket()
@@ -233,9 +233,9 @@ export function Terminal() {
         }
       }
     }
-    
+
     setupWebSocket(newWs)
-    
+
     // Re-attach input handler
     instance.terminal.onData((data) => {
       if (instance.ws && instance.ws.readyState === WebSocket.OPEN) {
@@ -249,7 +249,7 @@ export function Terminal() {
 
   if (!currentSession) {
     return (
-      <div className="h-full flex items-center justify-center text-gray-500">
+      <div className="h-full w-full flex items-center justify-center text-gray-500 dark:text-gray-400">
         <div className="text-center">
           <p className="text-lg mb-2">No session selected</p>
           <p className="text-sm">Select a session to use the terminal</p>
@@ -259,31 +259,30 @@ export function Terminal() {
   }
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="p-4 border-b bg-gray-50">
+    <div className="h-full w-full flex flex-col">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold">Terminal</h2>
-            <p className="text-sm text-gray-600">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Terminal</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               Session: {currentSession.name} • {currentSession.worktree_path}
             </p>
           </div>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${
-                connectionStatus === 'connected' ? 'bg-green-500' :
+              <div className={`w-2 h-2 rounded-full ${connectionStatus === 'connected' ? 'bg-green-500' :
                 connectionStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' :
-                connectionStatus === 'error' ? 'bg-red-500' :
-                'bg-gray-500'
-              }`} />
-              <span className="text-xs text-gray-600">
+                  connectionStatus === 'error' ? 'bg-red-500' :
+                    'bg-gray-500'
+                }`} />
+              <span className="text-xs text-gray-600 dark:text-gray-400">
                 {connectionStatus === 'connected' ? 'Connected' :
-                 connectionStatus === 'connecting' ? 'Connecting...' :
-                 connectionStatus === 'error' ? 'Error' :
-                 'Disconnected'}
+                  connectionStatus === 'connecting' ? 'Connecting...' :
+                    connectionStatus === 'error' ? 'Error' :
+                      'Disconnected'}
               </span>
             </div>
-            
+
             {(connectionStatus === 'disconnected' || connectionStatus === 'error') && (
               <button
                 onClick={handleReconnect}
@@ -292,17 +291,17 @@ export function Terminal() {
                 Reconnect
               </button>
             )}
-            
+
             <button
               onClick={() => clearActiveTerminal()}
-              className="text-sm px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
+              className="text-sm px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100"
             >
               Clear
             </button>
           </div>
         </div>
       </div>
-      
+
       <div className="flex-1 bg-black">
         <div ref={terminalRef} className="h-full" />
       </div>
