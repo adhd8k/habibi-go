@@ -212,6 +212,8 @@ func (c *Client) handleMessage(message []byte) {
 	switch msg.Type {
 	case "session_chat":
 		c.handleSessionChat(msg)
+	case "stop_generation":
+		c.handleStopGeneration(msg)
 	case "ping":
 		c.sendMessage(WSMessage{Type: "pong"})
 	default:
@@ -254,6 +256,37 @@ func (c *Client) handleSessionChat(msg WSMessage) {
 		Data: map[string]interface{}{
 			"session_id": int(sessionID),
 			"status":     "sent",
+		},
+	})
+}
+
+func (c *Client) handleStopGeneration(msg WSMessage) {
+	log.Printf("Received stop_generation message: %+v", msg)
+	
+	sessionID, ok := msg.Data.(map[string]interface{})["session_id"].(float64)
+	if !ok || sessionID == 0 {
+		log.Printf("Session ID error: %v", msg.Data)
+		c.sendError("Session ID is required")
+		return
+	}
+	
+	log.Printf("Stopping generation for session %d", int(sessionID))
+	
+	// Stop the generation via Claude service
+	if err := c.handler.claudeService.StopGeneration(int(sessionID)); err != nil {
+		log.Printf("Failed to stop generation: %v", err)
+		c.sendError(fmt.Sprintf("Failed to stop generation: %v", err))
+		return
+	}
+	
+	log.Printf("Generation stopped successfully, sending acknowledgment")
+	
+	// Send acknowledgment
+	c.sendMessage(WSMessage{
+		Type: "generation_stopped",
+		Data: map[string]interface{}{
+			"session_id": int(sessionID),
+			"status":     "stopped",
 		},
 	})
 }

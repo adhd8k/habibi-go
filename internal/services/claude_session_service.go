@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
+	"sync"
 
 	"habibi-go/internal/database/repositories"
 	"habibi-go/internal/models"
@@ -19,6 +20,8 @@ type ClaudeSessionService struct {
 	eventRepo        *repositories.EventRepository
 	claudeBinaryPath string
 	eventBroadcaster EventBroadcaster
+	runningProcesses map[int]*exec.Cmd
+	processMutex     sync.Mutex
 }
 
 // NewClaudeSessionService creates a new Claude session service
@@ -36,6 +39,7 @@ func NewClaudeSessionService(
 		eventRepo:        eventRepo,
 		claudeBinaryPath: claudeBinaryPath,
 		eventBroadcaster: &NoOpBroadcaster{},
+		runningProcesses: make(map[int]*exec.Cmd),
 	}
 }
 
@@ -75,13 +79,13 @@ func (s *ClaudeSessionService) SendMessage(sessionID int, message string) error 
 	}
 
 	// Execute Claude command
-	go s.executeClaudeCommand(session, message)
+	go s.executeClaudeCommand(session.ID, session.WorktreePath, message)
 
 	return nil
 }
 
 // executeClaudeCommand runs Claude in the session's worktree
-func (s *ClaudeSessionService) executeClaudeCommand(session *models.Session, message string) {
+func (s *ClaudeSessionService) executeClaudeCommand(sessionID int, worktreePath string, message string) {
 	// Prepare Claude command
 	claudePath := s.claudeBinaryPath
 	if claudePath == "" {
@@ -92,29 +96,41 @@ func (s *ClaudeSessionService) executeClaudeCommand(session *models.Session, mes
 	// Note: message should come after -c flag, and --verbose is required for proper output
 	args := []string{"--verbose", "--output-format", "stream-json", "--dangerously-skip-permissions", "-c", message}
 	cmd := exec.Command(claudePath, args...)
-	cmd.Dir = session.WorktreePath
+	cmd.Dir = worktreePath
 
 	// Get stdout pipe
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		s.handleError(session.ID, fmt.Errorf("failed to get stdout pipe: %w", err))
+		s.handleError(sessionID, fmt.Errorf("failed to get stdout pipe: %w", err))
 		return
 	}
 
 	// Get stderr pipe for debugging
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
-		s.handleError(session.ID, fmt.Errorf("failed to get stderr pipe: %w", err))
+		s.handleError(sessionID, fmt.Errorf("failed to get stderr pipe: %w", err))
 		return
 	}
 
 	// Start command
-	fmt.Printf("Starting Claude command: %s %v in directory: %s\n", claudePath, args, session.WorktreePath)
+	fmt.Printf("Starting Claude command: %s %v in directory: %s\n", claudePath, args, worktreePath)
 	if err := cmd.Start(); err != nil {
-		s.handleError(session.ID, fmt.Errorf("failed to start Claude: %w", err))
+		s.handleError(sessionID, fmt.Errorf("failed to start Claude: %w", err))
 		return
 	}
-	fmt.Printf("Claude command started successfully for session %d\n", session.ID)
+	fmt.Printf("Claude command started successfully for session %d\n", sessionID)
+
+	// Track the running process
+	s.processMutex.Lock()
+	s.runningProcesses[sessionID] = cmd
+	s.processMutex.Unlock()
+
+	// Ensure we clean up the process tracking when done
+	defer func() {
+		s.processMutex.Lock()
+		delete(s.runningProcesses, sessionID)
+		s.processMutex.Unlock()
+	}()
 
 	// Read stderr in background for debugging
 	go func() {
@@ -130,7 +146,7 @@ func (s *ClaudeSessionService) executeClaudeCommand(session *models.Session, mes
 	var assistantMessage strings.Builder
 	assistantMessageID := 0
 
-	fmt.Printf("Starting to read Claude output for session %d\n", session.ID)
+	fmt.Printf("Starting to read Claude output for session %d\n", sessionID)
 	for scanner.Scan() {
 		line := scanner.Text()
 		fmt.Printf("Claude stdout line: %s\n", line)
@@ -145,16 +161,16 @@ func (s *ClaudeSessionService) executeClaudeCommand(session *models.Session, mes
 			case "assistant":
 				// Handle assistant messages - each message is independent
 				messageID := 0
-				s.handleAssistantMessage(session.ID, streamMsg, &messageID)
+				s.handleAssistantMessage(sessionID, streamMsg, &messageID)
 			case "user":
 				// Handle tool results
-				s.handleToolResultMessage(session.ID, streamMsg)
+				s.handleToolResultMessage(sessionID, streamMsg)
 			case "system", "result":
 				// Log but don't process
 				fmt.Printf("System/Result message: %+v\n", streamMsg)
 			default:
 				// Try old format handler as fallback
-				s.handleStreamMessage(session.ID, streamMsg, &assistantMessage, &assistantMessageID)
+				s.handleStreamMessage(sessionID, streamMsg, &assistantMessage, &assistantMessageID)
 			}
 		} else {
 			fmt.Printf("Failed to parse as JSON (error: %v), treating as plain text: %s\n", err, line)
@@ -164,18 +180,18 @@ func (s *ClaudeSessionService) executeClaudeCommand(session *models.Session, mes
 
 			// Broadcast the chunk
 			s.eventBroadcaster.BroadcastEvent("claude_output", 0, map[string]interface{}{
-				"session_id":   session.ID,
+				"session_id":   sessionID,
 				"content_type": "text",
 				"output":       line + "\n",
 				"is_chunk":     true,
 			})
 		}
 	}
-	fmt.Printf("Finished reading Claude output for session %d\n", session.ID)
+	fmt.Printf("Finished reading Claude output for session %d\n", sessionID)
 
 	// Wait for command to complete
 	if err := cmd.Wait(); err != nil {
-		s.handleError(session.ID, fmt.Errorf("Claude command failed: %w", err))
+		s.handleError(sessionID, fmt.Errorf("Claude command failed: %w", err))
 		return
 	}
 
@@ -184,13 +200,13 @@ func (s *ClaudeSessionService) executeClaudeCommand(session *models.Session, mes
 	fmt.Printf("Claude command completed. Assistant message ID: %d\n", assistantMessageID)
 
 	// Update session activity
-	if err := s.sessionRepo.UpdateActivityStatus(session.ID, string(models.ActivityStatusNewResponse)); err != nil {
+	if err := s.sessionRepo.UpdateActivityStatus(sessionID, string(models.ActivityStatusNewResponse)); err != nil {
 		fmt.Printf("Failed to update session activity status: %v\n", err)
 	}
 
 	// Broadcast completion
 	s.eventBroadcaster.BroadcastEvent("claude_response_complete", 0, map[string]interface{}{
-		"session_id": session.ID,
+		"session_id": sessionID,
 	})
 }
 
@@ -437,4 +453,32 @@ func (s *ClaudeSessionService) handleToolResultMessage(sessionID int, msg map[st
 // GetChatHistory retrieves chat history for a session
 func (s *ClaudeSessionService) GetChatHistory(sessionID int, limit int) ([]*models.ChatMessage, error) {
 	return s.chatRepo.GetBySessionID(sessionID, limit)
+}
+
+// StopGeneration stops the Claude process for a session
+func (s *ClaudeSessionService) StopGeneration(sessionID int) error {
+	s.processMutex.Lock()
+	cmd, exists := s.runningProcesses[sessionID]
+	s.processMutex.Unlock()
+
+	if !exists {
+		return fmt.Errorf("no running process for session %d", sessionID)
+	}
+
+	// Kill the process
+	if err := cmd.Process.Kill(); err != nil {
+		return fmt.Errorf("failed to kill process: %w", err)
+	}
+
+	// Update session status
+	if err := s.sessionRepo.UpdateActivityStatus(sessionID, string(models.ActivityStatusIdle)); err != nil {
+		fmt.Printf("Failed to update session status after stopping: %v\n", err)
+	}
+
+	// Broadcast that generation was stopped
+	s.eventBroadcaster.BroadcastEvent("claude_generation_stopped", 0, map[string]interface{}{
+		"session_id": sessionID,
+	})
+
+	return nil
 }
