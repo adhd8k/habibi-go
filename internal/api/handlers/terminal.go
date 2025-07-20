@@ -25,12 +25,16 @@ type TerminalHandler struct {
 }
 
 type TerminalSession struct {
-	sessionID   int
-	cmd         *exec.Cmd
-	pty         *os.File
-	conn        *websocket.Conn
-	done        chan bool
-	cleanupOnce sync.Once
+	sessionID    int
+	cmd          *exec.Cmd
+	pty          *os.File
+	connections  map[*websocket.Conn]bool
+	connMutex    sync.RWMutex
+	outputBuffer []byte // Buffer to store recent output for reconnections
+	bufferMutex  sync.RWMutex
+	done         chan bool
+	cleanupOnce  sync.Once
+	isAlive      bool
 }
 
 type TerminalMessage struct {
@@ -74,17 +78,46 @@ func (h *TerminalHandler) HandleTerminalWebSocket(c *gin.Context) {
 	defer conn.Close()
 
 	// Check if terminal already exists for this session
-	h.terminalsMutex.RLock()
-	existingTerminal, exists := h.terminals[sessionID]
-	h.terminalsMutex.RUnlock()
-
-	if exists {
-		// Close existing terminal
-		existingTerminal.cleanup()
+	h.terminalsMutex.Lock()
+	terminal, exists := h.terminals[sessionID]
+	
+	if exists && terminal.isAlive {
+		// Add this connection to existing terminal
+		terminal.connMutex.Lock()
+		terminal.connections[conn] = true
+		terminal.connMutex.Unlock()
+		h.terminalsMutex.Unlock()
+		
+		log.Printf("Reconnecting to existing terminal for session %d", sessionID)
+		
+		// Send buffered output to catch up
+		terminal.bufferMutex.RLock()
+		if len(terminal.outputBuffer) > 0 {
+			conn.WriteJSON(TerminalMessage{
+				Type: "output",
+				Data: string(terminal.outputBuffer),
+			})
+		}
+		terminal.bufferMutex.RUnlock()
+		
+		// Handle messages for this connection
+		h.handleConnectionMessages(terminal, conn)
+		
+		// Remove connection when done
+		terminal.connMutex.Lock()
+		delete(terminal.connections, conn)
+		terminal.connMutex.Unlock()
+		return
 	}
+	
+	// Create new terminal if doesn't exist or is dead
+	if exists && !terminal.isAlive {
+		delete(h.terminals, sessionID)
+	}
+	h.terminalsMutex.Unlock()
 
 	// Create new terminal session
-	terminal, err := h.createTerminalSession(sessionID, session.WorktreePath, conn)
+	terminal, err = h.createTerminalSession(sessionID, session.WorktreePath)
 	if err != nil {
 		log.Printf("Failed to create terminal session for session %d: %v", sessionID, err)
 		// Send error message to frontend
@@ -92,41 +125,35 @@ func (h *TerminalHandler) HandleTerminalWebSocket(c *gin.Context) {
 			"type":    "error",
 			"message": fmt.Sprintf("Failed to create terminal: %v", err),
 		})
-		// Don't return immediately - let the connection stay open for retry
-		
-		// Send a message suggesting reconnection
-		conn.WriteJSON(map[string]interface{}{
-			"type":    "info",
-			"message": "Terminal session failed to start. You can try refreshing to reconnect.",
-		})
-		
-		// Keep connection alive for potential retry
-		for {
-			_, _, err := conn.ReadMessage()
-			if err != nil {
-				log.Printf("Terminal WebSocket connection closed for session %d: %v", sessionID, err)
-				break
-			}
-		}
 		return
 	}
+
+	// Add initial connection
+	terminal.connMutex.Lock()
+	terminal.connections[conn] = true
+	terminal.connMutex.Unlock()
 
 	// Store terminal session
 	h.terminalsMutex.Lock()
 	h.terminals[sessionID] = terminal
 	h.terminalsMutex.Unlock()
 
-	// Handle WebSocket messages
-	h.handleTerminalMessages(terminal)
+	// Handle WebSocket messages for this connection
+	h.handleConnectionMessages(terminal, conn)
 
-	// Cleanup when done
-	h.terminalsMutex.Lock()
-	delete(h.terminals, sessionID)
-	h.terminalsMutex.Unlock()
-	terminal.cleanup()
+	// Remove connection when done
+	terminal.connMutex.Lock()
+	delete(terminal.connections, conn)
+	hasConnections := len(terminal.connections) > 0
+	terminal.connMutex.Unlock()
+	
+	// Don't cleanup terminal if there are other connections
+	if hasConnections {
+		log.Printf("Connection closed for session %d, but %d connections remain", sessionID, len(terminal.connections))
+	}
 }
 
-func (h *TerminalHandler) createTerminalSession(sessionID int, workingDir string, conn *websocket.Conn) (*TerminalSession, error) {
+func (h *TerminalHandler) createTerminalSession(sessionID int, workingDir string) (*TerminalSession, error) {
 	// Find available shell (NixOS compatibility)
 	var shellPath string
 	possibleShells := []string{
@@ -179,11 +206,13 @@ func (h *TerminalHandler) createTerminalSession(sessionID int, workingDir string
 	}
 
 	terminal := &TerminalSession{
-		sessionID: sessionID,
-		cmd:       cmd,
-		pty:       ptmx,
-		conn:      conn,
-		done:      make(chan bool),
+		sessionID:    sessionID,
+		cmd:          cmd,
+		pty:          ptmx,
+		connections:  make(map[*websocket.Conn]bool),
+		outputBuffer: make([]byte, 0, 1024*64), // 64KB buffer
+		done:         make(chan bool),
+		isAlive:      true,
 	}
 
 	// Start goroutine to handle PTY output
@@ -211,32 +240,48 @@ func (h *TerminalHandler) handlePTYOutput(terminal *TerminalSession) {
 				if err != io.EOF {
 					log.Printf("Error reading from PTY: %v", err)
 				}
+				terminal.isAlive = false
 				return
 			}
 			
 			if n > 0 {
-				data := string(buffer[:n])
+				data := buffer[:n]
+				
+				// Update output buffer
+				terminal.bufferMutex.Lock()
+				terminal.outputBuffer = append(terminal.outputBuffer, data...)
+				// Keep buffer size reasonable (last 64KB)
+				if len(terminal.outputBuffer) > 64*1024 {
+					terminal.outputBuffer = terminal.outputBuffer[len(terminal.outputBuffer)-64*1024:]
+				}
+				terminal.bufferMutex.Unlock()
+				
+				// Broadcast to all connections
 				message := TerminalMessage{
 					Type: "output",
-					Data: data,
+					Data: string(data),
 				}
-				if err := terminal.conn.WriteJSON(message); err != nil {
-					log.Printf("Failed to write to WebSocket: %v", err)
-					return
+				
+				terminal.connMutex.RLock()
+				for conn := range terminal.connections {
+					if err := conn.WriteJSON(message); err != nil {
+						log.Printf("Failed to write to WebSocket: %v", err)
+					}
 				}
+				terminal.connMutex.RUnlock()
 			}
 		}
 	}
 }
 
-func (h *TerminalHandler) handleTerminalMessages(terminal *TerminalSession) {
+func (h *TerminalHandler) handleConnectionMessages(terminal *TerminalSession, conn *websocket.Conn) {
 	for {
 		select {
 		case <-terminal.done:
 			return
 		default:
 			var message TerminalMessage
-			if err := terminal.conn.ReadJSON(&message); err != nil {
+			if err := conn.ReadJSON(&message); err != nil {
 				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 					log.Printf("WebSocket error: %v", err)
 				}
@@ -260,8 +305,19 @@ func (h *TerminalHandler) handleTerminalMessages(terminal *TerminalSession) {
 
 func (ts *TerminalSession) cleanup() {
 	ts.cleanupOnce.Do(func() {
+		// Mark as not alive
+		ts.isAlive = false
+		
 		// Close done channel
 		close(ts.done)
+
+		// Close all connections
+		ts.connMutex.Lock()
+		for conn := range ts.connections {
+			conn.Close()
+		}
+		ts.connections = make(map[*websocket.Conn]bool)
+		ts.connMutex.Unlock()
 
 		// Close PTY
 		if ts.pty != nil {
@@ -280,4 +336,37 @@ func (ts *TerminalSession) cleanup() {
 			ts.cmd = nil
 		}
 	})
+}
+
+// CleanupSessionTerminal closes the terminal for a specific session
+func (h *TerminalHandler) CleanupSessionTerminal(sessionID int) {
+	h.terminalsMutex.Lock()
+	defer h.terminalsMutex.Unlock()
+	
+	if terminal, exists := h.terminals[sessionID]; exists {
+		log.Printf("Cleaning up terminal for session %d", sessionID)
+		terminal.cleanup()
+		delete(h.terminals, sessionID)
+	}
+}
+
+// RestartTerminal restarts the terminal for a specific session
+func (h *TerminalHandler) RestartTerminal(c *gin.Context) {
+	sessionIDStr := c.Param("sessionId")
+	sessionID, err := strconv.Atoi(sessionIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid session ID"})
+		return
+	}
+
+	// Clean up existing terminal if it exists
+	h.terminalsMutex.Lock()
+	if terminal, exists := h.terminals[sessionID]; exists {
+		log.Printf("Restarting terminal for session %d", sessionID)
+		terminal.cleanup()
+		delete(h.terminals, sessionID)
+	}
+	h.terminalsMutex.Unlock()
+
+	c.JSON(http.StatusOK, gin.H{"message": "Terminal restarted successfully"})
 }

@@ -104,6 +104,10 @@ func runServer(cmd *cobra.Command, args []string) {
 	chatHandler := handlers.NewChatHandler(chatRepo, sessionRepo)
 	terminalHandler := handlers.NewTerminalHandler(sessionService)
 	
+	// Set cross-handler dependencies
+	sessionHandler.SetWebSocketHandler(websocketHandler)
+	sessionHandler.SetTerminalHandler(terminalHandler)
+	
 	// Start WebSocket hub
 	websocketHandler.StartHub()
 	

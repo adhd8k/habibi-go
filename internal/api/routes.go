@@ -109,6 +109,9 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 
 	// Terminal WebSocket endpoint
 	api.GET("/terminal/:sessionId", r.terminalHandler.HandleTerminalWebSocket)
+	
+	// Terminal restart endpoint
+	api.POST("/terminal/:sessionId/restart", r.terminalHandler.RestartTerminal)
 
 	// WebSocket endpoint (also available on root for compatibility)
 	engine.GET("/ws", r.websocketHandler.HandleWebSocket)
