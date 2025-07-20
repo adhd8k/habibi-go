@@ -9,6 +9,7 @@ interface TerminalInstance {
   ws: WebSocket | null
   sessionId: number
   container: HTMLDivElement | null
+  onDataDisposer?: { dispose: () => void }
 }
 
 export function useTerminalManager() {
@@ -101,6 +102,9 @@ export function useTerminalManager() {
     if (instance) {
       if (instance.ws && instance.ws.readyState === WebSocket.OPEN) {
         instance.ws.close(1000)
+      }
+      if (instance.onDataDisposer) {
+        instance.onDataDisposer.dispose()
       }
       instance.terminal.dispose()
       terminalsRef.current.delete(sessionId)

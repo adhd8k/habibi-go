@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import '@xterm/xterm/css/xterm.css'
 import { useAppStore } from '../store'
 import { useTerminalManager } from '../hooks/useTerminalManager'
+import { wsClient } from '../api/websocket'
 
 export function Terminal() {
   const terminalRef = useRef<HTMLDivElement>(null)
@@ -11,7 +12,8 @@ export function Terminal() {
     switchToSession,
     fitActiveTerminal,
     clearActiveTerminal,
-    getActiveTerminal
+    getActiveTerminal,
+    closeTerminal
   } = useTerminalManager()
 
   useEffect(() => {
@@ -20,31 +22,32 @@ export function Terminal() {
     // Switch to the terminal for this session
     const instance = switchToSession(currentSession.id, terminalRef.current)
 
-    // Connect to backend terminal websocket if not already connected
-    if (!instance.ws || instance.ws.readyState !== WebSocket.OPEN) {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-      const wsUrl = `${protocol}//${window.location.host}/api/terminal/${currentSession.id}`
+    // Always attempt to connect/reconnect to backend terminal websocket
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    const wsUrl = `${protocol}//${window.location.host}/api/terminal/${currentSession.id}`
 
-      let reconnectAttempt = 0
-      const maxReconnectAttempts = 5
+    // Close existing websocket if any
+    if (instance.ws) {
+      instance.ws.close(1000)
+    }
 
-      const connectWebSocket = () => {
-        setConnectionStatus('connecting')
-        const newWs = new WebSocket(wsUrl)
-        instance.ws = newWs
-        setupWebSocket(newWs)
-        return newWs
-      }
+    let reconnectAttempt = 0
+    const maxReconnectAttempts = 5
+
+    const connectWebSocket = () => {
+      setConnectionStatus('connecting')
+      const newWs = new WebSocket(wsUrl)
+      instance.ws = newWs
+      setupWebSocket(newWs)
+      return newWs
+    }
 
       const setupWebSocket = (wsInstance: WebSocket) => {
         wsInstance.onopen = () => {
           console.log('Terminal WebSocket connected')
           setConnectionStatus('connected')
           reconnectAttempt = 0 // Reset on successful connection
-          instance.terminal.writeln('Welcome to Habibi-Go Terminal')
-          instance.terminal.writeln(`Session: ${currentSession.name}`)
-          instance.terminal.writeln(`Working Directory: ${currentSession.worktree_path}`)
-          instance.terminal.writeln('')
+          // Don't show welcome message - we might be reconnecting to existing terminal
         }
 
         wsInstance.onmessage = (event) => {
@@ -99,21 +102,21 @@ export function Terminal() {
         }
       }
 
-      connectWebSocket()
+    connectWebSocket()
 
-      // Handle terminal input
-      instance.terminal.onData((data) => {
-        if (instance.ws && instance.ws.readyState === WebSocket.OPEN) {
-          instance.ws.send(JSON.stringify({
-            type: 'input',
-            data: data
-          }))
-        }
-      })
-    } else {
-      // WebSocket already connected, just update status
-      setConnectionStatus('connected')
+    // Handle terminal input - dispose previous handler if exists
+    if (instance.onDataDisposer) {
+      instance.onDataDisposer.dispose()
     }
+    
+    instance.onDataDisposer = instance.terminal.onData((data) => {
+      if (instance.ws && instance.ws.readyState === WebSocket.OPEN) {
+        instance.ws.send(JSON.stringify({
+          type: 'input',
+          data: data
+        }))
+      }
+    })
 
     // Handle window resize
     const handleResize = () => {
@@ -144,6 +147,68 @@ export function Terminal() {
       resizeObserver.disconnect()
     }
   }, [fitActiveTerminal])
+
+  // Listen for session deletion events
+  useEffect(() => {
+    const handleSessionDeleted = (message: any) => {
+      if (message.type === 'session_deleted' && message.data?.session_id) {
+        const deletedSessionId = message.data.session_id
+        
+        // Close terminal if it's the deleted session
+        closeTerminal(deletedSessionId)
+        
+        // If it was the current session, clear the connection status
+        if (currentSession?.id === deletedSessionId) {
+          setConnectionStatus('disconnected')
+        }
+      }
+    }
+
+    wsClient.on('session_deleted', handleSessionDeleted)
+    
+    return () => {
+      wsClient.off('session_deleted', handleSessionDeleted)
+    }
+  }, [currentSession, closeTerminal])
+
+  const handleRestart = async () => {
+    if (!currentSession) return
+
+    const instance = getActiveTerminal()
+    if (instance) {
+      // Close existing websocket
+      if (instance.ws) {
+        instance.ws.close(1000)
+      }
+      instance.terminal.write('\r\n\x1b[36mRestarting terminal...\x1b[0m\r\n')
+    }
+
+    // Call restart API
+    try {
+      const response = await fetch(`/api/terminal/${currentSession.id}/restart`, {
+        method: 'POST'
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to restart terminal')
+      }
+
+      // Clear terminal output
+      if (instance) {
+        instance.terminal.clear()
+      }
+
+      // Force reconnect after restart
+      setTimeout(() => {
+        handleReconnect()
+      }, 500)
+    } catch (error) {
+      console.error('Failed to restart terminal:', error)
+      if (instance) {
+        instance.terminal.write('\r\n\x1b[31mFailed to restart terminal\x1b[0m\r\n')
+      }
+    }
+  }
 
   const handleReconnect = () => {
     const instance = getActiveTerminal()
@@ -181,7 +246,7 @@ export function Terminal() {
         console.log('Terminal WebSocket connected')
         setConnectionStatus('connected')
         reconnectAttempt = 0
-        instance.terminal.writeln('Reconnected successfully')
+        // Don't show message - terminal output buffer will show previous content
       }
 
       wsInstance.onmessage = (event) => {
@@ -236,8 +301,12 @@ export function Terminal() {
 
     setupWebSocket(newWs)
 
-    // Re-attach input handler
-    instance.terminal.onData((data) => {
+    // Re-attach input handler - dispose previous handler if exists
+    if (instance.onDataDisposer) {
+      instance.onDataDisposer.dispose()
+    }
+    
+    instance.onDataDisposer = instance.terminal.onData((data) => {
       if (instance.ws && instance.ws.readyState === WebSocket.OPEN) {
         instance.ws.send(JSON.stringify({
           type: 'input',
@@ -291,6 +360,14 @@ export function Terminal() {
                 Reconnect
               </button>
             )}
+
+            <button
+              onClick={handleRestart}
+              className="text-sm px-3 py-1 bg-amber-500 text-white rounded hover:bg-amber-600"
+              title="Restart terminal process"
+            >
+              Restart
+            </button>
 
             <button
               onClick={() => clearActiveTerminal()}

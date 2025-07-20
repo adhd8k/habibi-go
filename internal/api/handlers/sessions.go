@@ -10,8 +10,9 @@ import (
 )
 
 type SessionHandler struct {
-	sessionService *services.SessionService
-	wsHandler      *WebSocketHandler
+	sessionService   *services.SessionService
+	wsHandler        *WebSocketHandler
+	terminalHandler  *TerminalHandler
 }
 
 func NewSessionHandler(sessionService *services.SessionService) *SessionHandler {
@@ -23,6 +24,11 @@ func NewSessionHandler(sessionService *services.SessionService) *SessionHandler 
 // SetWebSocketHandler sets the WebSocket handler for broadcasting updates
 func (h *SessionHandler) SetWebSocketHandler(wsHandler *WebSocketHandler) {
 	h.wsHandler = wsHandler
+}
+
+// SetTerminalHandler sets the Terminal handler for cleanup operations
+func (h *SessionHandler) SetTerminalHandler(terminalHandler *TerminalHandler) {
+	h.terminalHandler = terminalHandler
 }
 
 func (h *SessionHandler) GetSessions(c *gin.Context) {
@@ -184,6 +190,11 @@ func (h *SessionHandler) DeleteSession(c *gin.Context) {
 	
 	// Get session before deletion for broadcast
 	session, _ := h.sessionService.GetSession(id)
+	
+	// Clean up terminal if exists
+	if h.terminalHandler != nil {
+		h.terminalHandler.CleanupSessionTerminal(id)
+	}
 	
 	if err := h.sessionService.DeleteSession(id); err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
