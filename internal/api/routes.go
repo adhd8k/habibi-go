@@ -14,13 +14,14 @@ import (
 )
 
 type Router struct {
-	projectHandler   *handlers.ProjectHandler
-	sessionHandler   *handlers.SessionHandler
-	websocketHandler *handlers.WebSocketHandler
-	chatHandler      *handlers.ChatHandler
-	terminalHandler  *handlers.TerminalHandler
-	webAssets        embed.FS
-	authConfig       *config.AuthConfig
+	projectHandler       *handlers.ProjectHandler
+	sessionHandler       *handlers.SessionHandler
+	websocketHandler     *handlers.WebSocketHandler
+	chatHandler          *handlers.ChatHandler
+	terminalHandler      *handlers.TerminalHandler
+	slashCommandHandler  *handlers.SlashCommandHandlers
+	webAssets            embed.FS
+	authConfig           *config.AuthConfig
 }
 
 func NewRouter(
@@ -29,13 +30,15 @@ func NewRouter(
 	websocketHandler *handlers.WebSocketHandler,
 	chatHandler *handlers.ChatHandler,
 	terminalHandler *handlers.TerminalHandler,
+	slashCommandHandler *handlers.SlashCommandHandlers,
 ) *Router {
 	return &Router{
-		projectHandler:   projectHandler,
-		sessionHandler:   sessionHandler,
-		websocketHandler: websocketHandler,
-		chatHandler:      chatHandler,
-		terminalHandler:  terminalHandler,
+		projectHandler:      projectHandler,
+		sessionHandler:      sessionHandler,
+		websocketHandler:    websocketHandler,
+		chatHandler:         chatHandler,
+		terminalHandler:     terminalHandler,
+		slashCommandHandler: slashCommandHandler,
 	}
 }
 
@@ -102,6 +105,10 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 		sessions.GET("/:id/chat", r.chatHandler.GetSessionChatHistory)
 		sessions.DELETE("/:id/chat", r.chatHandler.DeleteSessionChatHistory)
 		sessions.POST("/:id/chat", r.chatHandler.SendChatMessage)
+		
+		// Slash commands
+		sessions.GET("/:id/commands", r.slashCommandHandler.GetCommands)
+		sessions.POST("/:id/commands", r.slashCommandHandler.ExecuteCommand)
 	}
 
 	// WebSocket endpoint
@@ -162,6 +169,10 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 			v1Sessions.POST("/:id/chat", r.chatHandler.SendChatMessage)
 			v1Sessions.POST("/:id/open-editor", r.sessionHandler.OpenWithEditor)
 			v1Sessions.POST("/:id/run-startup-script", r.sessionHandler.RunStartupScript)
+			
+			// Slash commands
+			v1Sessions.GET("/:id/commands", r.slashCommandHandler.GetCommands)
+			v1Sessions.POST("/:id/commands", r.slashCommandHandler.ExecuteCommand)
 		}
 	}
 
