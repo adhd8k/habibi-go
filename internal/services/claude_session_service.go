@@ -2,6 +2,7 @@ package services
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"os/exec"
@@ -48,8 +49,24 @@ func (s *ClaudeSessionService) SetEventBroadcaster(broadcaster EventBroadcaster)
 	s.eventBroadcaster = broadcaster
 }
 
+// ClearChatHistory clears the chat history for a session
+func (s *ClaudeSessionService) ClearChatHistory(ctx context.Context, sessionID int) error {
+	return s.chatRepo.DeleteBySessionID(sessionID)
+}
+
+// GetAgent returns agent information for a given agent ID
+func (s *ClaudeSessionService) GetAgent(ctx context.Context, agentID int) (*models.Agent, error) {
+	// For now, return a mock agent since agents are virtual
+	return &models.Agent{
+		ID:           agentID,
+		Status:       "active",
+		ClaudeModel:  "claude-3-opus-20240229",
+		SessionCount: 1,
+	}, nil
+}
+
 // SendMessage sends a message to Claude for a session
-func (s *ClaudeSessionService) SendMessage(sessionID int, message string) error {
+func (s *ClaudeSessionService) SendMessage(ctx context.Context, sessionID int, message string) error {
 	// Get session
 	session, err := s.sessionRepo.GetByID(sessionID)
 	if err != nil {
