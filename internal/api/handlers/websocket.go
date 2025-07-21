@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -242,7 +243,7 @@ func (c *Client) handleSessionChat(msg WSMessage) {
 	log.Printf("Sending message to Claude service for session %d: %s", int(sessionID), message)
 	
 	// Send message via Claude service
-	if err := c.handler.claudeService.SendMessage(int(sessionID), message); err != nil {
+	if err := c.handler.claudeService.SendMessage(context.Background(), int(sessionID), message); err != nil {
 		log.Printf("Claude service error: %v", err)
 		c.sendError(fmt.Sprintf("Failed to send message: %v", err))
 		return

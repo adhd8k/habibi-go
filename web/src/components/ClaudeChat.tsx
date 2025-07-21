@@ -7,6 +7,9 @@ import { playNotificationSound, getNotificationsEnabled } from '../utils/notific
 import { useAppStore } from '../store'
 import { TaskDrawer } from './TaskDrawer'
 import { StopCircle, Send } from 'lucide-react'
+import CommandPalette from './CommandPalette'
+import { slashCommands } from '../api/client'
+import type { SlashCommand } from '../types'
 
 interface Message {
   id: string
@@ -35,15 +38,119 @@ export function ClaudeChat() {
   const [showToolMessages, setShowToolMessages] = useState(false)
   const [showTaskDrawer, setShowTaskDrawer] = useState(false)
   const [todos, setTodos] = useState<Todo[]>([])
+  const [showCommandPalette, setShowCommandPalette] = useState(false)
+  const [availableCommands, setAvailableCommands] = useState<SlashCommand[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
+  
+  // Handle slash command execution
+  const handleCommandSelect = async (command: string, args: string) => {
+    if (!currentSession) return
+    
+    setShowCommandPalette(false)
+    setInput('')
+    
+    try {
+      const result = await slashCommands.executeCommand(currentSession.id, command, args)
+      
+      // Handle different command result types
+      switch (result.type) {
+        case 'clear_chat':
+          setMessages([])
+          setTodos([])
+          break
+          
+        case 'show_help':
+          // Show help in a modal or as a message
+          const helpMessage: Message = {
+            id: Date.now().toString(),
+            role: 'assistant',
+            content: formatHelpMessage(result.data),
+            timestamp: new Date()
+          }
+          setMessages(prev => [...prev, helpMessage])
+          break
+          
+        case 'status':
+          // Show status information
+          const statusMessage: Message = {
+            id: Date.now().toString(),
+            role: 'assistant',
+            content: formatStatusMessage(result.data),
+            timestamp: new Date()
+          }
+          setMessages(prev => [...prev, statusMessage])
+          break
+          
+        case 'claude_message':
+          // Claude will handle the response through normal streaming
+          break
+          
+        case 'error':
+          const errorMessage: Message = {
+            id: Date.now().toString(),
+            role: 'assistant',
+            content: `Error: ${result.data.message}`,
+            timestamp: new Date()
+          }
+          setMessages(prev => [...prev, errorMessage])
+          break
+      }
+    } catch (error) {
+      console.error('Failed to execute command:', error)
+    }
+  }
+  
+  // Format help message
+  const formatHelpMessage = (data: any) => {
+    const { grouped } = data
+    let message = '## Available Commands\n\n'
+    
+    for (const [category, cmds] of Object.entries(grouped as Record<string, any[]>)) {
+      message += `### ${category}\n`
+      for (const cmd of cmds) {
+        message += `- **${cmd.name}** - ${cmd.description}\n`
+      }
+      message += '\n'
+    }
+    
+    return message
+  }
+  
+  // Format status message
+  const formatStatusMessage = (data: any) => {
+    const { session, agent } = data
+    return `## Session Status
+    
+**Session**: ${session.name}
+**Branch**: ${session.branch_name}
+**Status**: ${session.status}
+**Agent**: ${agent.claude_model || 'Claude'}
+**Created**: ${new Date(session.created_at).toLocaleString()}
+`
+  }
 
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+  
+  // Detect slash commands
+  useEffect(() => {
+    if (input.startsWith('/') && currentSession) {
+      setShowCommandPalette(true)
+      // Load commands if not already loaded
+      if (availableCommands.length === 0) {
+        slashCommands.getCommands(currentSession.id)
+          .then(setAvailableCommands)
+          .catch(console.error)
+      }
+    } else {
+      setShowCommandPalette(false)
+    }
+  }, [input, currentSession, availableCommands.length])
 
   // Load chat history and setup WebSocket
   useEffect(() => {
@@ -615,7 +722,16 @@ export function ClaudeChat() {
       </div>
 
       <div className="border-t border-gray-200 dark:border-gray-700 p-4">
-        <div className="flex gap-2 items-end">
+        <div className="relative">
+          {showCommandPalette && (
+            <CommandPalette
+              commands={availableCommands}
+              onSelect={handleCommandSelect}
+              onClose={() => setShowCommandPalette(false)}
+              searchTerm={input}
+            />
+          )}
+          <div className="flex gap-2 items-end">
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -656,6 +772,7 @@ export function ClaudeChat() {
               </>
             )}
           </button>
+          </div>
         </div>
       </div>
 
