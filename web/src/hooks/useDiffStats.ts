@@ -31,5 +31,10 @@ export function useDiffStats(sessionId?: number) {
       return stats
     },
     enabled: !!sessionId,
+    staleTime: Infinity, // Never consider the data stale
+    gcTime: Infinity, // Never garbage collect
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   })
 }

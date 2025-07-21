@@ -18,6 +18,11 @@ export function FileDiffs() {
       return response.data
     },
     enabled: !!currentSession,
+    staleTime: Infinity, // Never consider the data stale
+    gcTime: Infinity, // Never garbage collect
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   })
 
   if (!currentSession) {
