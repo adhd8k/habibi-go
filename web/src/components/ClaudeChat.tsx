@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { wsClient } from '../api/websocket'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -28,6 +28,7 @@ interface Todo {
 
 export function ClaudeChat() {
   const { currentSession } = useAppStore()
+  const queryClient = useQueryClient()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
@@ -249,6 +250,10 @@ export function ClaudeChat() {
         if (getNotificationsEnabled()) {
           playNotificationSound()
         }
+
+        // Invalidate diffs query to refresh with latest changes
+        queryClient.invalidateQueries({ queryKey: ['session-diffs', currentSession.id] })
+        queryClient.invalidateQueries({ queryKey: ['session-diff-stats', currentSession.id] })
       }
     }
 
@@ -303,7 +308,7 @@ export function ClaudeChat() {
       wsClient.off('claude_generation_stopped', handleGenerationStopped)
       wsClient.off('new_chat_message', handleNewMessage)
     }
-  }, [currentSession?.id])
+  }, [currentSession?.id, queryClient])
 
   const sendMessage = useMutation({
     mutationFn: async (message: string) => {
