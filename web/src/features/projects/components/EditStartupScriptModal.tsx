@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Modal } from './ui/Modal'
-import { useUpdateProjectMutation } from '../features/projects/api/projectsApi'
-import { Project } from '../shared/types/schemas'
+import { Modal } from '../../../components/ui/Modal'
+import { useUpdateProjectMutation } from '../../projects/api/projectsApi'
+import { Project } from '../../../shared/types/schemas'
 
 interface EditStartupScriptModalProps {
   isOpen: boolean

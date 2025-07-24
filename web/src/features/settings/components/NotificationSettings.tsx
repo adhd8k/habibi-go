@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getNotificationsEnabled, setNotificationsEnabled, playNotificationSound } from '../utils/notifications'
+import { getNotificationsEnabled, setNotificationsEnabled, playNotificationSound } from '../../../utils/notifications'
 
 export function NotificationSettings() {
   const [isEnabled, setIsEnabled] = useState(getNotificationsEnabled())

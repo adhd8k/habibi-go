@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { useAppStore } from '../store'
-import { sessionsApi } from '../api/client'
+import { useAppStore } from '../../../store'
+import { sessionsApi } from '../../../api/client'
 
 export function ManageSession() {
   const navigate = useNavigate()

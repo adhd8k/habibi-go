@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { sessionsApi, projectsApi } from '../api/client'
-import { CreateSessionRequest } from '../types'
-import { Modal } from './ui/Modal'
+import { sessionsApi, projectsApi } from '../../../api/client'
+import { CreateSessionRequest } from '../../../types'
+import { Modal } from '../../../components/ui/Modal'
 
 interface CreateSessionModalProps {
   isOpen: boolean

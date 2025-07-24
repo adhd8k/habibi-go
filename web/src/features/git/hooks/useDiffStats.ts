@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { sessionsApi, type DiffFile } from '../api/client'
+import { sessionsApi, type DiffFile } from '../../../api/client'
 
 export function useDiffStats(sessionId?: number) {
   const queryClient = useQueryClient()

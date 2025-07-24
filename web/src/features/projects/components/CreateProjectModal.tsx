@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { projectsApi } from '../api/client'
-import { CreateProjectRequest } from '../types'
-import { Modal } from './ui/Modal'
+import { projectsApi } from '../../../api/client'
+import { CreateProjectRequest } from '../../../types'
+import { Modal } from '../../../components/ui/Modal'
 
 interface CreateProjectModalProps {
   isOpen: boolean

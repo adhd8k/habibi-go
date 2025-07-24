@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { wsClient } from '../api/websocket'
+import { wsClient } from '../../../api/websocket'
 
 interface Todo {
   content: string

@@ -1,4 +1,4 @@
-import { useAppStore } from '../store'
+import { useAppStore } from '../../../store'
 
 export function DarkModeToggle() {
   const { darkMode, setDarkMode } = useAppStore()

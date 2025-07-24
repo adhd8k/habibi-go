@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import '@xterm/xterm/css/xterm.css'
-import { useAppStore } from '../store'
+import { useAppStore } from '../../../store'
 import { useTerminalManager } from '../hooks/useTerminalManager'
-import { wsClient } from '../api/websocket'
+import { wsClient } from '../../../api/websocket'
 
 export function Terminal() {
   const terminalRef = useRef<HTMLDivElement>(null)
