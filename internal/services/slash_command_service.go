@@ -46,17 +46,14 @@ func (s *SlashCommandService) GetAvailableCommands(ctx context.Context, sessionI
 
 	// Scan project .claude/commands/
 	projectCommandsPath := filepath.Join(project.Path, ".claude", "commands")
-	fmt.Printf("Scanning project commands at: %s\n", projectCommandsPath)
 	
 	// Also check the worktree path if this is a worktree session
 	if session.WorktreePath != "" && session.WorktreePath != project.Path {
 		worktreeCommandsPath := filepath.Join(session.WorktreePath, ".claude", "commands")
-		fmt.Printf("Also scanning worktree commands at: %s\n", worktreeCommandsPath)
 		worktreeCmds, err := s.scanDirectory(worktreeCommandsPath, false)
 		if err != nil && !os.IsNotExist(err) {
 			return nil, fmt.Errorf("failed to scan worktree commands: %w", err)
 		}
-		fmt.Printf("Found %d worktree commands\n", len(worktreeCmds))
 		commands = append(commands, worktreeCmds...)
 	}
 	
@@ -64,7 +61,6 @@ func (s *SlashCommandService) GetAvailableCommands(ctx context.Context, sessionI
 	if err != nil && !os.IsNotExist(err) {
 		return nil, fmt.Errorf("failed to scan project commands: %w", err)
 	}
-	fmt.Printf("Found %d project commands\n", len(projectCmds))
 	commands = append(commands, projectCmds...)
 
 	// Scan ~/.claude/commands/
@@ -222,10 +218,8 @@ func (s *SlashCommandService) scanDirectory(dir string, nested bool) ([]models.S
 
 	// Check if directory exists
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		fmt.Printf("Directory does not exist: %s\n", dir)
 		return commands, nil
 	}
-	fmt.Printf("Scanning directory: %s\n", dir)
 
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
