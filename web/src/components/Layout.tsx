@@ -1,6 +1,6 @@
 import { ReactNode } from 'react'
-import { NotificationSettings } from './NotificationSettings'
-import { DarkModeToggle } from './DarkModeToggle'
+import { NotificationSettings } from '../features/settings/components/NotificationSettings'
+import { DarkModeToggle } from '../features/settings/components/DarkModeToggle'
 
 interface LayoutProps {
   children: ReactNode

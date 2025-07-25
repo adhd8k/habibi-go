@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { wsClient } from '../api/websocket'
+import { wsClient } from '../../../api/websocket'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { playNotificationSound, getNotificationsEnabled } from '../utils/notifications'
-import { useAppStore } from '../store'
-import { TaskDrawer } from './TaskDrawer'
+import { playNotificationSound, getNotificationsEnabled } from '../../../utils/notifications'
+import { useAppStore } from '../../../store'
+import { TaskDrawer } from '../../todos/components/TaskDrawer'
 import { StopCircle, Send } from 'lucide-react'
 
 interface Message {

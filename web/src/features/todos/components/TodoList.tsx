@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { wsClient } from '../api/websocket'
-import { useAppStore } from '../store'
+import { wsClient } from '../../../api/websocket'
+import { useAppStore } from '../../../store'
 
 interface Todo {
   content: string

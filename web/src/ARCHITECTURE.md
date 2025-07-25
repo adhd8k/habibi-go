@@ -1,156 +1,179 @@
-# Frontend Architecture Guide
+# Frontend Architecture
+
+This document describes the architecture and organization of the Habibi-Go frontend application.
 
 ## Overview
 
-This frontend uses Redux Toolkit with RTK Query for state management and data fetching. The architecture follows a feature-based structure with clear separation of concerns.
+The frontend is a React application built with TypeScript and Vite. It follows a feature-based architecture pattern where functionality is organized by feature modules rather than technical layers.
 
-## Folder Structure
+## Technology Stack
+
+- **React 19** - UI framework
+- **TypeScript** - Type safety
+- **Vite** - Build tool and dev server
+- **Zustand** - Primary state management
+- **React Query** - Server state and caching
+- **React Router** - Client-side routing
+- **Tailwind CSS** - Styling
+- **WebSocket** - Real-time communication
+
+## Directory Structure
 
 ```
 src/
-├── app/                 # App-wide setup and configuration
-│   ├── store.ts        # Redux store configuration
-│   ├── hooks.ts        # Typed Redux hooks
-│   ├── middleware/     # Custom middleware (WebSocket)
-│   └── App.tsx         # Root application component
-│
-├── features/           # Feature-based modules
-│   ├── auth/          # Authentication feature
-│   ├── projects/      # Projects management
-│   ├── sessions/      # Sessions management
-│   └── agents/        # Agents management
-│
-├── shared/            # Shared resources
-│   ├── components/    # Reusable UI components
-│   ├── hooks/        # Shared custom hooks
-│   ├── utils/        # Utility functions
-│   └── types/        # Shared TypeScript types and schemas
-│
-├── services/         # External service integrations
-│   ├── api/         # API configuration and base setup
-│   └── websocket/   # WebSocket utilities
-│
-└── components/       # Legacy components (to be migrated)
+├── api/                    # API clients and configurations
+│   ├── client.ts          # HTTP client with axios
+│   └── websocket.ts       # WebSocket client
+├── app/                    # Application setup and configuration
+│   ├── App.tsx            # Main application component
+│   ├── store.ts           # Redux store setup (legacy)
+│   ├── hooks.ts           # Redux hooks (legacy)
+│   └── middleware/        # Redux middleware
+│       └── websocket.ts   # WebSocket Redux middleware
+├── components/            # Shared/common components
+│   ├── Layout.tsx         # Main layout wrapper
+│   └── ui/               # Generic UI components
+│       ├── Modal.tsx
+│       ├── DropdownMenu.tsx
+│       └── RightDrawer.tsx
+├── features/              # Feature-based modules
+│   ├── assistant/         # Claude AI assistant
+│   ├── auth/             # Authentication
+│   ├── git/              # Git diff visualization
+│   ├── projects/         # Project management
+│   ├── sessions/         # Session management
+│   ├── settings/         # App settings
+│   ├── terminal/         # Terminal emulator
+│   └── todos/            # Todo/task management
+├── hooks/                 # Global custom hooks
+│   └── useSessionActivity.ts
+├── services/              # Service layers
+│   └── api/
+│       └── baseApi.ts    # RTK Query base setup
+├── shared/                # Shared utilities and types
+│   ├── components/       # Shared components
+│   ├── hooks/           # Shared hooks
+│   └── types/           # Shared type definitions
+├── store/                 # Zustand store
+│   └── index.ts          # Main app store
+├── types/                 # Global type definitions
+│   └── index.ts
+├── utils/                 # Utility functions
+│   ├── errorHandling.ts
+│   └── notifications.ts
+├── main.tsx              # Application entry point
+└── index.css             # Global styles
 ```
 
-## Key Concepts
+## Feature Module Structure
 
-### 1. Redux Store Structure
+Each feature module follows a consistent structure:
 
-The store is organized by feature with the following slices:
-- `auth` - Authentication state and credentials
-- `projects` - Current project and filters
-- `sessions` - Current session and activity tracking
-- `api` - RTK Query API state (managed automatically)
-
-### 2. Data Flow
-
-1. **UI Components** dispatch actions or call RTK Query hooks
-2. **RTK Query** handles API calls with automatic caching
-3. **Redux Slices** manage UI state and business logic
-4. **WebSocket Middleware** handles real-time updates
-5. **Selectors** provide derived state to components
-
-### 3. Type Safety
-
-- **Zod Schemas** validate API responses at runtime
-- **TypeScript Types** are inferred from Zod schemas
-- **Typed Hooks** ensure type safety throughout the app
-
-### 4. WebSocket Integration
-
-The WebSocket middleware:
-- Manages connection lifecycle
-- Handles reconnection with exponential backoff
-- Dispatches messages as Redux actions
-- Integrates with authentication
-
-### 5. Authentication
-
-- Credentials stored in Redux and localStorage
-- Automatic auth header injection
-- Auth modal for 401 responses
-- WebSocket auth integration
-
-## Best Practices
-
-### Component Structure
-
-```typescript
-// Container Component (handles logic)
-export function ProjectListContainer() {
-  const dispatch = useAppDispatch()
-  const projects = useGetProjectsQuery()
-  
-  const handleSelect = (project: Project) => {
-    dispatch(setCurrentProject(project))
-  }
-  
-  return <ProjectListView {...props} />
-}
-
-// View Component (handles presentation)
-export function ProjectListView({ projects, onSelect }: Props) {
-  return <div>...</div>
-}
+```
+features/[feature-name]/
+├── components/           # Feature-specific components
+├── hooks/               # Feature-specific hooks
+├── api/                 # Feature-specific API endpoints (if using RTK Query)
+├── slice/               # Redux slice (legacy, being phased out)
+└── types/               # Feature-specific types
 ```
 
-### API Calls
+## State Management
 
-```typescript
-// Use RTK Query hooks
-const { data, isLoading, error } = useGetProjectsQuery()
+The application uses a hybrid approach for state management:
 
-// Mutations
-const [createProject] = useCreateProjectMutation()
+1. **Zustand** (Primary) - Used for global application state
+   - Current project and session
+   - UI preferences
+   - Real-time updates
 
-await createProject(data).unwrap()
-```
+2. **React Query** - Used for server state
+   - Data fetching and caching
+   - Optimistic updates
+   - Background refetching
 
-### State Updates
+3. **Redux Toolkit** (Legacy) - Being phased out
+   - Still used in some features
+   - Gradually migrating to Zustand
 
-```typescript
-// Dispatch actions
-dispatch(setCurrentProject(project))
+## API Layer
 
-// Use selectors
-const currentProject = useAppSelector(selectCurrentProject)
-```
+The application supports two API approaches:
 
-### WebSocket Subscriptions
+1. **Direct API calls** - Using axios client
+   - Most components use this approach
+   - Simple and straightforward
 
-```typescript
-useWebSocketSubscription({
-  messageType: 'session_update',
-  onMessage: (message) => {
-    // Handle message
-  }
-})
-```
+2. **RTK Query** - Redux Toolkit Query
+   - Used in some features
+   - Provides automatic caching
 
-## Migration Guide
+## WebSocket Architecture
 
-To migrate a component:
+Real-time features use WebSocket connections:
 
-1. Create feature folder structure
-2. Define Zod schemas for types
-3. Create RTK Query API endpoints
-4. Create Redux slice if needed
-5. Split into Container/View components
-6. Update imports in parent components
+- **Main WebSocket** - For application events and Claude responses
+- **Terminal WebSockets** - Separate connections for each terminal session
 
-## Performance Considerations
+## Key Features
 
-- RTK Query automatically deduplicates requests
-- Use `skip` parameter to conditionally fetch
-- Implement proper cache invalidation
-- Use React.memo for expensive components
-- Leverage RTK Query's optimistic updates
+### Assistant
+- Claude AI chat interface
+- Streaming responses
+- Tool use visualization
+- Task extraction
 
-## Testing
+### Projects
+- Project creation and management
+- SSH project support
+- Startup scripts
 
-The architecture supports easy testing:
-- Mock the store for component tests
-- Mock API endpoints for integration tests
-- Test slices and selectors in isolation
-- Use MSW for API mocking
+### Sessions
+- Git worktree management
+- Activity tracking
+- Multiple concurrent sessions
+
+### Terminal
+- Full terminal emulator using xterm.js
+- PTY backend support
+- Session persistence
+
+### Git Integration
+- Diff visualization
+- Branch comparison
+- File change tracking
+
+### Todos
+- Task management
+- Session-specific todos
+- Progress tracking
+
+## Component Patterns
+
+### Container/Presentational
+Some features use container components for logic and presentational components for UI.
+
+### Direct State Access
+Most components directly access Zustand store using the `useAppStore` hook.
+
+### Error Boundaries
+The app uses React error boundaries for graceful error handling.
+
+## Styling
+
+- **Tailwind CSS** for utility-first styling
+- **Dark mode** support throughout
+- **Responsive design** with mobile considerations
+
+## Build and Development
+
+- **Vite** for fast development and optimized builds
+- **TypeScript** strict mode for type safety
+- **Hot Module Replacement** for development
+
+## Future Considerations
+
+1. Complete migration from Redux to Zustand
+2. Consolidate API approaches to a single pattern
+3. Enhance WebSocket architecture for better performance
+4. Add comprehensive testing setup

@@ -1,4 +1,4 @@
-import { useAppStore } from '../store'
+import { useAppStore } from '../../../store'
 import { ClaudeChat } from './ClaudeChat'
 
 export function AssistantView() {

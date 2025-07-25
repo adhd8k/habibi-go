@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { useAppStore } from '../store'
-import { sessionsApi, type DiffFile } from '../api/client'
+import { useAppStore } from '../../../store'
+import { sessionsApi, type DiffFile } from '../../../api/client'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
