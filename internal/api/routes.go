@@ -20,6 +20,7 @@ type Router struct {
 	chatHandler          *handlers.ChatHandler
 	terminalHandler      *handlers.TerminalHandler
 	slashCommandHandler  *handlers.SlashCommandHandlers
+	fileHandler          *handlers.FileHandlers
 	webAssets            embed.FS
 	authConfig           *config.AuthConfig
 }
@@ -31,6 +32,7 @@ func NewRouter(
 	chatHandler *handlers.ChatHandler,
 	terminalHandler *handlers.TerminalHandler,
 	slashCommandHandler *handlers.SlashCommandHandlers,
+	fileHandler *handlers.FileHandlers,
 ) *Router {
 	return &Router{
 		projectHandler:      projectHandler,
@@ -39,6 +41,7 @@ func NewRouter(
 		chatHandler:         chatHandler,
 		terminalHandler:     terminalHandler,
 		slashCommandHandler: slashCommandHandler,
+		fileHandler:         fileHandler,
 	}
 }
 
@@ -109,6 +112,10 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 		// Slash commands
 		sessions.GET("/:id/commands", r.slashCommandHandler.GetCommands)
 		sessions.POST("/:id/commands", r.slashCommandHandler.ExecuteCommand)
+		
+		// File operations
+		sessions.GET("/:id/files", r.fileHandler.ListFiles)
+		sessions.GET("/:id/files/search", r.fileHandler.SearchFiles)
 	}
 
 	// WebSocket endpoint
@@ -173,6 +180,10 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 			// Slash commands
 			v1Sessions.GET("/:id/commands", r.slashCommandHandler.GetCommands)
 			v1Sessions.POST("/:id/commands", r.slashCommandHandler.ExecuteCommand)
+			
+			// File operations
+			v1Sessions.GET("/:id/files", r.fileHandler.ListFiles)
+			v1Sessions.GET("/:id/files/search", r.fileHandler.SearchFiles)
 		}
 	}
 

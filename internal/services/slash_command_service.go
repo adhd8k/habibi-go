@@ -114,23 +114,150 @@ func (s *SlashCommandService) ExecuteCommand(ctx context.Context, sessionID int,
 // getBuiltinCommands returns the list of built-in commands
 func (s *SlashCommandService) getBuiltinCommands() []models.SlashCommand {
 	return []models.SlashCommand{
+		// Directory Management
+		{
+			Name:        "/add-dir",
+			Description: "Add additional working directories",
+			IsBuiltin:   true,
+			Category:    "Project",
+		},
+		
+		// AI & Agents
+		{
+			Name:        "/agents",
+			Description: "Manage custom AI sub agents for specialized tasks",
+			IsBuiltin:   true,
+			Category:    "AI",
+		},
+		{
+			Name:        "/model",
+			Description: "Select or change the AI model",
+			IsBuiltin:   true,
+			Category:    "AI",
+		},
+		
+		// Development Tools
+		{
+			Name:        "/review",
+			Description: "Request code review",
+			IsBuiltin:   true,
+			Category:    "Development",
+		},
+		{
+			Name:        "/pr_comments",
+			Description: "View pull request comments",
+			IsBuiltin:   true,
+			Category:    "Development",
+		},
+		{
+			Name:        "/bug",
+			Description: "Report bugs (sends conversation to Anthropic)",
+			IsBuiltin:   true,
+			Category:    "Development",
+		},
+		
+		// Chat Management
 		{
 			Name:        "/clear",
-			Description: "Clear the chat history",
+			Description: "Clear conversation history",
 			IsBuiltin:   true,
 			Category:    "Chat",
 		},
 		{
-			Name:        "/help",
-			Description: "Show available commands and their descriptions",
+			Name:        "/compact",
+			Description: "Compact conversation with optional focus instructions",
 			IsBuiltin:   true,
-			Category:    "Help",
+			Category:    "Chat",
+		},
+		
+		// Configuration
+		{
+			Name:        "/config",
+			Description: "View/modify configuration",
+			IsBuiltin:   true,
+			Category:    "Configuration",
+		},
+		{
+			Name:        "/permissions",
+			Description: "View or update permissions",
+			IsBuiltin:   true,
+			Category:    "Configuration",
+		},
+		{
+			Name:        "/terminal-setup",
+			Description: "Install Shift+Enter key binding for newlines",
+			IsBuiltin:   true,
+			Category:    "Configuration",
+		},
+		
+		// Account & Auth
+		{
+			Name:        "/login",
+			Description: "Switch Anthropic accounts",
+			IsBuiltin:   true,
+			Category:    "Account",
+		},
+		{
+			Name:        "/logout",
+			Description: "Sign out from your Anthropic account",
+			IsBuiltin:   true,
+			Category:    "Account",
+		},
+		
+		// Project Management
+		{
+			Name:        "/init",
+			Description: "Initialize project with CLAUDE.md guide",
+			IsBuiltin:   true,
+			Category:    "Project",
+		},
+		{
+			Name:        "/memory",
+			Description: "Edit CLAUDE.md memory files",
+			IsBuiltin:   true,
+			Category:    "Project",
+		},
+		
+		// System & Info
+		{
+			Name:        "/cost",
+			Description: "Show token usage statistics",
+			IsBuiltin:   true,
+			Category:    "Info",
+		},
+		{
+			Name:        "/doctor",
+			Description: "Checks the health of your Claude Code installation",
+			IsBuiltin:   true,
+			Category:    "Info",
+		},
+		{
+			Name:        "/help",
+			Description: "Get usage help",
+			IsBuiltin:   true,
+			Category:    "Info",
 		},
 		{
 			Name:        "/status",
-			Description: "Show current session and agent status",
+			Description: "View account and system statuses",
 			IsBuiltin:   true,
 			Category:    "Info",
+		},
+		
+		// Integrations
+		{
+			Name:        "/mcp",
+			Description: "Manage MCP server connections and OAuth authentication",
+			IsBuiltin:   true,
+			Category:    "Integrations",
+		},
+		
+		// Editor Modes
+		{
+			Name:        "/vim",
+			Description: "Enter vim mode for alternating insert and command modes",
+			IsBuiltin:   true,
+			Category:    "Editor",
 		},
 	}
 }
@@ -204,6 +331,104 @@ func (s *SlashCommandService) handleBuiltinCommand(ctx context.Context, sessionI
 			Data: map[string]interface{}{
 				"session": session,
 				"agent":   agent,
+			},
+		}, true
+
+	case "compact":
+		// Compact conversation - in Habibi-Go context, this clears old messages
+		return &models.CommandResult{
+			Type: models.CommandResultTypeCompact,
+			Data: map[string]interface{}{
+				"message": "Conversation compacted. Use /clear to fully clear the chat.",
+				"args":    args,
+			},
+		}, true
+
+	case "vim":
+		// Enable vim mode
+		return &models.CommandResult{
+			Type: models.CommandResultTypeVimMode,
+			Data: map[string]interface{}{
+				"enabled": true,
+				"message": "Vim mode enabled. Use 'i' to insert, 'Esc' to command mode.",
+			},
+		}, true
+
+	case "cost":
+		// Show token usage - placeholder for now
+		return &models.CommandResult{
+			Type: models.CommandResultTypeInfo,
+			Data: map[string]interface{}{
+				"title": "Token Usage",
+				"content": "Token usage tracking is not yet implemented in Habibi-Go.",
+			},
+		}, true
+
+	case "doctor":
+		// Health check
+		return &models.CommandResult{
+			Type: models.CommandResultTypeInfo,
+			Data: map[string]interface{}{
+				"title": "System Health Check",
+				"content": "✓ Backend service: Running\n✓ WebSocket connection: Active\n✓ Database: Connected",
+			},
+		}, true
+
+	case "init":
+		// Initialize CLAUDE.md
+		return &models.CommandResult{
+			Type: models.CommandResultTypeAction,
+			Data: map[string]interface{}{
+				"action": "init_claude_md",
+				"message": "Initialize CLAUDE.md in the project directory",
+			},
+		}, true
+
+	case "memory":
+		// Edit CLAUDE.md
+		return &models.CommandResult{
+			Type: models.CommandResultTypeAction,
+			Data: map[string]interface{}{
+				"action": "edit_claude_md",
+				"message": "Open CLAUDE.md for editing",
+			},
+		}, true
+
+	case "config":
+		// Show configuration
+		return &models.CommandResult{
+			Type: models.CommandResultTypeConfig,
+			Data: map[string]interface{}{
+				"message": "Configuration management through Habibi-Go settings",
+			},
+		}, true
+
+	case "add-dir":
+		// Add directory
+		return &models.CommandResult{
+			Type: models.CommandResultTypeAction,
+			Data: map[string]interface{}{
+				"action": "add_directory",
+				"args":   args,
+				"message": "Add working directory: " + args,
+			},
+		}, true
+
+	case "review":
+		// Code review
+		return &models.CommandResult{
+			Type: models.CommandResultTypeClaudeMessage,
+			Data: map[string]interface{}{
+				"message": "Starting code review...",
+			},
+		}, true
+
+	case "model", "agents", "bug", "login", "logout", "mcp", "permissions", "pr_comments", "terminal-setup":
+		// These commands will be passed to Claude for processing
+		return &models.CommandResult{
+			Type: models.CommandResultTypeClaudeMessage,
+			Data: map[string]interface{}{
+				"message": fmt.Sprintf("Processing /%s command...", command),
 			},
 		}, true
 

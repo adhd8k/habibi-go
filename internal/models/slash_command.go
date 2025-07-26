@@ -24,4 +24,9 @@ const (
 	CommandResultTypeError         = "error"
 	CommandResultTypeShowHelp      = "show_help"
 	CommandResultTypeStatus        = "status"
+	CommandResultTypeConfig        = "config"
+	CommandResultTypeInfo          = "info"
+	CommandResultTypeAction        = "action"
+	CommandResultTypeVimMode       = "vim_mode"
+	CommandResultTypeCompact       = "compact"
 )

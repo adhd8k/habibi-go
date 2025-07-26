@@ -8,8 +8,9 @@ import { useAppStore } from '../../../store'
 import { TaskDrawer } from '../../todos/components/TaskDrawer'
 import { StopCircle, Send } from 'lucide-react'
 import CommandPalette from './CommandPalette'
+import FileMentionPalette from './FileMentionPalette'
 import { slashCommands } from '../api/client'
-import type { SlashCommand } from '../types'
+import type { SlashCommand, FileMention } from '../types'
 
 interface Message {
   id: string
@@ -40,10 +41,86 @@ export function ClaudeChat() {
   const [todos, setTodos] = useState<Todo[]>([])
   const [showCommandPalette, setShowCommandPalette] = useState(false)
   const [availableCommands, setAvailableCommands] = useState<SlashCommand[]>([])
+  const [showFileMention, setShowFileMention] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
+  
+  // Handle file mention selection
+  const handleFileMentionSelect = (file: FileMention) => {
+    if (!inputRef.current) return
+    
+    const cursorPosition = inputRef.current.selectionStart || 0
+    const textBeforeCursor = input.slice(0, cursorPosition)
+    const lastAtIndex = textBeforeCursor.lastIndexOf('@')
+    
+    if (lastAtIndex !== -1) {
+      // Replace @query with @filepath
+      const newText = input.slice(0, lastAtIndex) + '@' + file.path + ' ' + input.slice(cursorPosition)
+      setInput(newText)
+      setShowFileMention(false)
+      
+      // Set cursor position after the file mention
+      setTimeout(() => {
+        if (inputRef.current) {
+          const newPosition = lastAtIndex + file.path.length + 2
+          inputRef.current.setSelectionRange(newPosition, newPosition)
+          inputRef.current.focus()
+        }
+      }, 0)
+    }
+  }
+  
+  // Handle action commands
+  const handleAction = (data: any) => {
+    const { action, message, args } = data
+    
+    switch (action) {
+      case 'init_claude_md':
+        // TODO: Create CLAUDE.md file in project
+        const initMessage: Message = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: `${message}\n\nThis will create a CLAUDE.md file in your project root.`,
+          timestamp: new Date()
+        }
+        setMessages(prev => [...prev, initMessage])
+        break
+        
+      case 'edit_claude_md':
+        // TODO: Open CLAUDE.md for editing
+        const editMessage: Message = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: `${message}\n\nOpening CLAUDE.md for editing...`,
+          timestamp: new Date()
+        }
+        setMessages(prev => [...prev, editMessage])
+        break
+        
+      case 'add_directory':
+        // TODO: Add directory to project
+        const addDirMessage: Message = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: `${message}\n\nDirectory path: ${args}`,
+          timestamp: new Date()
+        }
+        setMessages(prev => [...prev, addDirMessage])
+        break
+        
+      default:
+        const defaultMessage: Message = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: `Action: ${action}\n${message}`,
+          timestamp: new Date()
+        }
+        setMessages(prev => [...prev, defaultMessage])
+    }
   }
   
   // Handle slash command execution
@@ -98,6 +175,52 @@ export function ClaudeChat() {
           }
           setMessages(prev => [...prev, errorMessage])
           break
+          
+        case 'info':
+          const infoMessage: Message = {
+            id: Date.now().toString(),
+            role: 'assistant',
+            content: `## ${result.data.title}\n\n${result.data.content}`,
+            timestamp: new Date()
+          }
+          setMessages(prev => [...prev, infoMessage])
+          break
+          
+        case 'config':
+          const configMessage: Message = {
+            id: Date.now().toString(),
+            role: 'assistant',
+            content: `## Configuration\n\n${result.data.message}`,
+            timestamp: new Date()
+          }
+          setMessages(prev => [...prev, configMessage])
+          break
+          
+        case 'action':
+          // Handle various actions
+          handleAction(result.data)
+          break
+          
+        case 'vim_mode':
+          const vimMessage: Message = {
+            id: Date.now().toString(),
+            role: 'assistant',
+            content: result.data.message,
+            timestamp: new Date()
+          }
+          setMessages(prev => [...prev, vimMessage])
+          // TODO: Actually enable vim mode in the input
+          break
+          
+        case 'compact':
+          const compactMessage: Message = {
+            id: Date.now().toString(),
+            role: 'assistant',
+            content: result.data.message,
+            timestamp: new Date()
+          }
+          setMessages(prev => [...prev, compactMessage])
+          break
       }
     } catch (error) {
       console.error('Failed to execute command:', error)
@@ -151,6 +274,30 @@ export function ClaudeChat() {
       setShowCommandPalette(false)
     }
   }, [input, currentSession, availableCommands.length])
+  
+  // Detect file mentions
+  useEffect(() => {
+    if (currentSession) {
+      // Check if the current word being typed starts with @
+      const cursorPosition = inputRef.current?.selectionStart || 0
+      const textBeforeCursor = input.slice(0, cursorPosition)
+      const lastAtIndex = textBeforeCursor.lastIndexOf('@')
+      
+      if (lastAtIndex !== -1) {
+        const textAfterAt = textBeforeCursor.slice(lastAtIndex)
+        // Check if @ is at the start or preceded by whitespace
+        const charBeforeAt = lastAtIndex > 0 ? textBeforeCursor[lastAtIndex - 1] : ' '
+        if (charBeforeAt === ' ' || charBeforeAt === '\n' || lastAtIndex === 0) {
+          // Check if there's no space after the @
+          if (!textAfterAt.includes(' ')) {
+            setShowFileMention(true)
+            return
+          }
+        }
+      }
+      setShowFileMention(false)
+    }
+  }, [input, currentSession])
 
   // Load chat history and setup WebSocket
   useEffect(() => {
@@ -731,12 +878,21 @@ export function ClaudeChat() {
               searchTerm={input}
             />
           )}
+          {showFileMention && currentSession && (
+            <FileMentionPalette
+              sessionId={currentSession.id}
+              searchTerm={input}
+              onSelect={handleFileMentionSelect}
+              onClose={() => setShowFileMention(false)}
+            />
+          )}
           <div className="flex gap-2 items-end">
           <textarea
+            ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-            placeholder="Type your message... (Shift+Enter for new line)"
+            placeholder="Type your message... (Shift+Enter for new line, / for commands, @ for files)"
             disabled={isProcessing}
             rows={1}
             className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 disabled:opacity-50 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 resize-none overflow-hidden min-h-[40px] max-h-[200px]"

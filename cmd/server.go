@@ -100,6 +100,9 @@ func runServer(cmd *cobra.Command, args []string) {
 	// Initialize slash command service
 	slashCommandService := services.NewSlashCommandService(sessionService, claudeSessionService, sessionRepo, projectRepo)
 	
+	// Initialize file service
+	fileService := services.NewFileService()
+	
 	// Initialize handlers
 	projectHandler := handlers.NewProjectHandler(projectService)
 	sessionHandler := handlers.NewSessionHandler(sessionService)
@@ -107,6 +110,7 @@ func runServer(cmd *cobra.Command, args []string) {
 	chatHandler := handlers.NewChatHandler(chatRepo, sessionRepo)
 	terminalHandler := handlers.NewTerminalHandler(sessionService)
 	slashCommandHandler := handlers.NewSlashCommandHandlers(slashCommandService)
+	fileHandler := handlers.NewFileHandlers(sessionService, fileService)
 	
 	// Set cross-handler dependencies
 	sessionHandler.SetWebSocketHandler(websocketHandler)
@@ -116,7 +120,7 @@ func runServer(cmd *cobra.Command, args []string) {
 	websocketHandler.StartHub()
 	
 	// Initialize router
-	router := api.NewRouter(projectHandler, sessionHandler, websocketHandler, chatHandler, terminalHandler, slashCommandHandler)
+	router := api.NewRouter(projectHandler, sessionHandler, websocketHandler, chatHandler, terminalHandler, slashCommandHandler, fileHandler)
 	
 	// Set auth config
 	router.SetAuthConfig(&cfg.Server.Auth)
