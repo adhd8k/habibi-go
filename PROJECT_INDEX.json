@@ -1,0 +1,4789 @@
+{
+  "indexed_at": "2025-08-17T09:18:32.485551",
+  "root": ".",
+  "project_structure": {
+    "type": "tree",
+    "root": ".",
+    "tree": [
+      ".",
+      "\u251c\u2500\u2500 bin/",
+      "\u251c\u2500\u2500 cmd/ (5 files)",
+      "\u251c\u2500\u2500 configs/",
+      "\u251c\u2500\u2500 internal/ (35 files)",
+      "\u2502   \u251c\u2500\u2500 api/ (9 files)",
+      "\u2502   \u2502   \u251c\u2500\u2500 handlers/ (5 files)",
+      "\u2502   \u2502   \u2514\u2500\u2500 middleware/ (3 files)",
+      "\u2502   \u251c\u2500\u2500 config/ (1 files)",
+      "\u2502   \u251c\u2500\u2500 database/ (12 files)",
+      "\u2502   \u2502   \u251c\u2500\u2500 migrations/ (7 files)",
+      "\u2502   \u2502   \u2514\u2500\u2500 repositories/ (4 files)",
+      "\u2502   \u251c\u2500\u2500 models/ (4 files)",
+      "\u2502   \u251c\u2500\u2500 services/ (6 files)",
+      "\u2502   \u2514\u2500\u2500 util/ (3 files)",
+      "\u251c\u2500\u2500 releases/",
+      "\u2502   \u2514\u2500\u2500 v0.1/",
+      "\u251c\u2500\u2500 web/ (15297 files)",
+      "\u2502   \u251c\u2500\u2500 src/ (53 files)",
+      "\u2502   \u2502   \u251c\u2500\u2500 api/ (2 files)",
+      "\u2502   \u2502   \u251c\u2500\u2500 app/ (4 files)",
+      "\u2502   \u2502   \u2502   \u2514\u2500\u2500 middleware/ (1 files)",
+      "\u2502   \u2502   \u251c\u2500\u2500 components/ (4 files)",
+      "\u2502   \u2502   \u2502   \u2514\u2500\u2500 ui/ (3 files)",
+      "\u2502   \u2502   \u251c\u2500\u2500 features/ (29 files)",
+      "\u2502   \u2502   \u2502   \u251c\u2500\u2500 assistant/ (2 files)",
+      "\u2502   \u2502   \u2502   \u2502   \u2514\u2500\u2500 components/ (2 files)",
+      "\u2502   \u2502   \u2502   \u251c\u2500\u2500 auth/ (3 files)",
+      "\u2502   \u2502   \u2502   \u2502   \u251c\u2500\u2500 components/ (1 files)",
+      "\u2502   \u2502   \u2502   \u2502   \u251c\u2500\u2500 slice/ (1 files)",
+      "\u2502   \u2502   \u2502   \u2502   \u2514\u2500\u2500 types/ (1 files)",
+      "\u2502   \u2502   \u2502   \u251c\u2500\u2500 git/ (2 files)",
+      "\u2502   \u2502   \u2502   \u2502   \u251c\u2500\u2500 components/ (1 files)",
+      "\u2502   \u2502   \u2502   \u2502   \u2514\u2500\u2500 hooks/ (1 files)",
+      "\u2502   \u2502   \u2502   \u251c\u2500\u2500 projects/ (9 files)",
+      "\u2502   \u2502   \u2502   \u2502   \u251c\u2500\u2500 api/ (1 files)",
+      "\u2502   \u2502   \u2502   \u2502   \u251c\u2500\u2500 components/ (7 files)",
+      "\u2502   \u2502   \u2502   \u2502   \u2514\u2500\u2500 slice/ (1 files)",
+      "\u2502   \u2502   \u2502   \u251c\u2500\u2500 sessions/ (6 files)",
+      "\u2502   \u2502   \u2502   \u2502   \u251c\u2500\u2500 api/ (1 files)",
+      "\u2502   \u2502   \u2502   \u2502   \u251c\u2500\u2500 components/ (4 files)",
+      "\u2502   \u2502   \u2502   \u2502   \u2514\u2500\u2500 slice/ (1 files)",
+      "\u2502   \u2502   \u2502   \u251c\u2500\u2500 settings/ (2 files)",
+      "\u2502   \u2502   \u2502   \u2502   \u2514\u2500\u2500 components/ (2 files)",
+      "\u2502   \u2502   \u2502   \u251c\u2500\u2500 terminal/ (2 files)",
+      "\u2502   \u2502   \u2502   \u2502   \u251c\u2500\u2500 components/ (1 files)",
+      "\u2502   \u2502   \u2502   \u2502   \u2514\u2500\u2500 hooks/ (1 files)",
+      "\u2502   \u2502   \u2502   \u2514\u2500\u2500 todos/ (3 files)",
+      "\u2502   \u2502   \u2502       \u251c\u2500\u2500 components/ (2 files)",
+      "\u2502   \u2502   \u2502       \u2514\u2500\u2500 hooks/ (1 files)",
+      "\u2502   \u2502   \u251c\u2500\u2500 hooks/ (1 files)",
+      "\u2502   \u2502   \u251c\u2500\u2500 services/ (1 files)",
+      "\u2502   \u2502   \u2502   \u2514\u2500\u2500 api/ (1 files)",
+      "\u2502   \u2502   \u251c\u2500\u2500 shared/ (6 files)",
+      "\u2502   \u2502   \u2502   \u251c\u2500\u2500 components/ (4 files)",
+      "\u2502   \u2502   \u2502   \u251c\u2500\u2500 hooks/ (1 files)",
+      "\u2502   \u2502   \u2502   \u2514\u2500\u2500 types/ (1 files)",
+      "\u2502   \u2502   \u251c\u2500\u2500 store/ (1 files)",
+      "\u2502   \u2502   \u251c\u2500\u2500 types/ (1 files)",
+      "\u2502   \u2502   \u2514\u2500\u2500 utils/ (2 files)",
+      "\u2502   \u2514\u2500\u2500 package.json",
+      "\u251c\u2500\u2500 go.mod",
+      "\u251c\u2500\u2500 Makefile",
+      "\u2514\u2500\u2500 README.md"
+    ]
+  },
+  "documentation_map": {
+    "habibi_go_react_implementation_plan.md": {
+      "sections": [
+        "Agentic Coding Management Platform - Go + React Implementation Plan",
+        "Project Overview",
+        "Technology Stack",
+        "Backend (Go 1.21+)",
+        "Frontend (React 18+)",
+        "Key Dependencies",
+        "Project Structure"
+      ],
+      "architecture_hints": [
+        "upload/download"
+      ]
+    },
+    "CLAUDE.md": {
+      "sections": [
+        "Habibi-Go Claude Integration Guide",
+        "Project Overview",
+        "Key Architecture Components",
+        "Backend (Go)",
+        "Frontend (React + TypeScript)",
+        "Important Commands",
+        "Running the Application",
+        "Backend",
+        "Frontend (in web/ directory)",
+        "Build frontend"
+      ],
+      "architecture_hints": []
+    },
+    "TESTING.md": {
+      "sections": [
+        "Testing Habibi-Go Locally",
+        "Quick Start",
+        "1. Install Dependencies",
+        "2. Build and Run",
+        "Build everything (backend + frontend)",
+        "Run the server",
+        "Development Mode",
+        "Terminal 1: Run both frontend and backend in dev mode",
+        "Testing Each Phase",
+        "Phase 1: Core Backend"
+      ],
+      "architecture_hints": []
+    },
+    "CLAUDE_FIX_SUMMARY.md": {
+      "sections": [
+        "Claude Integration Fix Summary",
+        "Issues Fixed",
+        "Implementation Details",
+        "1. Agent Service Updates",
+        "2. Configuration",
+        "3. Claude Simulator",
+        "4. Process Monitoring",
+        "Testing",
+        "Next Steps",
+        "Usage"
+      ],
+      "architecture_hints": []
+    },
+    "README.md": {
+      "sections": [
+        "\ud83d\ude80 Habibi-Go",
+        "\u2728 Features",
+        "\ud83c\udfaf Core Features",
+        "\ud83d\udee0\ufe0f Technical Features",
+        "\ud83d\udccb Prerequisites",
+        "\ud83d\ude80 Quick Start",
+        "Option 1: Download Pre-built Binary (Recommended)",
+        "Option 2: Build from Source",
+        "\ud83c\udfd7\ufe0f Building",
+        "Build for Current Platform"
+      ],
+      "architecture_hints": []
+    },
+    "CLAUDE_INTEGRATION.md": {
+      "sections": [
+        "Claude Integration",
+        "Features",
+        "Setup",
+        "1. Install Claude Code CLI",
+        "Check if claude is installed",
+        "If not found, install Claude Code CLI from Anthropic",
+        "2. Configure Claude Path (Optional)",
+        "3. Run Habibi-Go",
+        "Usage",
+        "How It Works"
+      ],
+      "architecture_hints": []
+    },
+    "web/src/ARCHITECTURE.md": {
+      "sections": [
+        "Frontend Architecture",
+        "Overview",
+        "Technology Stack",
+        "Directory Structure",
+        "Feature Module Structure",
+        "State Management",
+        "API Layer",
+        "WebSocket Architecture",
+        "Key Features",
+        "Assistant"
+      ],
+      "architecture_hints": []
+    }
+  },
+  "directory_purposes": {
+    "web/src": "Source code root directory",
+    "web/src/api": "API endpoints and route handlers",
+    "web/src/components": "Reusable UI components",
+    "web/src/utils": "Shared utility functions and helpers",
+    "web/src/features/settings/components": "Reusable UI components",
+    "web/src/features/sessions/api": "API endpoints and route handlers",
+    "web/src/features/sessions/components": "Reusable UI components",
+    "web/src/features/assistant/components": "Reusable UI components",
+    "web/src/features/todos/components": "Reusable UI components",
+    "web/src/features/auth/components": "Reusable UI components",
+    "web/src/features/terminal/components": "Reusable UI components",
+    "web/src/features/git/components": "Reusable UI components",
+    "web/src/features/projects/api": "API endpoints and route handlers",
+    "web/src/features/projects/components": "Reusable UI components",
+    "web/src/app/middleware": "Middleware functions and handlers",
+    "web/src/services/api": "API endpoints and route handlers",
+    "web/src/shared/components": "Reusable UI components",
+    "internal/api": "API endpoints and route handlers",
+    "internal/config": "Configuration files and settings",
+    "internal/models": "Data models and database schemas",
+    "internal/services": "Business logic and external service integrations",
+    "internal/api/middleware": "Middleware functions and handlers",
+    "internal/database/migrations": "Database migration files"
+  },
+  "stats": {
+    "total_files": 118,
+    "total_directories": 124,
+    "fully_parsed": {
+      "go": 34,
+      "shell": 14,
+      "typescript": 53,
+      "javascript": 2
+    },
+    "listed_only": {
+      "json": 6,
+      "html": 1,
+      "css": 1,
+      "sql": 7
+    },
+    "markdown_files": 7
+  },
+  "files": {
+    "main.go": {
+      "language": "go",
+      "parsed": true,
+      "purpose": "Application entry point",
+      "imports": [
+        "embed",
+        "log",
+        "os",
+        "habibi-go/cmd"
+      ],
+      "functions": {
+        "main": "()"
+      },
+      "variables": [
+        "webAssets"
+      ],
+      "call_graph": {},
+      "package": "main"
+    },
+    "test_agent_clean.sh": {
+      "language": "shell",
+      "parsed": false,
+      "purpose": "Test file"
+    },
+    "test_claude_chat.sh": {
+      "language": "shell",
+      "parsed": false,
+      "purpose": "Test file"
+    },
+    "claude-simulator.sh": {
+      "language": "shell",
+      "parsed": true,
+      "functions": {
+        "respond": {
+          "doc": "Function to simulate Claude thinking and responding",
+          "signature": "()"
+        }
+      },
+      "variables": [
+        "SKIP_PERMS",
+        "PRINT_MODE",
+        "RESUME_SESSION",
+        "MESSAGE"
+      ],
+      "call_graph": {}
+    },
+    "build.sh": {
+      "language": "shell",
+      "parsed": true,
+      "functions": {
+        "build_platform": {
+          "doc": "Function to build for a specific platform",
+          "signature": "()"
+        }
+      },
+      "variables": [
+        "GREEN",
+        "BLUE",
+        "YELLOW",
+        "NC",
+        "VERSION",
+        "BUILD_TIME",
+        "LDFLAGS",
+        "GOOS",
+        "GOARCH",
+        "OUTPUT",
+        "SIZE"
+      ],
+      "call_graph": {}
+    },
+    "test_agent_script.sh": {
+      "language": "shell",
+      "parsed": false,
+      "purpose": "Test file"
+    },
+    "run_debug.sh": {
+      "language": "shell",
+      "parsed": false
+    },
+    "mock_claude.sh": {
+      "language": "shell",
+      "parsed": false
+    },
+    "test_echo_agent.sh": {
+      "language": "shell",
+      "parsed": false,
+      "purpose": "Test file"
+    },
+    "PROJECT_INDEX.json": {
+      "language": "json",
+      "parsed": false
+    },
+    "test_agent.sh": {
+      "language": "shell",
+      "parsed": false,
+      "purpose": "Test file"
+    },
+    "test_phase3.sh": {
+      "language": "shell",
+      "parsed": false,
+      "purpose": "Test file"
+    },
+    "build_web.sh": {
+      "language": "shell",
+      "parsed": false
+    },
+    "test_fullstack.sh": {
+      "language": "shell",
+      "parsed": false,
+      "purpose": "Test file"
+    },
+    "test_server.sh": {
+      "language": "shell",
+      "parsed": false,
+      "purpose": "Test file"
+    },
+    "release.sh": {
+      "language": "shell",
+      "parsed": true,
+      "functions": {
+        "create_archive": {
+          "doc": "Function to create archive",
+          "signature": "()"
+        }
+      },
+      "variables": [
+        "GREEN",
+        "BLUE",
+        "YELLOW",
+        "NC",
+        "VERSION",
+        "RELEASE_DIR",
+        "BINARY",
+        "PLATFORM",
+        "TEMP_DIR"
+      ],
+      "call_graph": {}
+    },
+    "cmd/session.go": {
+      "language": "go",
+      "parsed": true,
+      "imports": [
+        "fmt",
+        "log",
+        "os",
+        "strconv",
+        "text/tabwriter",
+        "github.com/spf13/cobra",
+        "habibi-go/internal/config",
+        "habibi-go/internal/database",
+        "habibi-go/internal/database/repositories",
+        "habibi-go/internal/models",
+        "habibi-go/internal/services"
+      ],
+      "functions": {
+        "init": "()",
+        "getSessionService": "() *services.SessionService, *services.ProjectService",
+        "runSessionList": "(cmd *cobra.Command, args []string)",
+        "runSessionCreate": "(cmd *cobra.Command, args []string)",
+        "runSessionShow": "(cmd *cobra.Command, args []string)",
+        "runSessionActivate": "(cmd *cobra.Command, args []string)",
+        "runSessionDelete": "(cmd *cobra.Command, args []string)",
+        "runSessionCleanup": "(cmd *cobra.Command, args []string)",
+        "runSessionSync": "(cmd *cobra.Command, args []string)"
+      },
+      "variables": [
+        "sessionCmd",
+        "sessionListCmd",
+        "sessionCreateCmd",
+        "sessionShowCmd",
+        "sessionActivateCmd",
+        "sessionDeleteCmd",
+        "sessionCleanupCmd",
+        "sessionSyncCmd",
+        "sessions",
+        "err",
+        "projectID"
+      ],
+      "call_graph": {},
+      "package": "cmd"
+    },
+    "cmd/config.go": {
+      "language": "go",
+      "parsed": true,
+      "purpose": "Configuration",
+      "imports": [
+        "fmt",
+        "log",
+        "github.com/spf13/cobra",
+        "habibi-go/internal/config"
+      ],
+      "functions": {
+        "init": "()",
+        "runConfigShow": "(cmd *cobra.Command, args []string)"
+      },
+      "variables": [
+        "configCmd",
+        "configShowCmd"
+      ],
+      "call_graph": {},
+      "package": "cmd"
+    },
+    "cmd/project.go": {
+      "language": "go",
+      "parsed": true,
+      "imports": [
+        "fmt",
+        "log",
+        "os",
+        "text/tabwriter",
+        "github.com/spf13/cobra",
+        "habibi-go/internal/config",
+        "habibi-go/internal/database",
+        "habibi-go/internal/database/repositories",
+        "habibi-go/internal/models",
+        "habibi-go/internal/services"
+      ],
+      "functions": {
+        "init": "()",
+        "getProjectService": "() *services.ProjectService",
+        "runProjectList": "(cmd *cobra.Command, args []string)",
+        "runProjectCreate": "(cmd *cobra.Command, args []string)",
+        "runProjectShow": "(cmd *cobra.Command, args []string)",
+        "runProjectDelete": "(cmd *cobra.Command, args []string)",
+        "runProjectDiscover": "(cmd *cobra.Command, args []string)"
+      },
+      "variables": [
+        "projectCmd",
+        "projectListCmd",
+        "projectCreateCmd",
+        "projectShowCmd",
+        "projectDeleteCmd",
+        "projectDiscoverCmd"
+      ],
+      "call_graph": {},
+      "package": "cmd"
+    },
+    "cmd/root.go": {
+      "language": "go",
+      "parsed": true,
+      "imports": [
+        "fmt",
+        "os",
+        "github.com/spf13/cobra",
+        "github.com/spf13/viper"
+      ],
+      "functions": {
+        "Execute": {
+          "calls": [
+            "Execute"
+          ],
+          "signature": "() error",
+          "called_by": [
+            "Execute"
+          ]
+        },
+        "init": "()",
+        "initConfig": "()"
+      },
+      "variables": [
+        "rootCmd"
+      ],
+      "call_graph": {},
+      "package": "cmd"
+    },
+    "cmd/server.go": {
+      "language": "go",
+      "parsed": true,
+      "imports": [
+        "context",
+        "embed",
+        "fmt",
+        "log",
+        "net/http",
+        "os",
+        "os/signal",
+        "syscall",
+        "github.com/gin-gonic/gin",
+        "github.com/spf13/cobra",
+        "habibi-go/internal/api",
+        "habibi-go/internal/api/handlers",
+        "habibi-go/internal/config",
+        "habibi-go/internal/database",
+        "habibi-go/internal/database/repositories",
+        "habibi-go/internal/services"
+      ],
+      "functions": {
+        "SetWebAssets": {
+          "signature": "(assets embed.FS)",
+          "called_by": [
+            "runServer"
+          ]
+        },
+        "init": "()",
+        "runServer": {
+          "calls": [
+            "SetWebAssets"
+          ],
+          "signature": "(cmd *cobra.Command, args []string)"
+        }
+      },
+      "variables": [
+        "serverCmd"
+      ],
+      "call_graph": {},
+      "package": "cmd"
+    },
+    "web/vite.config.ts": {
+      "language": "typescript",
+      "parsed": false,
+      "purpose": "Configuration"
+    },
+    "web/package-lock.json": {
+      "language": "json",
+      "parsed": false
+    },
+    "web/index.html": {
+      "language": "html",
+      "parsed": false,
+      "purpose": "Application entry point"
+    },
+    "web/tailwind.config.js": {
+      "language": "javascript",
+      "parsed": false,
+      "purpose": "Configuration"
+    },
+    "web/postcss.config.js": {
+      "language": "javascript",
+      "parsed": false,
+      "purpose": "Configuration"
+    },
+    "web/tsconfig.json": {
+      "language": "json",
+      "parsed": false,
+      "purpose": "Configuration"
+    },
+    "web/package.json": {
+      "language": "json",
+      "parsed": false
+    },
+    "web/tsconfig.node.json": {
+      "language": "json",
+      "parsed": false,
+      "purpose": "Configuration"
+    },
+    "web/src/index.css": {
+      "language": "css",
+      "parsed": false,
+      "purpose": "Application entry point"
+    },
+    "web/src/main.tsx": {
+      "language": "typescript",
+      "parsed": false,
+      "purpose": "Application entry point"
+    },
+    "web/src/api/websocket.ts": {
+      "language": "typescript",
+      "parsed": true,
+      "functions": {
+        "getWebSocketUrl": {
+          "signature": "()",
+          "called_by": [
+            "AppContent"
+          ]
+        }
+      },
+      "classes": {
+        "WebSocketClient": {
+          "methods": {
+            "constructor": {
+              "calls": [
+                "reconnect",
+                "send"
+              ],
+              "signature": "(private url: string)"
+            },
+            "connect": {
+              "signature": "()",
+              "called_by": [
+                "websocketMiddleware",
+                "connect"
+              ]
+            },
+            "subscribe": {
+              "calls": [
+                "send"
+              ],
+              "signature": "(agentId: number)"
+            },
+            "unsubscribe": {
+              "calls": [
+                "send"
+              ],
+              "signature": "(agentId: number)",
+              "called_by": [
+                "useWebSocketSubscription"
+              ]
+            },
+            "send": {
+              "signature": "(data: any)",
+              "called_by": [
+                "WebSocketClient.__init__",
+                "WebSocketClient.unsubscribe",
+                "WebSocketClient.subscribe",
+                "WebSocketClient.constructor"
+              ]
+            },
+            "on": "(event: string, handler: (data: any) => void)",
+            "off": "(event: string, handler?: (data: any) => void)",
+            "disconnect": "()",
+            "isConnected": "()",
+            "getReadyState": "()",
+            "__init__": {
+              "calls": [
+                "reconnect",
+                "send"
+              ],
+              "signature": "(private url: string)"
+            }
+          }
+        }
+      },
+      "variables": [
+        "message",
+        "handlers",
+        "delay",
+        "getWebSocketUrl",
+        "protocol",
+        "host",
+        "auth",
+        "wsClient"
+      ],
+      "call_graph": {}
+    },
+    "web/src/api/client.ts": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "axios"
+      ],
+      "functions": {
+        "getAuthHeader": "()"
+      },
+      "classes": {},
+      "variables": [
+        "getAuthHeader",
+        "auth",
+        "api",
+        "authHeader",
+        "username",
+        "password",
+        "config",
+        "projectsApi",
+        "sessionsApi"
+      ],
+      "interfaces": {
+        "DiffFile": {},
+        "ChatMessage": {}
+      },
+      "call_graph": {}
+    },
+    "web/src/types/index.ts": {
+      "language": "typescript",
+      "parsed": false,
+      "purpose": "Application entry point"
+    },
+    "web/src/features/settings/components/DarkModeToggle.tsx": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "../../../store"
+      ],
+      "functions": {
+        "DarkModeToggle": "()"
+      },
+      "classes": {},
+      "call_graph": {}
+    },
+    "web/src/features/settings/components/NotificationSettings.tsx": {
+      "language": "typescript",
+      "parsed": true,
+      "purpose": "Configuration",
+      "imports": [
+        "react",
+        "../../../utils/notifications"
+      ],
+      "functions": {
+        "NotificationSettings": {
+          "calls": [
+            "handleToggle"
+          ],
+          "signature": "()"
+        },
+        "handleToggle": {
+          "signature": "(enabled: boolean)",
+          "called_by": [
+            "NotificationSettings"
+          ]
+        }
+      },
+      "classes": {},
+      "variables": [
+        "handleToggle"
+      ],
+      "call_graph": {}
+    },
+    "web/src/features/sessions/api/sessionsApi.ts": {
+      "language": "typescript",
+      "parsed": false
+    },
+    "web/src/features/sessions/components/CreateSessionModal.tsx": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "react",
+        "@tanstack/react-query",
+        "../../../api/client",
+        "../../../types",
+        "../../../components/ui/Modal"
+      ],
+      "functions": {
+        "CreateSessionModal": "({ isOpen, onClose, projectId, onSuccess }: CreateSessionModalProps)",
+        "handleCreateSession": "()",
+        "handleClose": {
+          "signature": "()",
+          "called_by": [
+            "CreateProjectModal"
+          ]
+        }
+      },
+      "classes": {},
+      "variables": [
+        "queryClient",
+        "response",
+        "data",
+        "createMutation",
+        "session",
+        "handleCreateSession",
+        "handleClose",
+        "footer"
+      ],
+      "interfaces": {
+        "CreateSessionModalProps": {}
+      },
+      "call_graph": {}
+    },
+    "web/src/features/sessions/components/SessionView.tsx": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "react",
+        "react-markdown",
+        "remark-gfm",
+        "../../../store",
+        "../../assistant/components/AssistantView",
+        "../../git/components/FileDiffs",
+        "./ManageSession",
+        "../../terminal/components/Terminal",
+        "../../git/hooks/useDiffStats",
+        "../../../hooks/useSessionActivity"
+      ],
+      "functions": {
+        "ProjectReadme": {
+          "calls": [
+            "fetchReadme"
+          ],
+          "signature": "({ projectPath }: { projectPath: string })"
+        },
+        "SessionView": {
+          "calls": [
+            "getDiffLabel"
+          ],
+          "signature": "()"
+        },
+        "fetchReadme": {
+          "signature": "async ()",
+          "called_by": [
+            "ProjectReadme"
+          ]
+        },
+        "getDiffLabel": {
+          "signature": "()",
+          "called_by": [
+            "SessionView"
+          ]
+        }
+      },
+      "classes": {},
+      "variables": [
+        "fetchReadme",
+        "readmeFiles",
+        "response",
+        "content",
+        "isMarkdown",
+        "getDiffLabel",
+        "tabs"
+      ],
+      "call_graph": {}
+    },
+    "web/src/features/sessions/components/ManageSession.tsx": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "react",
+        "@tanstack/react-query",
+        "react-router-dom",
+        "../../../store",
+        "../../../api/client"
+      ],
+      "functions": {
+        "ManageSession": "()"
+      },
+      "classes": {},
+      "variables": [
+        "navigate",
+        "queryClient",
+        "rebaseMutation",
+        "response",
+        "pushMutation",
+        "mergeMutation",
+        "mergeToOriginalMutation",
+        "closeMutation"
+      ],
+      "call_graph": {}
+    },
+    "web/src/features/sessions/components/SessionManager.tsx": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "@tanstack/react-query",
+        "react",
+        "../../../api/client",
+        "../../../store",
+        "../../../types",
+        "../../todos/hooks/useSessionTodos",
+        "../../../api/websocket",
+        "../../../components/ui/DropdownMenu",
+        "../../sessions/api/sessionsApi",
+        "./CreateSessionModal"
+      ],
+      "functions": {
+        "SessionInProgressTask": "({ sessionId }: { sessionId: number })",
+        "SessionManager": "()",
+        "handleTodoUpdate": "()"
+      },
+      "classes": {},
+      "variables": [
+        "queryClient",
+        "itemsPerPage",
+        "handleTodoUpdate",
+        "response",
+        "data",
+        "deleteMutation",
+        "openEditorMutation",
+        "totalPages",
+        "startIndex",
+        "endIndex",
+        "currentSessions",
+        "result"
+      ],
+      "call_graph": {}
+    },
+    "web/src/features/sessions/slice/sessionsSlice.ts": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "@reduxjs/toolkit",
+        "../../../shared/types/schemas",
+        "../../../app/middleware/websocket"
+      ],
+      "functions": {
+        "selectCurrentSession": "(state: { sessions: SessionsState })",
+        "selectRecentSessions": "(state: { sessions: SessionsState })",
+        "selectSessionActivity": "(state: { sessions: SessionsState }, sessionId: number)"
+      },
+      "classes": {},
+      "variables": [
+        "initialState",
+        "sessionsSlice",
+        "message",
+        "selectCurrentSession",
+        "selectRecentSessions",
+        "selectSessionActivity"
+      ],
+      "interfaces": {
+        "SessionsState": {}
+      },
+      "call_graph": {}
+    },
+    "web/src/features/assistant/components/ClaudeChat.tsx": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "@tanstack/react-query",
+        "../../../api/websocket",
+        "react-markdown",
+        "remark-gfm",
+        "../../../utils/notifications",
+        "../../../store",
+        "../../todos/components/TaskDrawer",
+        "lucide-react"
+      ],
+      "functions": {
+        "ClaudeChat": "()",
+        "scrollToBottom": "()",
+        "loadChatHistory": {
+          "calls": [
+            "setMessages"
+          ],
+          "signature": "async ()"
+        },
+        "loadExistingTodos": "async ()",
+        "handleClaudeOutput": {
+          "calls": [
+            "setMessages"
+          ],
+          "signature": "(message: any)"
+        },
+        "handleResponseComplete": "(message: any)",
+        "handleGenerationStopped": "(message: any)",
+        "handleNewMessage": {
+          "calls": [
+            "setMessages"
+          ],
+          "signature": "(message: any)"
+        },
+        "handleResponse": "(msg: any)",
+        "handleSend": "()",
+        "handleStop": "()",
+        "getHiddenToolCount": "(index: number): number"
+      },
+      "classes": {},
+      "variables": [
+        "queryClient",
+        "messagesEndRef",
+        "scrollToBottom",
+        "loadChatHistory",
+        "response",
+        "data",
+        "historyMessages",
+        "loadExistingTodos",
+        "todoMessages",
+        "latestTodos",
+        "toolInput",
+        "handleClaudeOutput",
+        "contentType",
+        "output",
+        "isChunk",
+        "dbMessageId",
+        "lastMessage",
+        "existingIndex",
+        "updated",
+        "handleResponseComplete",
+        "handleGenerationStopped",
+        "handleNewMessage",
+        "exists",
+        "sendMessage",
+        "userMessage",
+        "handleResponse",
+        "handleSend",
+        "messageToSend",
+        "handleStop",
+        "filteredMessages",
+        "getHiddenToolCount",
+        "count",
+        "startIndex",
+        "endIndex",
+        "i",
+        "todosByStatus",
+        "hiddenToolCount",
+        "match",
+        "lastFilteredIndex",
+        "target"
+      ],
+      "interfaces": {
+        "Message": {},
+        "Todo": {}
+      },
+      "call_graph": {}
+    },
+    "web/src/features/assistant/components/AssistantView.tsx": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "../../../store",
+        "./ClaudeChat"
+      ],
+      "functions": {
+        "AssistantView": "()"
+      },
+      "classes": {},
+      "call_graph": {}
+    },
+    "web/src/features/todos/components/TodoList.tsx": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "react",
+        "../../../api/websocket",
+        "../../../store"
+      ],
+      "functions": {
+        "TodoList": "()",
+        "loadExistingTodos": "async ()",
+        "handleClaudeOutput": "(message: any)",
+        "getStatusIcon": "(status: string)",
+        "getStatusColor": "(status: string)"
+      },
+      "classes": {},
+      "variables": [
+        "loadExistingTodos",
+        "response",
+        "data",
+        "todoMessages",
+        "latestTodos",
+        "toolInput",
+        "handleClaudeOutput",
+        "getStatusIcon",
+        "getStatusColor",
+        "todosByStatus"
+      ],
+      "interfaces": {
+        "Todo": {}
+      },
+      "call_graph": {}
+    },
+    "web/src/features/todos/components/TaskDrawer.tsx": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "../../../components/ui/RightDrawer",
+        "./TodoList"
+      ],
+      "functions": {
+        "TaskDrawer": "({ isOpen, onClose }: TaskDrawerProps)"
+      },
+      "classes": {},
+      "interfaces": {
+        "TaskDrawerProps": {}
+      },
+      "call_graph": {}
+    },
+    "web/src/features/todos/hooks/useSessionTodos.ts": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "react",
+        "../../../api/websocket"
+      ],
+      "functions": {
+        "useSessionTodos": {
+          "calls": [
+            "loadTodos",
+            "updateInProgressTask"
+          ],
+          "signature": "(sessionId?: number)"
+        },
+        "getSessionInProgressTask": "(sessionId: number): string | null",
+        "loadTodos": {
+          "calls": [
+            "updateInProgressTask"
+          ],
+          "signature": "async ()",
+          "called_by": [
+            "useSessionTodos"
+          ]
+        },
+        "handleClaudeOutput": {
+          "calls": [
+            "updateInProgressTask"
+          ],
+          "signature": "(message: any)"
+        },
+        "updateInProgressTask": {
+          "signature": "(todoList: Todo[])",
+          "called_by": [
+            "useSessionTodos",
+            "loadTodos",
+            "handleClaudeOutput"
+          ]
+        }
+      },
+      "classes": {},
+      "variables": [
+        "sessionTodos",
+        "cachedTodos",
+        "loadTodos",
+        "response",
+        "data",
+        "todoMessages",
+        "latestTodos",
+        "toolInput",
+        "handleClaudeOutput",
+        "msgSessionId",
+        "updateInProgressTask",
+        "inProgress",
+        "todos"
+      ],
+      "interfaces": {
+        "Todo": {}
+      },
+      "call_graph": {}
+    },
+    "web/src/features/auth/types/index.ts": {
+      "language": "typescript",
+      "parsed": false,
+      "purpose": "Application entry point"
+    },
+    "web/src/features/auth/components/AuthModal.tsx": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "react",
+        "../../../app/hooks",
+        "../slice/authSlice"
+      ],
+      "functions": {
+        "AuthModal": "()",
+        "handleSubmit": "async (e: React.FormEvent)"
+      },
+      "classes": {},
+      "variables": [
+        "dispatch",
+        "isAuthRequired",
+        "authError",
+        "handleSubmit"
+      ],
+      "call_graph": {}
+    },
+    "web/src/features/auth/slice/authSlice.ts": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "@reduxjs/toolkit",
+        "../types"
+      ],
+      "functions": {
+        "loadStoredCredentials": "(): AuthCredentials | null",
+        "selectIsAuthenticated": "(state: { auth: AuthState })",
+        "selectCredentials": "(state: { auth: AuthState })",
+        "selectIsAuthRequired": "(state: { auth: AuthState })",
+        "selectAuthError": "(state: { auth: AuthState })",
+        "getAuthHeader": "(credentials: AuthCredentials | null): string | null"
+      },
+      "classes": {},
+      "constants": {
+        "STORAGE_KEY": "str"
+      },
+      "variables": [
+        "loadStoredCredentials",
+        "stored",
+        "initialState",
+        "authSlice",
+        "selectIsAuthenticated",
+        "selectCredentials",
+        "selectIsAuthRequired",
+        "selectAuthError",
+        "getAuthHeader"
+      ],
+      "call_graph": {}
+    },
+    "web/src/features/terminal/components/Terminal.tsx": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "react",
+        "../../../store",
+        "../hooks/useTerminalManager",
+        "../../../api/websocket"
+      ],
+      "functions": {
+        "Terminal": "()",
+        "connectWebSocket": {
+          "calls": [
+            "setupWebSocket"
+          ],
+          "signature": "()",
+          "called_by": [
+            "setupWebSocket",
+            "handleReconnect"
+          ]
+        },
+        "setupWebSocket": {
+          "calls": [
+            "connectWebSocket"
+          ],
+          "signature": "(wsInstance: WebSocket)",
+          "called_by": [
+            "connectWebSocket",
+            "handleReconnect"
+          ]
+        },
+        "handleResize": "()",
+        "handleSessionDeleted": "(message: any)",
+        "handleRestart": {
+          "calls": [
+            "handleReconnect"
+          ],
+          "signature": "async ()"
+        },
+        "handleReconnect": {
+          "calls": [
+            "connectWebSocket",
+            "setupWebSocket"
+          ],
+          "signature": "()",
+          "called_by": [
+            "handleRestart"
+          ]
+        }
+      },
+      "classes": {},
+      "variables": [
+        "terminalRef",
+        "instance",
+        "protocol",
+        "wsUrl",
+        "reconnectAttempt",
+        "maxReconnectAttempts",
+        "connectWebSocket",
+        "newWs",
+        "setupWebSocket",
+        "data",
+        "delay",
+        "handleResize",
+        "resizeObserver",
+        "handleSessionDeleted",
+        "deletedSessionId",
+        "handleRestart",
+        "response",
+        "handleReconnect",
+        "ws"
+      ],
+      "call_graph": {}
+    },
+    "web/src/features/terminal/hooks/useTerminalManager.ts": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "react",
+        "@xterm/xterm",
+        "@xterm/addon-fit",
+        "@xterm/addon-web-links"
+      ],
+      "functions": {
+        "useTerminalManager": "()"
+      },
+      "classes": {},
+      "variables": [
+        "terminalsRef",
+        "activeSessionIdRef",
+        "createTerminal",
+        "terminal",
+        "fitAddon",
+        "webLinksAddon",
+        "getOrCreateTerminal",
+        "instance",
+        "switchToSession",
+        "currentInstance",
+        "closeTerminal",
+        "fitActiveTerminal",
+        "clearActiveTerminal",
+        "getActiveTerminal"
+      ],
+      "interfaces": {
+        "TerminalInstance": {}
+      },
+      "call_graph": {}
+    },
+    "web/src/features/git/components/FileDiffs.tsx": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "@tanstack/react-query",
+        "../../../store",
+        "../../../api/client",
+        "react-syntax-highlighter",
+        "react-syntax-highlighter/dist/esm/styles/prism"
+      ],
+      "functions": {
+        "FileDiffs": "()"
+      },
+      "classes": {},
+      "variables": [
+        "response",
+        "hasChanges"
+      ],
+      "call_graph": {}
+    },
+    "web/src/features/git/hooks/useDiffStats.ts": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "@tanstack/react-query",
+        "../../../api/client"
+      ],
+      "functions": {
+        "useDiffStats": "(sessionId?: number)"
+      },
+      "classes": {},
+      "variables": [
+        "queryClient",
+        "cachedDiffData",
+        "response",
+        "stats"
+      ],
+      "call_graph": {}
+    },
+    "web/src/features/projects/api/projectsApi.ts": {
+      "language": "typescript",
+      "parsed": false
+    },
+    "web/src/features/projects/components/CreateProjectModal.tsx": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "react",
+        "@tanstack/react-query",
+        "../../../api/client",
+        "../../../types",
+        "../../../components/ui/Modal"
+      ],
+      "functions": {
+        "CreateProjectModal": {
+          "calls": [
+            "handleClose"
+          ],
+          "signature": "({ isOpen, onClose, onSuccess }: CreateProjectModalProps)"
+        },
+        "handleCreateProject": "()",
+        "handleClose": {
+          "signature": "()",
+          "called_by": [
+            "CreateProjectModal"
+          ]
+        }
+      },
+      "classes": {},
+      "variables": [
+        "queryClient",
+        "createMutation",
+        "response",
+        "handleCreateProject",
+        "handleClose",
+        "footer"
+      ],
+      "interfaces": {
+        "CreateProjectModalProps": {}
+      },
+      "call_graph": {}
+    },
+    "web/src/features/projects/components/EditStartupScriptModal.tsx": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "react",
+        "../../../components/ui/Modal",
+        "../../projects/api/projectsApi",
+        "../../../shared/types/schemas"
+      ],
+      "functions": {
+        "EditStartupScriptModal": "({ isOpen, onClose, project }: EditStartupScriptModalProps)",
+        "handleSave": "async ()",
+        "handleRunScript": "async ()"
+      },
+      "classes": {},
+      "variables": [
+        "handleSave",
+        "handleRunScript",
+        "response",
+        "data"
+      ],
+      "interfaces": {
+        "EditStartupScriptModalProps": {}
+      },
+      "call_graph": {}
+    },
+    "web/src/features/projects/components/ProjectManager.tsx": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "@tanstack/react-query",
+        "react",
+        "../../../api/client",
+        "../../../store",
+        "../../../types",
+        "../../../components/ui/DropdownMenu",
+        "./CreateProjectModal",
+        "./CreateSSHProjectModal",
+        "./EditProjectModal",
+        "./EditStartupScriptModal"
+      ],
+      "functions": {
+        "ProjectManager": "()",
+        "handleProjectSelect": "(project: Project)",
+        "handleCreateSuccess": "()"
+      },
+      "classes": {},
+      "variables": [
+        "queryClient",
+        "itemsPerPage",
+        "response",
+        "data",
+        "sessionPromises",
+        "sessions",
+        "deleteMutation",
+        "handleProjectSelect",
+        "handleCreateSuccess",
+        "displayProjects",
+        "totalPages",
+        "startIndex",
+        "endIndex",
+        "currentProjects"
+      ],
+      "call_graph": {}
+    },
+    "web/src/features/projects/components/EditProjectModal.tsx": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "react",
+        "../../../components/ui/Modal",
+        "../../projects/api/projectsApi",
+        "../../../shared/types/schemas"
+      ],
+      "functions": {
+        "EditProjectModal": "({ isOpen, onClose, project }: EditProjectModalProps)",
+        "handleSave": "async ()",
+        "handleRunScript": "async ()"
+      },
+      "classes": {},
+      "variables": [
+        "handleSave",
+        "handleRunScript",
+        "response",
+        "data"
+      ],
+      "interfaces": {
+        "EditProjectModalProps": {}
+      },
+      "call_graph": {}
+    },
+    "web/src/features/projects/components/CreateSSHProjectModal.tsx": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "react",
+        "@tanstack/react-query",
+        "../../../api/client",
+        "../../../types",
+        "../../../components/ui/Modal"
+      ],
+      "functions": {
+        "CreateSSHProjectModal": "({ isOpen, onClose, onSuccess }: CreateSSHProjectModalProps)",
+        "handleSubmit": "()",
+        "handleClose": {
+          "signature": "()",
+          "called_by": [
+            "CreateProjectModal"
+          ]
+        },
+        "addEnvironmentVar": "()",
+        "removeEnvironmentVar": "(key: string)"
+      },
+      "classes": {},
+      "variables": [
+        "queryClient",
+        "createProject",
+        "config",
+        "request",
+        "response",
+        "handleSubmit",
+        "handleClose",
+        "addEnvironmentVar",
+        "removeEnvironmentVar",
+        "setupCommandHint",
+        "footer"
+      ],
+      "interfaces": {
+        "CreateSSHProjectModalProps": {}
+      },
+      "call_graph": {}
+    },
+    "web/src/features/projects/components/ProjectList.tsx": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "@tanstack/react-query",
+        "react",
+        "../../../api/client",
+        "../../../store",
+        "../../../types",
+        "./AddSSHProjectForm",
+        "../../../components/ui/DropdownMenu",
+        "./EditStartupScriptModal",
+        "./EditProjectModal"
+      ],
+      "functions": {
+        "ProjectList": "()",
+        "handleSelectProject": "(project: Project)",
+        "handleCreateProject": "()"
+      },
+      "classes": {},
+      "variables": [
+        "queryClient",
+        "response",
+        "data",
+        "deleteMutation",
+        "createMutation",
+        "handleSelectProject",
+        "handleCreateProject"
+      ],
+      "call_graph": {}
+    },
+    "web/src/features/projects/components/AddSSHProjectForm.tsx": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "react",
+        "@tanstack/react-query",
+        "../../../api/client",
+        "../../../types"
+      ],
+      "functions": {
+        "AddSSHProjectForm": "({ onSuccess, onCancel }: AddSSHProjectFormProps)",
+        "handleSubmit": "(e: React.FormEvent)",
+        "addEnvironmentVar": "()",
+        "removeEnvironmentVar": "(key: string)"
+      },
+      "classes": {},
+      "variables": [
+        "queryClient",
+        "createProject",
+        "config",
+        "request",
+        "response",
+        "handleSubmit",
+        "addEnvironmentVar",
+        "removeEnvironmentVar",
+        "setupCommandHint"
+      ],
+      "interfaces": {
+        "AddSSHProjectFormProps": {}
+      },
+      "call_graph": {}
+    },
+    "web/src/features/projects/slice/projectsSlice.ts": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "@reduxjs/toolkit",
+        "../../../shared/types/schemas"
+      ],
+      "functions": {
+        "selectCurrentProject": "(state: { projects: ProjectsState })",
+        "selectProjectsFilter": "(state: { projects: ProjectsState })"
+      },
+      "classes": {},
+      "variables": [
+        "initialState",
+        "projectsSlice",
+        "selectCurrentProject",
+        "selectProjectsFilter"
+      ],
+      "interfaces": {
+        "ProjectsState": {}
+      },
+      "call_graph": {}
+    },
+    "web/src/components/Layout.tsx": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "react",
+        "../features/settings/components/NotificationSettings",
+        "../features/settings/components/DarkModeToggle"
+      ],
+      "functions": {
+        "Layout": "({ children }: LayoutProps)"
+      },
+      "classes": {},
+      "interfaces": {
+        "LayoutProps": {}
+      },
+      "call_graph": {}
+    },
+    "web/src/components/ui/Modal.tsx": {
+      "language": "typescript",
+      "parsed": true,
+      "functions": {
+        "Modal": {
+          "calls": [
+            "handleEscape"
+          ],
+          "signature": "({ isOpen, onClose, title, children, footer }: ModalProps)"
+        },
+        "handleEscape": {
+          "signature": "(event: KeyboardEvent)",
+          "called_by": [
+            "Modal"
+          ]
+        }
+      },
+      "classes": {},
+      "variables": [
+        "modalRef"
+      ],
+      "interfaces": {
+        "ModalProps": {}
+      },
+      "call_graph": {}
+    },
+    "web/src/components/ui/DropdownMenu.tsx": {
+      "language": "typescript",
+      "parsed": true,
+      "functions": {
+        "DropdownMenu": {
+          "calls": [
+            "handleClickOutside"
+          ],
+          "signature": "({ items, trigger }: DropdownMenuProps)"
+        },
+        "handleClickOutside": {
+          "signature": "(event: MouseEvent)",
+          "called_by": [
+            "DropdownMenu"
+          ]
+        }
+      },
+      "classes": {},
+      "variables": [
+        "dropdownRef"
+      ],
+      "interfaces": {
+        "DropdownMenuItem": {},
+        "DropdownMenuProps": {}
+      },
+      "call_graph": {}
+    },
+    "web/src/components/ui/RightDrawer.tsx": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "react"
+      ],
+      "functions": {
+        "RightDrawer": "({ isOpen, onClose, children, title }: RightDrawerProps)"
+      },
+      "classes": {},
+      "interfaces": {
+        "RightDrawerProps": {}
+      },
+      "call_graph": {}
+    },
+    "web/src/app/store.ts": {
+      "language": "typescript",
+      "parsed": false
+    },
+    "web/src/app/hooks.ts": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "react-redux"
+      ],
+      "functions": {
+        "useAppDispatch": "()"
+      },
+      "classes": {},
+      "variables": [
+        "useAppDispatch"
+      ],
+      "call_graph": {}
+    },
+    "web/src/app/App.tsx": {
+      "language": "typescript",
+      "parsed": true,
+      "purpose": "Application entry point",
+      "imports": [
+        "react",
+        "react-redux",
+        "react-router-dom",
+        "./store",
+        "./hooks",
+        "./middleware/websocket",
+        "../features/auth/components/AuthModal",
+        "../components/Layout",
+        "../features/projects/components/ProjectManager",
+        "../features/sessions/components/SessionManager",
+        "../features/sessions/components/SessionView",
+        "../features/auth/slice/authSlice",
+        "../shared/components/StoreSync",
+        "../store"
+      ],
+      "functions": {
+        "Dashboard": "()",
+        "AppContent": {
+          "calls": [
+            "getWebSocketUrl"
+          ],
+          "signature": "()"
+        },
+        "App": "()",
+        "getWebSocketUrl": {
+          "signature": "()",
+          "called_by": [
+            "AppContent"
+          ]
+        }
+      },
+      "classes": {},
+      "variables": [
+        "dispatch",
+        "getWebSocketUrl",
+        "protocol",
+        "host",
+        "credentials"
+      ],
+      "call_graph": {}
+    },
+    "web/src/app/middleware/websocket.ts": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "@reduxjs/toolkit"
+      ],
+      "functions": {
+        "websocketMiddleware": {
+          "calls": [
+            "connect"
+          ],
+          "signature": "(store)"
+        },
+        "connect": {
+          "calls": [
+            "connect"
+          ],
+          "signature": "(url: string, onOpen?: ()",
+          "called_by": [
+            "websocketMiddleware",
+            "connect"
+          ]
+        },
+        "websocketConnect": "(url: string, onOpen?: ()",
+        "websocketDisconnect": "(): WebSocketDisconnectAction",
+        "websocketSend": "(message: WebSocketMessage): WebSocketSendAction"
+      },
+      "classes": {},
+      "variables": [
+        "websocketMiddleware",
+        "reconnectAttempts",
+        "maxReconnectAttempts",
+        "isConnecting",
+        "connect",
+        "message",
+        "delay",
+        "typedAction",
+        "websocketConnect",
+        "websocketDisconnect",
+        "websocketSend"
+      ],
+      "interfaces": {
+        "WebSocketMessage": {},
+        "WebSocketConnectAction": {},
+        "WebSocketDisconnectAction": {},
+        "WebSocketSendAction": {},
+        "WebSocketMessageReceivedAction": {},
+        "WebSocketErrorAction": {},
+        "WebSocketConnectedAction": {},
+        "WebSocketDisconnectedAction": {}
+      },
+      "call_graph": {}
+    },
+    "web/src/services/api/baseApi.ts": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "@reduxjs/toolkit/query/react",
+        "../../app/store",
+        "../../features/auth/slice/authSlice",
+        "../../features/auth/slice/authSlice"
+      ],
+      "functions": {
+        "baseQueryWithAuth": "async (args, api, extraOptions)"
+      },
+      "classes": {},
+      "variables": [
+        "baseQuery",
+        "state",
+        "authHeader",
+        "baseQueryWithRetry",
+        "result",
+        "baseApi",
+        "unwrapApiResponse"
+      ],
+      "call_graph": {}
+    },
+    "web/src/store/index.ts": {
+      "language": "typescript",
+      "parsed": true,
+      "purpose": "Application entry point",
+      "imports": [
+        "zustand",
+        "zustand/middleware"
+      ],
+      "functions": {
+        "initializeDarkMode": "()"
+      },
+      "classes": {},
+      "variables": [
+        "initializeDarkMode",
+        "saved",
+        "enabled",
+        "useAppStore"
+      ],
+      "interfaces": {
+        "AppState": {}
+      },
+      "call_graph": {}
+    },
+    "web/src/shared/types/schemas.ts": {
+      "language": "typescript",
+      "parsed": false
+    },
+    "web/src/shared/components/ErrorBoundary.tsx": {
+      "language": "typescript",
+      "parsed": true,
+      "functions": {},
+      "classes": {
+        "ErrorBoundary": {
+          "methods": {
+            "constructor": "(props: ErrorBoundaryProps)",
+            "componentDidCatch": "(error: Error, errorInfo: React.ErrorInfo)",
+            "render": "()",
+            "__init__": "(props: ErrorBoundaryProps)"
+          },
+          "extends": "Component"
+        }
+      },
+      "interfaces": {
+        "ErrorBoundaryProps": {},
+        "ErrorBoundaryState": {}
+      },
+      "call_graph": {}
+    },
+    "web/src/shared/components/StoreSync.tsx": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "react",
+        "../../app/hooks",
+        "../../features/projects/slice/projectsSlice",
+        "../../features/sessions/slice/sessionsSlice",
+        "../../store"
+      ],
+      "functions": {
+        "StoreSync": "()"
+      },
+      "classes": {},
+      "variables": [
+        "reduxProject",
+        "reduxSession",
+        "setCurrentProject",
+        "setCurrentSession",
+        "nullToUndefined",
+        "result",
+        "zustandProject",
+        "zustandSession"
+      ],
+      "call_graph": {}
+    },
+    "web/src/shared/components/ErrorMessage.tsx": {
+      "language": "typescript",
+      "parsed": true,
+      "functions": {
+        "ErrorMessage": "({ title = 'Error', message, onRetry, className = '' }: ErrorMessageProps)"
+      },
+      "classes": {},
+      "interfaces": {
+        "ErrorMessageProps": {}
+      },
+      "call_graph": {}
+    },
+    "web/src/shared/components/LoadingSpinner.tsx": {
+      "language": "typescript",
+      "parsed": true,
+      "functions": {
+        "LoadingSpinner": "({ size = 'md', className = '' }: LoadingSpinnerProps)"
+      },
+      "classes": {},
+      "variables": [
+        "sizeClasses"
+      ],
+      "interfaces": {
+        "LoadingSpinnerProps": {}
+      },
+      "call_graph": {}
+    },
+    "web/src/shared/hooks/useWebSocketSubscription.ts": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "react",
+        "../../app/hooks",
+        "../../app/middleware/websocket"
+      ],
+      "functions": {
+        "useWebSocketSubscription": {
+          "calls": [
+            "unsubscribe"
+          ],
+          "signature": "({ messageType, filter, onMessage, }: UseWebSocketSubscriptionOptions)"
+        }
+      },
+      "classes": {},
+      "variables": [
+        "dispatch",
+        "handleMessage",
+        "message",
+        "types",
+        "unsubscribe"
+      ],
+      "interfaces": {
+        "UseWebSocketSubscriptionOptions": {}
+      },
+      "call_graph": {}
+    },
+    "web/src/hooks/useSessionActivity.ts": {
+      "language": "typescript",
+      "parsed": true,
+      "imports": [
+        "react",
+        "@tanstack/react-query",
+        "../api/websocket"
+      ],
+      "functions": {
+        "useSessionActivity": "()",
+        "handleSessionActivityUpdate": "(message: any)",
+        "handleSessionUpdate": "(message: any)",
+        "handleSessionCreated": "(message: any)",
+        "handleSessionDeleted": "(message: any)"
+      },
+      "classes": {},
+      "variables": [
+        "queryClient",
+        "handleSessionActivityUpdate",
+        "handleSessionUpdate",
+        "session",
+        "handleSessionCreated",
+        "handleSessionDeleted"
+      ],
+      "call_graph": {}
+    },
+    "web/src/utils/errorHandling.ts": {
+      "language": "typescript",
+      "parsed": true,
+      "functions": {
+        "getErrorMessage": "(error: unknown): string"
+      },
+      "classes": {},
+      "variables": [
+        "data"
+      ],
+      "call_graph": {}
+    },
+    "web/src/utils/notifications.ts": {
+      "language": "typescript",
+      "parsed": true,
+      "functions": {
+        "playNotificationSound": "()",
+        "setNotificationsEnabled": "(enabled: boolean)",
+        "getNotificationsEnabled": "()"
+      },
+      "classes": {
+        "NotificationManager": {
+          "methods": {
+            "constructor": "()",
+            "playDing": {
+              "calls": [
+                "initializeAudio"
+              ],
+              "signature": "async ()"
+            },
+            "setEnabled": "(enabled: boolean)",
+            "getEnabled": "(): boolean",
+            "requestPermission": "async (): Promise<boolean>",
+            "__init__": "()"
+          }
+        }
+      },
+      "variables": [
+        "sampleRate",
+        "duration",
+        "length",
+        "buffer",
+        "data",
+        "i",
+        "t",
+        "tone1",
+        "tone2",
+        "envelope",
+        "source",
+        "gainNode",
+        "stored",
+        "permission",
+        "notificationManager",
+        "playNotificationSound",
+        "setNotificationsEnabled",
+        "getNotificationsEnabled"
+      ],
+      "call_graph": {}
+    },
+    ".claude/settings.local.json": {
+      "language": "json",
+      "parsed": false,
+      "purpose": "Configuration"
+    },
+    "internal/api/routes.go": {
+      "language": "go",
+      "parsed": true,
+      "purpose": "Route definitions",
+      "imports": [
+        "embed",
+        "io/fs",
+        "net/http",
+        "strings",
+        "habibi-go/internal/api/handlers",
+        "habibi-go/internal/api/middleware",
+        "habibi-go/internal/config",
+        "github.com/gin-gonic/gin"
+      ],
+      "functions": {},
+      "types": {
+        "Router": {
+          "type": "struct",
+          "fields": {},
+          "methods": {
+            "SetAuthConfig": {
+              "signature": "(authConfig *config.AuthConfig)",
+              "receiver": "Router"
+            },
+            "SetWebAssets": {
+              "signature": "(assets embed.FS)",
+              "receiver": "Router"
+            },
+            "SetupRoutes": {
+              "signature": "(engine *gin.Engine)",
+              "receiver": "Router"
+            }
+          }
+        }
+      },
+      "call_graph": {},
+      "package": "api"
+    },
+    "internal/api/handlers/terminal.go": {
+      "language": "go",
+      "parsed": true,
+      "imports": [
+        "fmt",
+        "io",
+        "log",
+        "net/http",
+        "os",
+        "os/exec",
+        "strconv",
+        "sync",
+        "syscall",
+        "github.com/creack/pty",
+        "github.com/gin-gonic/gin",
+        "github.com/gorilla/websocket",
+        "habibi-go/internal/services"
+      ],
+      "functions": {
+        "NewTerminalHandler": "(sessionService *services.SessionService) *TerminalHandler"
+      },
+      "types": {
+        "TerminalHandler": {
+          "type": "struct",
+          "fields": {},
+          "methods": {
+            "HandleTerminalWebSocket": {
+              "signature": "(c *gin.Context)",
+              "receiver": "TerminalHandler"
+            },
+            "createTerminalSession": {
+              "signature": "(sessionID int, workingDir string) *TerminalSession, error",
+              "receiver": "TerminalHandler"
+            },
+            "handlePTYOutput": {
+              "signature": "(terminal *TerminalSession)",
+              "receiver": "TerminalHandler"
+            },
+            "handleConnectionMessages": {
+              "signature": "(terminal *TerminalSession, conn *websocket.Conn)",
+              "receiver": "TerminalHandler"
+            },
+            "CleanupSessionTerminal": {
+              "signature": "(sessionID int)",
+              "receiver": "TerminalHandler"
+            },
+            "RestartTerminal": {
+              "signature": "(c *gin.Context)",
+              "receiver": "TerminalHandler"
+            }
+          }
+        },
+        "TerminalSession": {
+          "type": "struct",
+          "fields": {},
+          "methods": {
+            "cleanup": {
+              "signature": "()",
+              "receiver": "TerminalSession"
+            }
+          }
+        },
+        "TerminalMessage": {
+          "type": "struct",
+          "fields": {
+            "Type": "string",
+            "Data": "string"
+          }
+        }
+      },
+      "variables": [
+        "shellPath",
+        "message"
+      ],
+      "call_graph": {},
+      "package": "handlers"
+    },
+    "internal/api/handlers/sessions.go": {
+      "language": "go",
+      "parsed": true,
+      "imports": [
+        "net/http",
+        "strconv",
+        "github.com/gin-gonic/gin",
+        "habibi-go/internal/models",
+        "habibi-go/internal/services"
+      ],
+      "functions": {
+        "NewSessionHandler": "(sessionService *services.SessionService) *SessionHandler"
+      },
+      "types": {
+        "SessionHandler": {
+          "type": "struct",
+          "fields": {},
+          "methods": {
+            "SetWebSocketHandler": {
+              "signature": "(wsHandler *WebSocketHandler)",
+              "receiver": "SessionHandler"
+            },
+            "SetTerminalHandler": {
+              "signature": "(terminalHandler *TerminalHandler)",
+              "receiver": "SessionHandler"
+            },
+            "GetSessions": {
+              "signature": "(c *gin.Context)",
+              "receiver": "SessionHandler"
+            },
+            "CreateSession": {
+              "signature": "(c *gin.Context)",
+              "receiver": "SessionHandler",
+              "calls": [
+                "CreateSession"
+              ]
+            },
+            "GetSession": {
+              "signature": "(c *gin.Context)",
+              "receiver": "SessionHandler",
+              "calls": [
+                "GetSession"
+              ]
+            },
+            "UpdateSession": {
+              "signature": "(c *gin.Context)",
+              "receiver": "SessionHandler",
+              "calls": [
+                "UpdateSession"
+              ]
+            },
+            "DeleteSession": {
+              "signature": "(c *gin.Context)",
+              "receiver": "SessionHandler",
+              "calls": [
+                "DeleteSession",
+                "GetSession"
+              ]
+            },
+            "ActivateSession": {
+              "signature": "(c *gin.Context)",
+              "receiver": "SessionHandler",
+              "calls": [
+                "ActivateSession"
+              ]
+            },
+            "GetSessionStatus": {
+              "signature": "(c *gin.Context)",
+              "receiver": "SessionHandler",
+              "calls": [
+                "GetSessionStatus"
+              ]
+            },
+            "SyncSession": {
+              "signature": "(c *gin.Context)",
+              "receiver": "SessionHandler"
+            },
+            "CleanupSessions": {
+              "signature": "(c *gin.Context)",
+              "receiver": "SessionHandler"
+            },
+            "GetSessionStats": {
+              "signature": "(c *gin.Context)",
+              "receiver": "SessionHandler",
+              "calls": [
+                "GetSessionStats"
+              ]
+            },
+            "GetSessionDiffs": {
+              "signature": "(c *gin.Context)",
+              "receiver": "SessionHandler",
+              "calls": [
+                "GetSessionDiffs"
+              ]
+            },
+            "RebaseSession": {
+              "signature": "(c *gin.Context)",
+              "receiver": "SessionHandler",
+              "calls": [
+                "RebaseSession"
+              ]
+            },
+            "PushSession": {
+              "signature": "(c *gin.Context)",
+              "receiver": "SessionHandler",
+              "calls": [
+                "PushSession"
+              ]
+            },
+            "MergeSession": {
+              "signature": "(c *gin.Context)",
+              "receiver": "SessionHandler",
+              "calls": [
+                "MergeSession"
+              ]
+            },
+            "MergeSessionToOriginal": {
+              "signature": "(c *gin.Context)",
+              "receiver": "SessionHandler",
+              "calls": [
+                "MergeSessionToOriginal"
+              ]
+            },
+            "CloseSession": {
+              "signature": "(c *gin.Context)",
+              "receiver": "SessionHandler",
+              "calls": [
+                "CloseSession"
+              ]
+            },
+            "GetProjectSessions": {
+              "signature": "(c *gin.Context)",
+              "receiver": "SessionHandler"
+            },
+            "OpenWithEditor": {
+              "signature": "(c *gin.Context)",
+              "receiver": "SessionHandler",
+              "calls": [
+                "OpenWithEditor"
+              ]
+            },
+            "RunStartupScript": {
+              "signature": "(c *gin.Context)",
+              "receiver": "SessionHandler"
+            }
+          }
+        }
+      },
+      "variables": [
+        "req",
+        "projectID",
+        "err"
+      ],
+      "call_graph": {},
+      "package": "handlers"
+    },
+    "internal/api/handlers/projects.go": {
+      "language": "go",
+      "parsed": true,
+      "imports": [
+        "io/ioutil",
+        "net/http",
+        "os",
+        "path/filepath",
+        "strconv",
+        "strings",
+        "github.com/gin-gonic/gin",
+        "habibi-go/internal/models",
+        "habibi-go/internal/services"
+      ],
+      "functions": {
+        "NewProjectHandler": "(projectService *services.ProjectService) *ProjectHandler"
+      },
+      "types": {
+        "ProjectHandler": {
+          "type": "struct",
+          "fields": {},
+          "methods": {
+            "GetProjects": {
+              "signature": "(c *gin.Context)",
+              "receiver": "ProjectHandler"
+            },
+            "CreateProject": {
+              "signature": "(c *gin.Context)",
+              "receiver": "ProjectHandler",
+              "calls": [
+                "CreateProject"
+              ]
+            },
+            "GetProject": {
+              "signature": "(c *gin.Context)",
+              "receiver": "ProjectHandler",
+              "calls": [
+                "GetProject"
+              ]
+            },
+            "UpdateProject": {
+              "signature": "(c *gin.Context)",
+              "receiver": "ProjectHandler",
+              "calls": [
+                "UpdateProject"
+              ]
+            },
+            "DeleteProject": {
+              "signature": "(c *gin.Context)",
+              "receiver": "ProjectHandler",
+              "calls": [
+                "DeleteProject"
+              ]
+            },
+            "GetProjectWithSessions": {
+              "signature": "(c *gin.Context)",
+              "receiver": "ProjectHandler",
+              "calls": [
+                "GetProjectWithSessions"
+              ]
+            },
+            "DiscoverProjects": {
+              "signature": "(c *gin.Context)",
+              "receiver": "ProjectHandler",
+              "calls": [
+                "DiscoverProjects"
+              ]
+            },
+            "GetProjectStats": {
+              "signature": "(c *gin.Context)",
+              "receiver": "ProjectHandler",
+              "calls": [
+                "GetProjectStats"
+              ]
+            },
+            "RunStartupScript": {
+              "signature": "(c *gin.Context)",
+              "receiver": "ProjectHandler"
+            },
+            "GetProjectBranches": {
+              "signature": "(c *gin.Context)",
+              "receiver": "ProjectHandler",
+              "calls": [
+                "GetProjectBranches"
+              ]
+            },
+            "GetProjectFile": {
+              "signature": "(c *gin.Context)",
+              "receiver": "ProjectHandler"
+            }
+          }
+        },
+        "DiscoverRequest": {
+          "type": "struct",
+          "fields": {
+            "Directory": "string"
+          }
+        }
+      },
+      "variables": [
+        "req"
+      ],
+      "call_graph": {},
+      "package": "handlers"
+    },
+    "internal/api/handlers/chat.go": {
+      "language": "go",
+      "parsed": true,
+      "imports": [
+        "net/http",
+        "strconv",
+        "github.com/gin-gonic/gin",
+        "habibi-go/internal/database/repositories",
+        "habibi-go/internal/models"
+      ],
+      "functions": {
+        "NewChatHandler": "(chatRepo *repositories.ChatMessageV2Repository, sessionRepo *repositories.SessionRepository) *ChatHandler"
+      },
+      "types": {
+        "ChatHandler": {
+          "type": "struct",
+          "fields": {},
+          "methods": {
+            "GetSessionChatHistory": {
+              "signature": "(c *gin.Context)",
+              "receiver": "ChatHandler"
+            },
+            "DeleteSessionChatHistory": {
+              "signature": "(c *gin.Context)",
+              "receiver": "ChatHandler"
+            },
+            "SendChatMessage": {
+              "signature": "(c *gin.Context)",
+              "receiver": "ChatHandler"
+            }
+          }
+        }
+      },
+      "variables": [
+        "request"
+      ],
+      "call_graph": {},
+      "package": "handlers"
+    },
+    "internal/api/handlers/websocket.go": {
+      "language": "go",
+      "parsed": true,
+      "imports": [
+        "encoding/json",
+        "fmt",
+        "log",
+        "net/http",
+        "time",
+        "github.com/gin-gonic/gin",
+        "github.com/gorilla/websocket",
+        "habibi-go/internal/services"
+      ],
+      "functions": {
+        "NewWebSocketHandler": {
+          "calls": [
+            "NewHub"
+          ],
+          "signature": "(claudeService *services.ClaudeSessionService) *WebSocketHandler"
+        },
+        "NewHub": {
+          "signature": "() *Hub",
+          "called_by": [
+            "NewWebSocketHandler"
+          ]
+        }
+      },
+      "types": {
+        "WebSocketHandler": {
+          "type": "struct",
+          "fields": {},
+          "methods": {
+            "StartHub": {
+              "signature": "()",
+              "receiver": "WebSocketHandler",
+              "calls": [
+                "Run"
+              ]
+            },
+            "HandleWebSocket": {
+              "signature": "(c *gin.Context)",
+              "receiver": "WebSocketHandler"
+            },
+            "BroadcastEvent": {
+              "signature": "(eventType string, agentID int, data interface{})",
+              "receiver": "WebSocketHandler"
+            },
+            "BroadcastSessionUpdate": {
+              "signature": "(session interface{})",
+              "receiver": "WebSocketHandler"
+            }
+          }
+        },
+        "Hub": {
+          "type": "struct",
+          "fields": {},
+          "methods": {
+            "Run": {
+              "signature": "()",
+              "receiver": "Hub"
+            }
+          }
+        },
+        "Client": {
+          "type": "struct",
+          "fields": {},
+          "methods": {
+            "readPump": {
+              "signature": "()",
+              "receiver": "Client"
+            },
+            "writePump": {
+              "signature": "()",
+              "receiver": "Client"
+            },
+            "handleMessage": {
+              "signature": "(message []byte)",
+              "receiver": "Client"
+            },
+            "handleSessionChat": {
+              "signature": "(msg WSMessage)",
+              "receiver": "Client"
+            },
+            "handleStopGeneration": {
+              "signature": "(msg WSMessage)",
+              "receiver": "Client"
+            },
+            "sendMessage": {
+              "signature": "(msg WSMessage)",
+              "receiver": "Client"
+            },
+            "sendError": {
+              "signature": "(message string)",
+              "receiver": "Client"
+            }
+          }
+        },
+        "WSMessage": {
+          "type": "struct",
+          "fields": {
+            "Type": "string",
+            "SessionID": "interface{}",
+            "Data": "interface{}"
+          }
+        }
+      },
+      "variables": [
+        "upgrader",
+        "msg"
+      ],
+      "call_graph": {},
+      "package": "handlers"
+    },
+    "internal/api/middleware/logging.go": {
+      "language": "go",
+      "parsed": true,
+      "imports": [
+        "fmt",
+        "time",
+        "github.com/gin-gonic/gin"
+      ],
+      "functions": {
+        "Logger": "() gin.HandlerFunc"
+      },
+      "call_graph": {},
+      "package": "middleware"
+    },
+    "internal/api/middleware/cors.go": {
+      "language": "go",
+      "parsed": true,
+      "imports": [
+        "time",
+        "github.com/gin-contrib/cors",
+        "github.com/gin-gonic/gin"
+      ],
+      "functions": {
+        "CORS": "() gin.HandlerFunc"
+      },
+      "call_graph": {},
+      "package": "middleware"
+    },
+    "internal/api/middleware/auth.go": {
+      "language": "go",
+      "parsed": true,
+      "imports": [
+        "crypto/subtle",
+        "net/http",
+        "github.com/gin-gonic/gin",
+        "habibi-go/internal/config"
+      ],
+      "functions": {
+        "BasicAuth": {
+          "doc": "BasicAuth returns a Basic Authentication middleware",
+          "calls": [
+            "BasicAuth"
+          ],
+          "signature": "(cfg *config.AuthConfig) gin.HandlerFunc",
+          "called_by": [
+            "BasicAuth"
+          ]
+        }
+      },
+      "call_graph": {},
+      "package": "middleware"
+    },
+    "internal/config/config.go": {
+      "language": "go",
+      "parsed": true,
+      "purpose": "Configuration",
+      "imports": [
+        "fmt",
+        "os",
+        "path/filepath",
+        "strings",
+        "time",
+        "github.com/spf13/viper"
+      ],
+      "functions": {
+        "Load": "() *Config, error",
+        "setDefaults": "()",
+        "expandPaths": "(config *Config) error",
+        "expandPath": "(path string) string, error"
+      },
+      "types": {
+        "Config": {
+          "type": "struct",
+          "fields": {
+            "Server": "ServerConfig",
+            "Database": "DatabaseConfig",
+            "Projects": "ProjectsConfig",
+            "Agents": "AgentsConfig",
+            "Slack": "SlackConfig",
+            "Logging": "LoggingConfig"
+          },
+          "methods": {
+            "CreateDirectories": {
+              "signature": "() error",
+              "receiver": "Config"
+            }
+          }
+        },
+        "ServerConfig": {
+          "type": "struct",
+          "fields": {
+            "Host": "string",
+            "Port": "int",
+            "ReadTimeout": "time.Duration",
+            "WriteTimeout": "time.Duration",
+            "ShutdownTimeout": "time.Duration",
+            "Auth": "AuthConfig"
+          }
+        },
+        "AuthConfig": {
+          "type": "struct",
+          "fields": {
+            "Enabled": "bool",
+            "Username": "string",
+            "Password": "string"
+          }
+        },
+        "DatabaseConfig": {
+          "type": "struct",
+          "fields": {
+            "Path": "string",
+            "BackupEnabled": "bool",
+            "BackupInterval": "time.Duration",
+            "MaxConnections": "int"
+          }
+        },
+        "ProjectsConfig": {
+          "type": "struct",
+          "fields": {
+            "DefaultDirectory": "string",
+            "AutoDiscover": "bool",
+            "WorktreeBasePath": "string"
+          }
+        },
+        "AgentsConfig": {
+          "type": "struct",
+          "fields": {
+            "DefaultTimeout": "time.Duration",
+            "MaxConcurrent": "int",
+            "HealthCheckInterval": "time.Duration",
+            "LogRetentionDays": "int",
+            "ResourceLimits": "ResourceLimits",
+            "ClaudeBinaryPath": "string"
+          }
+        },
+        "ResourceLimits": {
+          "type": "struct",
+          "fields": {
+            "MemoryMB": "int",
+            "CPUPercent": "int"
+          }
+        },
+        "SlackConfig": {
+          "type": "struct",
+          "fields": {
+            "Enabled": "bool",
+            "BotToken": "string",
+            "AppToken": "string",
+            "SigningSecret": "string",
+            "NotificationChannel": "string"
+          }
+        },
+        "LoggingConfig": {
+          "type": "struct",
+          "fields": {
+            "Level": "string",
+            "Format": "string",
+            "FilePath": "string",
+            "MaxSizeMB": "int",
+            "MaxBackups": "int"
+          }
+        }
+      },
+      "variables": [
+        "config",
+        "err"
+      ],
+      "call_graph": {},
+      "package": "config"
+    },
+    "internal/models/session.go": {
+      "language": "go",
+      "parsed": true,
+      "imports": [
+        "encoding/json",
+        "fmt",
+        "time"
+      ],
+      "functions": {},
+      "types": {
+        "Session": {
+          "type": "struct",
+          "fields": {
+            "ID": "int",
+            "ProjectID": "int",
+            "Name": "string",
+            "BranchName": "string",
+            "OriginalBranch": "string",
+            "WorktreePath": "string",
+            "Status": "string",
+            "Config": "map[string]interface{}",
+            "CreatedAt": "time.Time",
+            "LastUsedAt": "time.Time",
+            "LastActivityAt": "*time.Time",
+            "ActivityStatus": "string",
+            "LastViewedAt": "*time.Time",
+            "Project": "*Project"
+          },
+          "methods": {
+            "MarshalConfig": {
+              "signature": "() string, error",
+              "receiver": "Session"
+            },
+            "UnmarshalConfig": {
+              "signature": "(configStr string) error",
+              "receiver": "Session"
+            },
+            "Validate": {
+              "signature": "() error",
+              "receiver": "Session",
+              "calls": [
+                "IsValidStatus"
+              ]
+            },
+            "IsValidStatus": {
+              "signature": "() bool",
+              "receiver": "Session"
+            },
+            "BeforeCreate": {
+              "signature": "()",
+              "receiver": "Session"
+            },
+            "BeforeUpdate": {
+              "signature": "()",
+              "receiver": "Session"
+            },
+            "UpdateLastUsed": {
+              "signature": "()",
+              "receiver": "Session"
+            },
+            "IsActive": {
+              "signature": "() bool",
+              "receiver": "Session"
+            },
+            "Activate": {
+              "signature": "()",
+              "receiver": "Session",
+              "calls": [
+                "UpdateLastUsed"
+              ]
+            },
+            "Pause": {
+              "signature": "()",
+              "receiver": "Session"
+            },
+            "Stop": {
+              "signature": "()",
+              "receiver": "Session"
+            }
+          }
+        },
+        "SessionStatus": {
+          "type": "alias",
+          "definition": "string"
+        },
+        "SessionActivityStatus": {
+          "type": "alias",
+          "definition": "string"
+        },
+        "CreateSessionRequest": {
+          "type": "struct",
+          "fields": {
+            "ProjectID": "int",
+            "Name": "string",
+            "BranchName": "string",
+            "BaseBranch": "string"
+          }
+        },
+        "UpdateSessionRequest": {
+          "type": "struct",
+          "fields": {
+            "Name": "string",
+            "BranchName": "string",
+            "Status": "string",
+            "Config": "map[string]interface{}"
+          }
+        }
+      },
+      "constants": {
+        "SessionStatusActive": "value",
+        "SessionStatusPaused": "value",
+        "SessionStatusStopped": "value",
+        "ActivityStatusIdle": "value",
+        "ActivityStatusStreaming": "value",
+        "ActivityStatusNewResponse": "value",
+        "ActivityStatusViewed": "value"
+      },
+      "call_graph": {},
+      "package": "models"
+    },
+    "internal/models/chat_message.go": {
+      "language": "go",
+      "parsed": true,
+      "imports": [
+        "time"
+      ],
+      "functions": {
+        "NewChatMessage": "(agentID int, role, content string) *ChatMessage",
+        "NewToolUseMessage": "(agentID int, toolName, toolUseID string, toolInput interface{}) *ChatMessage",
+        "NewToolResultMessage": "(agentID int, toolUseID string, toolContent interface{}) *ChatMessage"
+      },
+      "types": {
+        "ChatMessage": {
+          "type": "struct",
+          "fields": {
+            "ID": "int",
+            "AgentID": "int",
+            "SessionID": "int",
+            "Role": "string",
+            "Content": "string",
+            "CreatedAt": "time.Time",
+            "ToolName": "string",
+            "ToolInput": "interface{}",
+            "ToolUseID": "string",
+            "ToolContent": "interface{}"
+          }
+        },
+        "CreateChatMessageRequest": {
+          "type": "struct",
+          "fields": {
+            "AgentID": "int",
+            "Role": "string",
+            "Content": "string"
+          }
+        }
+      },
+      "call_graph": {},
+      "package": "models"
+    },
+    "internal/models/project.go": {
+      "language": "go",
+      "parsed": true,
+      "imports": [
+        "encoding/json",
+        "fmt",
+        "time"
+      ],
+      "functions": {},
+      "types": {
+        "Project": {
+          "type": "struct",
+          "fields": {
+            "ID": "int",
+            "Name": "string",
+            "Path": "string",
+            "RepositoryURL": "string",
+            "DefaultBranch": "string",
+            "SetupCommand": "*string",
+            "Config": "map[string]interface{}",
+            "CreatedAt": "time.Time",
+            "UpdatedAt": "time.Time",
+            "Sessions": "[]Session"
+          },
+          "methods": {
+            "MarshalConfig": {
+              "signature": "() string, error",
+              "receiver": "Project"
+            },
+            "UnmarshalConfig": {
+              "signature": "(configStr string) error",
+              "receiver": "Project"
+            },
+            "Validate": {
+              "signature": "() error",
+              "receiver": "Project"
+            },
+            "BeforeCreate": {
+              "signature": "()",
+              "receiver": "Project"
+            },
+            "BeforeUpdate": {
+              "signature": "()",
+              "receiver": "Project"
+            }
+          }
+        },
+        "ProjectConfig": {
+          "type": "struct",
+          "fields": {
+            "GitRemote": "string",
+            "AgentDefaults": "map[string]string",
+            "Notifications": "bool",
+            "SSHHost": "string",
+            "SSHPort": "int",
+            "SSHKeyPath": "string",
+            "RemoteProjectPath": "string",
+            "EnvironmentVars": "map[string]string",
+            "RemoteSetupCmd": "string"
+          }
+        },
+        "CreateProjectRequest": {
+          "type": "struct",
+          "fields": {
+            "Name": "string",
+            "Path": "string",
+            "RepositoryURL": "string",
+            "DefaultBranch": "string",
+            "SetupCommand": "*string"
+          }
+        },
+        "UpdateProjectRequest": {
+          "type": "struct",
+          "fields": {
+            "Name": "string",
+            "Path": "string",
+            "RepositoryURL": "string",
+            "DefaultBranch": "string",
+            "SetupCommand": "*string",
+            "Config": "map[string]interface{}"
+          }
+        }
+      },
+      "call_graph": {},
+      "package": "models"
+    },
+    "internal/models/event.go": {
+      "language": "go",
+      "parsed": true,
+      "imports": [
+        "encoding/json",
+        "fmt",
+        "time"
+      ],
+      "functions": {
+        "NewProjectEvent": {
+          "doc": "Helper functions for creating specific event types",
+          "signature": "(eventType EventType, projectID int, data map[string]interface{}) *Event"
+        },
+        "NewSessionEvent": "(eventType EventType, sessionID int, data map[string]interface{}) *Event",
+        "NewAgentEvent": "(eventType EventType, agentID int, data map[string]interface{}) *Event"
+      },
+      "types": {
+        "Event": {
+          "type": "struct",
+          "fields": {
+            "ID": "int",
+            "EventType": "string",
+            "EntityType": "string",
+            "EntityID": "int",
+            "Data": "map[string]interface{}",
+            "CreatedAt": "time.Time"
+          },
+          "methods": {
+            "MarshalData": {
+              "signature": "() string, error",
+              "receiver": "Event"
+            },
+            "UnmarshalData": {
+              "signature": "(dataStr string) error",
+              "receiver": "Event"
+            },
+            "Validate": {
+              "signature": "() error",
+              "receiver": "Event",
+              "calls": [
+                "IsValidEntityType",
+                "IsValidEventType"
+              ]
+            },
+            "IsValidEventType": {
+              "signature": "() bool",
+              "receiver": "Event"
+            },
+            "IsValidEntityType": {
+              "signature": "() bool",
+              "receiver": "Event"
+            },
+            "BeforeCreate": {
+              "signature": "()",
+              "receiver": "Event"
+            }
+          }
+        },
+        "EventType": {
+          "type": "alias",
+          "definition": "string"
+        },
+        "EntityType": {
+          "type": "alias",
+          "definition": "string"
+        },
+        "CreateEventRequest": {
+          "type": "struct",
+          "fields": {
+            "EventType": "string",
+            "EntityType": "string",
+            "EntityID": "int",
+            "Data": "map[string]interface{}"
+          }
+        },
+        "AgentCommand": {
+          "type": "struct",
+          "fields": {
+            "ID": "int",
+            "AgentID": "int",
+            "CommandText": "string",
+            "ResponseText": "string",
+            "Status": "string",
+            "ExecutionTimeMs": "int",
+            "CreatedAt": "time.Time",
+            "CompletedAt": "*time.Time"
+          },
+          "doc": "Agent command and file models"
+        },
+        "AgentFile": {
+          "type": "struct",
+          "fields": {
+            "ID": "int",
+            "AgentID": "int",
+            "Filename": "string",
+            "FilePath": "string",
+            "FileSize": "int64",
+            "MimeType": "string",
+            "Direction": "string",
+            "CreatedAt": "time.Time"
+          }
+        }
+      },
+      "constants": {
+        "EventTypeProjectCreated": "value",
+        "EventTypeProjectUpdated": "value",
+        "EventTypeProjectDeleted": "value",
+        "EventTypeSessionCreated": "value",
+        "EventTypeSessionUpdated": "value",
+        "EventTypeSessionDeleted": "value",
+        "EventTypeSessionActivated": "value",
+        "EventTypeSessionPaused": "value",
+        "EventTypeSessionStopped": "value",
+        "EventTypeAgentCreated": "value",
+        "EventTypeAgentStarted": "value",
+        "EventTypeAgentStopped": "value",
+        "EventTypeAgentFailed": "value",
+        "EventTypeAgentHeartbeat": "value",
+        "EventTypeAgentCommand": "value",
+        "EventTypeAgentResponse": "value",
+        "EventTypeAgentFileUpload": "value",
+        "EventTypeAgentFileDownload": "value",
+        "EntityTypeProject": "value",
+        "EntityTypeSession": "value",
+        "EntityTypeAgent": "value"
+      },
+      "call_graph": {},
+      "package": "models"
+    },
+    "internal/services/claude_session_service.go": {
+      "language": "go",
+      "parsed": true,
+      "imports": [
+        "bufio",
+        "encoding/json",
+        "fmt",
+        "os/exec",
+        "strings",
+        "sync",
+        "habibi-go/internal/database/repositories",
+        "habibi-go/internal/models"
+      ],
+      "functions": {},
+      "types": {
+        "ClaudeSessionService": {
+          "type": "struct",
+          "fields": {},
+          "methods": {
+            "SetEventBroadcaster": {
+              "signature": "(broadcaster EventBroadcaster)",
+              "receiver": "ClaudeSessionService"
+            },
+            "SendMessage": {
+              "signature": "(sessionID int, message string) error",
+              "receiver": "ClaudeSessionService"
+            },
+            "executeClaudeCommand": {
+              "signature": "(sessionID int, worktreePath string, message string)",
+              "receiver": "ClaudeSessionService"
+            },
+            "handleStreamMessage": {
+              "signature": "(sessionID int, msg map[string]interface{}, assistantMessage *strings.Builder, assistantMessageID *int)",
+              "receiver": "ClaudeSessionService"
+            },
+            "handleError": {
+              "signature": "(sessionID int, err error)",
+              "receiver": "ClaudeSessionService"
+            },
+            "handleAssistantMessage": {
+              "signature": "(sessionID int, msg map[string]interface{}, assistantMessageID *int)",
+              "receiver": "ClaudeSessionService"
+            },
+            "handleToolResultMessage": {
+              "signature": "(sessionID int, msg map[string]interface{})",
+              "receiver": "ClaudeSessionService"
+            },
+            "GetChatHistory": {
+              "signature": "(sessionID int, limit int) []*models.ChatMessage, error",
+              "receiver": "ClaudeSessionService"
+            },
+            "StopGeneration": {
+              "signature": "(sessionID int) error",
+              "receiver": "ClaudeSessionService"
+            }
+          }
+        }
+      },
+      "variables": [
+        "assistantMessage",
+        "streamMsg"
+      ],
+      "call_graph": {},
+      "package": "services"
+    },
+    "internal/services/event_broadcaster.go": {
+      "language": "go",
+      "parsed": true,
+      "functions": {},
+      "types": {
+        "EventBroadcaster": {
+          "type": "interface",
+          "methods": {
+            "BroadcastEvent": "(eventType string, agentID int, data interface{})"
+          }
+        },
+        "NoOpBroadcaster": {
+          "type": "struct",
+          "fields": {},
+          "doc": "Do nothing",
+          "methods": {
+            "BroadcastEvent": {
+              "signature": "(eventType string, agentID int, data interface{})",
+              "receiver": "NoOpBroadcaster"
+            }
+          }
+        }
+      },
+      "call_graph": {},
+      "package": "services"
+    },
+    "internal/services/session_service.go": {
+      "language": "go",
+      "parsed": true,
+      "imports": [
+        "fmt",
+        "os",
+        "os/exec",
+        "strings",
+        "habibi-go/internal/database/repositories",
+        "habibi-go/internal/models"
+      ],
+      "functions": {
+        "getUpdatedFields": {
+          "doc": "Helper function to determine what fields were updated",
+          "signature": "(req *models.UpdateSessionRequest) []string"
+        }
+      },
+      "types": {
+        "SessionService": {
+          "type": "struct",
+          "fields": {},
+          "methods": {
+            "CreateSession": {
+              "signature": "(req *models.CreateSessionRequest) *models.Session, error",
+              "receiver": "SessionService"
+            },
+            "GetSession": {
+              "signature": "(id int) *models.Session, error",
+              "receiver": "SessionService"
+            },
+            "GetSessionByProjectAndName": {
+              "signature": "(projectID int, name string) *models.Session, error",
+              "receiver": "SessionService"
+            },
+            "GetSessionsByProject": {
+              "signature": "(projectID int) []*models.Session, error",
+              "receiver": "SessionService"
+            },
+            "GetAllSessions": {
+              "signature": "() []*models.Session, error",
+              "receiver": "SessionService"
+            },
+            "UpdateSession": {
+              "signature": "(id int, req *models.UpdateSessionRequest) *models.Session, error",
+              "receiver": "SessionService"
+            },
+            "DeleteSession": {
+              "signature": "(id int) error",
+              "receiver": "SessionService"
+            },
+            "ActivateSession": {
+              "signature": "(id int) *models.Session, error",
+              "receiver": "SessionService"
+            },
+            "GetSessionStatus": {
+              "signature": "(id int) *SessionStatusInfo, error",
+              "receiver": "SessionService"
+            },
+            "SyncSessionBranch": {
+              "signature": "(id int) error",
+              "receiver": "SessionService"
+            },
+            "CleanupStoppedSessions": {
+              "signature": "(projectID int) error",
+              "receiver": "SessionService"
+            },
+            "GetSessionStats": {
+              "signature": "() map[string]interface{}, error",
+              "receiver": "SessionService"
+            },
+            "GetSessionDiffs": {
+              "signature": "(id int) map[string]interface{}, error",
+              "receiver": "SessionService"
+            },
+            "RebaseSession": {
+              "signature": "(id int) error",
+              "receiver": "SessionService"
+            },
+            "PushSession": {
+              "signature": "(id int, remoteBranch string) error",
+              "receiver": "SessionService"
+            },
+            "MergeSession": {
+              "signature": "(id int, targetBranch string) error",
+              "receiver": "SessionService"
+            },
+            "MergeSessionToOriginal": {
+              "signature": "(id int) error",
+              "receiver": "SessionService"
+            },
+            "CloseSession": {
+              "signature": "(id int) error",
+              "receiver": "SessionService"
+            },
+            "runSetupCommand": {
+              "signature": "(command, workingDir string, envVars map[string]string) error",
+              "receiver": "SessionService"
+            },
+            "isSSHProject": {
+              "signature": "(project *models.Project) bool",
+              "receiver": "SessionService"
+            },
+            "getSSHConfig": {
+              "signature": "(project *models.Project) *models.ProjectConfig, error",
+              "receiver": "SessionService"
+            },
+            "hasRemoteSetupCommand": {
+              "signature": "(project *models.Project) bool",
+              "receiver": "SessionService"
+            },
+            "OpenWithEditor": {
+              "signature": "(id int) error",
+              "receiver": "SessionService"
+            },
+            "RunSessionStartupScript": {
+              "signature": "(id int) string, error",
+              "receiver": "SessionService"
+            }
+          }
+        },
+        "SessionStatusInfo": {
+          "type": "struct",
+          "fields": {
+            "Session": "*models.Session",
+            "WorktreeStatus": "*WorktreeStatus",
+            "WorktreeExists": "bool"
+          }
+        }
+      },
+      "variables": [
+        "worktreePath",
+        "originalBranch",
+        "sessionsToClean",
+        "project",
+        "fields",
+        "output"
+      ],
+      "call_graph": {},
+      "package": "services"
+    },
+    "internal/services/git_service.go": {
+      "language": "go",
+      "parsed": true,
+      "imports": [
+        "fmt",
+        "os",
+        "os/exec",
+        "path/filepath",
+        "strconv",
+        "strings",
+        "habibi-go/internal/util"
+      ],
+      "functions": {
+        "NewGitService": "(worktreeBasePath string) *GitService"
+      },
+      "types": {
+        "GitService": {
+          "type": "struct",
+          "fields": {},
+          "methods": {
+            "CreateWorktree": {
+              "signature": "(projectPath, sessionName, branchName, baseBranch string) string, error",
+              "receiver": "GitService",
+              "calls": [
+                "HasRemote",
+                "ListWorktrees"
+              ]
+            },
+            "RemoveWorktree": {
+              "signature": "(projectPath, worktreePath string) error",
+              "receiver": "GitService"
+            },
+            "manualWorktreeCleanup": {
+              "signature": "(projectPath, worktreePath string) error",
+              "receiver": "GitService"
+            },
+            "ListWorktrees": {
+              "signature": "(projectPath string) []WorktreeInfo, error",
+              "receiver": "GitService"
+            },
+            "parseWorktreeList": {
+              "signature": "(output string) []WorktreeInfo",
+              "receiver": "GitService"
+            },
+            "GetWorktreeStatus": {
+              "signature": "(worktreePath string) *WorktreeStatus, error",
+              "receiver": "GitService",
+              "calls": [
+                "GetCurrentBranch"
+              ]
+            },
+            "SwitchBranch": {
+              "signature": "(worktreePath, branchName string) error",
+              "receiver": "GitService"
+            },
+            "PullLatest": {
+              "signature": "(worktreePath string) error",
+              "receiver": "GitService"
+            },
+            "CleanupStaleWorktrees": {
+              "signature": "(projectPath string) error",
+              "receiver": "GitService"
+            },
+            "GetWorkingTreeDiff": {
+              "signature": "(worktreePath, baseBranch string) []DiffFile, error",
+              "receiver": "GitService"
+            },
+            "GetCurrentBranch": {
+              "signature": "(projectPath string) string, error",
+              "receiver": "GitService"
+            },
+            "RebaseWorktree": {
+              "signature": "(worktreePath, targetBranch string) error",
+              "receiver": "GitService",
+              "calls": [
+                "HasRemote"
+              ]
+            },
+            "PushBranch": {
+              "signature": "(worktreePath, localBranch, remoteBranch string) error",
+              "receiver": "GitService",
+              "calls": [
+                "HasRemote"
+              ]
+            },
+            "HasRemote": {
+              "signature": "(projectPath string) bool",
+              "receiver": "GitService"
+            },
+            "MergeBranch": {
+              "signature": "(projectPath, sessionBranch, targetBranch string) error",
+              "receiver": "GitService",
+              "calls": [
+                "HasRemote"
+              ]
+            }
+          }
+        },
+        "WorktreeInfo": {
+          "type": "struct",
+          "fields": {
+            "Path": "string",
+            "Branch": "string",
+            "Commit": "string",
+            "Bare": "bool"
+          },
+          "doc": "WorktreeInfo represents information about a Git worktree"
+        },
+        "WorktreeStatus": {
+          "type": "struct",
+          "fields": {
+            "Path": "string",
+            "Branch": "string",
+            "Commit": "string",
+            "HasUncommittedChanges": "bool",
+            "GitStatus": "string"
+          },
+          "doc": "WorktreeStatus represents the status of a Git worktree"
+        },
+        "DiffFile": {
+          "type": "struct",
+          "fields": {
+            "Path": "string",
+            "Status": "string",
+            "Additions": "int",
+            "Deletions": "int",
+            "Diff": "string",
+            "IsTruncated": "bool"
+          }
+        }
+      },
+      "variables": [
+        "cmd",
+        "worktrees",
+        "current",
+        "diffFiles",
+        "compareBase",
+        "fileStatus",
+        "fileDiff",
+        "isTruncated"
+      ],
+      "call_graph": {},
+      "package": "services"
+    },
+    "internal/services/project_service.go": {
+      "language": "go",
+      "parsed": true,
+      "imports": [
+        "fmt",
+        "os",
+        "os/exec",
+        "path/filepath",
+        "habibi-go/internal/database/repositories",
+        "habibi-go/internal/models"
+      ],
+      "functions": {
+        "NewProjectService": "(projectRepo *repositories.ProjectRepository, eventRepo *repositories.EventRepository, gitService *GitService) *ProjectService",
+        "expandPath": "(path string) string, error"
+      },
+      "types": {
+        "ProjectService": {
+          "type": "struct",
+          "fields": {},
+          "methods": {
+            "CreateProject": {
+              "signature": "(req *models.CreateProjectRequest) *models.Project, error",
+              "receiver": "ProjectService"
+            },
+            "GetProject": {
+              "signature": "(id int) *models.Project, error",
+              "receiver": "ProjectService"
+            },
+            "GetProjectByName": {
+              "signature": "(name string) *models.Project, error",
+              "receiver": "ProjectService"
+            },
+            "GetAllProjects": {
+              "signature": "() []*models.Project, error",
+              "receiver": "ProjectService"
+            },
+            "UpdateProject": {
+              "signature": "(id int, req *models.UpdateProjectRequest) *models.Project, error",
+              "receiver": "ProjectService"
+            },
+            "DeleteProject": {
+              "signature": "(id int) error",
+              "receiver": "ProjectService"
+            },
+            "GetProjectWithSessions": {
+              "signature": "(id int) *models.Project, error",
+              "receiver": "ProjectService"
+            },
+            "DiscoverProjects": {
+              "signature": "(directory string) []*models.Project, error",
+              "receiver": "ProjectService"
+            },
+            "GetProjectStats": {
+              "signature": "() map[string]interface{}, error",
+              "receiver": "ProjectService"
+            },
+            "GetProjectBranches": {
+              "signature": "(projectID int) map[string][]string, error",
+              "receiver": "ProjectService"
+            },
+            "isGitRepository": {
+              "signature": "(path string) bool",
+              "receiver": "ProjectService"
+            },
+            "initializeGitRepo": {
+              "signature": "(path string) error",
+              "receiver": "ProjectService"
+            },
+            "RunProjectStartupScript": {
+              "signature": "(id int) string, error",
+              "receiver": "ProjectService"
+            }
+          }
+        }
+      },
+      "variables": [
+        "discoveredProjects"
+      ],
+      "call_graph": {},
+      "package": "services"
+    },
+    "internal/services/ssh_service.go": {
+      "language": "go",
+      "parsed": true,
+      "imports": [
+        "bytes",
+        "fmt",
+        "io",
+        "os",
+        "path/filepath",
+        "strings",
+        "golang.org/x/crypto/ssh",
+        "habibi-go/internal/models"
+      ],
+      "functions": {
+        "NewSSHService": "() *SSHService"
+      },
+      "types": {
+        "SSHService": {
+          "type": "struct",
+          "fields": {},
+          "methods": {
+            "Connect": {
+              "signature": "(project *models.Project) error",
+              "receiver": "SSHService",
+              "calls": [
+                "ParseProjectSSHConfig"
+              ]
+            },
+            "Disconnect": {
+              "signature": "(projectID int) error",
+              "receiver": "SSHService",
+              "calls": [
+                "Close"
+              ]
+            },
+            "ExecuteSetupCommand": {
+              "signature": "(project *models.Project, worktreePath string) string, error",
+              "receiver": "SSHService",
+              "calls": [
+                "Close"
+              ]
+            },
+            "ExecuteCommand": {
+              "signature": "(projectID int, command string) string, error",
+              "receiver": "SSHService",
+              "calls": [
+                "Close"
+              ]
+            },
+            "CreateRemoteWorktree": {
+              "signature": "(project *models.Project, branchName string, worktreePath string) error",
+              "receiver": "SSHService",
+              "calls": [
+                "ExecuteCommand"
+              ]
+            },
+            "StreamClaudeOutput": {
+              "signature": "(projectID int, worktreePath string, args []string) io.ReadCloser, error",
+              "receiver": "SSHService",
+              "calls": [
+                "Close"
+              ]
+            },
+            "ParseProjectSSHConfig": {
+              "signature": "(project *models.Project) *models.ProjectConfig, error",
+              "receiver": "SSHService"
+            },
+            "parseHostPort": {
+              "signature": "(host string, port int) string, string",
+              "receiver": "SSHService"
+            },
+            "loadSSHKey": {
+              "signature": "(keyPath string) ssh.Signer, error",
+              "receiver": "SSHService"
+            },
+            "getConnection": {
+              "signature": "(project *models.Project) *SSHConnection, error",
+              "receiver": "SSHService",
+              "calls": [
+                "Connect"
+              ]
+            },
+            "prepareEnvironmentVars": {
+              "signature": "(config *models.ProjectConfig, projectPath, worktreePath string) map[string]string",
+              "receiver": "SSHService"
+            },
+            "expandVariables": {
+              "signature": "(command string, vars map[string]string) string",
+              "receiver": "SSHService"
+            }
+          }
+        },
+        "SSHConnection": {
+          "type": "struct",
+          "fields": {}
+        },
+        "sshStreamReader": {
+          "type": "struct",
+          "fields": {},
+          "methods": {
+            "Read": {
+              "signature": "(p []byte) n int, err error",
+              "receiver": "sshStreamReader",
+              "calls": [
+                "Read"
+              ]
+            },
+            "Close": {
+              "signature": "() error",
+              "receiver": "sshStreamReader",
+              "calls": [
+                "Close"
+              ]
+            }
+          }
+        }
+      },
+      "variables": [
+        "cmdBuilder",
+        "stdout",
+        "config"
+      ],
+      "call_graph": {},
+      "package": "services"
+    },
+    "internal/util/process.go": {
+      "language": "go",
+      "parsed": true,
+      "imports": [
+        "bufio",
+        "fmt",
+        "io",
+        "os",
+        "os/exec",
+        "strconv",
+        "strings",
+        "syscall",
+        "time"
+      ],
+      "functions": {
+        "NewProcessManager": {
+          "doc": "NewProcessManager creates a new ProcessManager instance",
+          "signature": "() *ProcessManager"
+        }
+      },
+      "types": {
+        "ProcessManager": {
+          "type": "struct",
+          "fields": {
+            "PID": "int",
+            "Command": "string",
+            "Args": "[]string",
+            "WorkingDir": "string",
+            "StartTime": "time.Time",
+            "Status": "string",
+            "CPUPercent": "float64",
+            "MemoryMB": "int64"
+          },
+          "methods": {
+            "StartProcess": {
+              "signature": "(command string, args []string, workingDir string) *exec.Cmd, error",
+              "receiver": "ProcessManager"
+            },
+            "GetProcessInfo": {
+              "signature": "(pid int) *ProcessInfo, error",
+              "receiver": "ProcessManager",
+              "calls": [
+                "ProcessExists"
+              ]
+            },
+            "ProcessExists": {
+              "signature": "(pid int) bool",
+              "receiver": "ProcessManager"
+            },
+            "KillProcess": {
+              "signature": "(pid int) error",
+              "receiver": "ProcessManager",
+              "calls": [
+                "ProcessExists"
+              ]
+            },
+            "KillProcessGroup": {
+              "signature": "(pid int) error",
+              "receiver": "ProcessManager",
+              "calls": [
+                "ProcessExists"
+              ]
+            },
+            "WaitForProcessExit": {
+              "signature": "(cmd *exec.Cmd, timeout time.Duration) error",
+              "receiver": "ProcessManager",
+              "calls": [
+                "KillProcessGroup"
+              ]
+            },
+            "CreatePipes": {
+              "signature": "() io.ReadCloser, io.WriteCloser, io.ReadCloser, error",
+              "receiver": "ProcessManager"
+            },
+            "StreamOutput": {
+              "signature": "(reader io.Reader, outputChan chan<- string)",
+              "receiver": "ProcessManager"
+            },
+            "getProcessCmdline": {
+              "signature": "(pid int) []string, error",
+              "receiver": "ProcessManager"
+            },
+            "getProcessWorkingDir": {
+              "signature": "(pid int) string, error",
+              "receiver": "ProcessManager"
+            },
+            "getProcessStatus": {
+              "signature": "(pid int) string, error",
+              "receiver": "ProcessManager"
+            },
+            "getProcessResourceUsage": {
+              "signature": "(pid int) float64, int64, error",
+              "receiver": "ProcessManager"
+            },
+            "MonitorProcess": {
+              "signature": "(pid int, interval time.Duration) <-chan *ProcessInfo, chan<- struct{}",
+              "receiver": "ProcessManager",
+              "calls": [
+                "GetProcessInfo",
+                "ProcessExists"
+              ]
+            }
+          }
+        }
+      },
+      "variables": [
+        "result",
+        "memoryKB"
+      ],
+      "call_graph": {},
+      "package": "util"
+    },
+    "internal/util/git.go": {
+      "language": "go",
+      "parsed": true,
+      "imports": [
+        "fmt",
+        "os",
+        "os/exec",
+        "path/filepath",
+        "strings"
+      ],
+      "functions": {
+        "NewGitUtil": {
+          "doc": "NewGitUtil creates a new GitUtil instance",
+          "signature": "() *GitUtil"
+        }
+      },
+      "types": {
+        "GitUtil": {
+          "type": "struct",
+          "fields": {},
+          "methods": {
+            "IsGitRepository": {
+              "signature": "(path string) bool",
+              "receiver": "GitUtil"
+            },
+            "GetCurrentBranch": {
+              "signature": "(repoPath string) string, error",
+              "receiver": "GitUtil"
+            },
+            "GetRemoteBranches": {
+              "signature": "(repoPath string) []string, error",
+              "receiver": "GitUtil"
+            },
+            "GetLocalBranches": {
+              "signature": "(repoPath string) []string, error",
+              "receiver": "GitUtil"
+            },
+            "BranchExists": {
+              "signature": "(repoPath, branchName string) bool, error",
+              "receiver": "GitUtil",
+              "calls": [
+                "GetLocalBranches",
+                "GetRemoteBranches"
+              ]
+            },
+            "CreateBranch": {
+              "signature": "(repoPath, branchName, baseBranch string) error",
+              "receiver": "GitUtil"
+            },
+            "CheckoutBranch": {
+              "signature": "(repoPath, branchName string) error",
+              "receiver": "GitUtil"
+            },
+            "FetchAll": {
+              "signature": "(repoPath string) error",
+              "receiver": "GitUtil"
+            },
+            "GetCommitHash": {
+              "signature": "(repoPath string) string, error",
+              "receiver": "GitUtil"
+            },
+            "GetStatus": {
+              "signature": "(repoPath string) string, error",
+              "receiver": "GitUtil"
+            },
+            "HasUncommittedChanges": {
+              "signature": "(repoPath string) bool, error",
+              "receiver": "GitUtil",
+              "calls": [
+                "GetStatus"
+              ]
+            },
+            "GetWorktreeList": {
+              "signature": "(repoPath string) []string, error",
+              "receiver": "GitUtil"
+            },
+            "ValidateRepository": {
+              "signature": "(repoPath string) error",
+              "receiver": "GitUtil",
+              "calls": [
+                "GetCurrentBranch",
+                "IsGitRepository"
+              ]
+            }
+          }
+        }
+      },
+      "variables": [
+        "branches",
+        "worktrees"
+      ],
+      "call_graph": {},
+      "package": "util"
+    },
+    "internal/util/pty_handler.go": {
+      "language": "go",
+      "parsed": true,
+      "imports": [
+        "bufio",
+        "fmt",
+        "io",
+        "os",
+        "os/exec",
+        "github.com/creack/pty"
+      ],
+      "functions": {
+        "StartProcessWithPTY": {
+          "doc": "StartProcessWithPTY starts a process with a pseudo-terminal",
+          "calls": [
+            "Start"
+          ],
+          "signature": "(cmd *exec.Cmd) *PTYProcess, error"
+        }
+      },
+      "types": {
+        "PTYProcess": {
+          "type": "struct",
+          "fields": {
+            "PTY": "*os.File",
+            "Cmd": "*exec.Cmd",
+            "InputCh": "chan",
+            "OutputCh": "chan",
+            "ErrorCh": "chan",
+            "StopCh": "chan"
+          },
+          "doc": "PTYProcess represents a process running with a PTY",
+          "methods": {
+            "Start": {
+              "signature": "()",
+              "receiver": "PTYProcess"
+            },
+            "Stop": {
+              "signature": "() error",
+              "receiver": "PTYProcess"
+            }
+          }
+        }
+      },
+      "call_graph": {},
+      "package": "util"
+    },
+    "internal/database/connection.go": {
+      "language": "go",
+      "parsed": true,
+      "imports": [
+        "database/sql",
+        "fmt",
+        "os",
+        "path/filepath",
+        "strings",
+        "modernc.org/sqlite"
+      ],
+      "functions": {
+        "New": "(dbPath string) *DB, error",
+        "createDatabaseDir": "(dbPath string) error"
+      },
+      "types": {
+        "DB": {
+          "type": "struct",
+          "fields": {},
+          "methods": {
+            "columnExists": {
+              "signature": "(table, column string) bool",
+              "receiver": "DB"
+            },
+            "tableExists": {
+              "signature": "(tableName string) bool",
+              "receiver": "DB"
+            },
+            "addColumnIfNotExists": {
+              "signature": "(table, column, columnDef string) error",
+              "receiver": "DB"
+            },
+            "RunMigrations": {
+              "signature": "() error",
+              "receiver": "DB"
+            },
+            "Close": {
+              "signature": "() error",
+              "receiver": "DB",
+              "calls": [
+                "Close"
+              ]
+            },
+            "fixChatMessagesRoleConstraint": {
+              "signature": "() error",
+              "receiver": "DB"
+            },
+            "fixSessionStatusConstraint": {
+              "signature": "() error",
+              "receiver": "DB",
+              "calls": [
+                "Close"
+              ]
+            },
+            "simplifyAgentArchitecture": {
+              "signature": "() error",
+              "receiver": "DB"
+            }
+          }
+        }
+      },
+      "variables": [
+        "count",
+        "constraintCheck",
+        "copyQuery",
+        "cid",
+        "dfltValue",
+        "tableExists"
+      ],
+      "call_graph": {},
+      "package": "database"
+    },
+    "internal/database/repositories/event_repo.go": {
+      "language": "go",
+      "parsed": true,
+      "imports": [
+        "database/sql",
+        "fmt",
+        "habibi-go/internal/models"
+      ],
+      "functions": {
+        "NewEventRepository": "(db *sql.DB) *EventRepository"
+      },
+      "types": {
+        "EventRepository": {
+          "type": "struct",
+          "fields": {},
+          "methods": {
+            "Create": {
+              "signature": "(event *models.Event) error",
+              "receiver": "EventRepository"
+            },
+            "GetByID": {
+              "signature": "(id int) *models.Event, error",
+              "receiver": "EventRepository"
+            },
+            "GetByEntity": {
+              "signature": "(entityType string, entityID int, limit int) []*models.Event, error",
+              "receiver": "EventRepository"
+            },
+            "GetRecent": {
+              "signature": "(limit int) []*models.Event, error",
+              "receiver": "EventRepository"
+            },
+            "GetByType": {
+              "signature": "(eventType string, limit int) []*models.Event, error",
+              "receiver": "EventRepository"
+            },
+            "DeleteOldEvents": {
+              "signature": "(daysOld int) error",
+              "receiver": "EventRepository"
+            },
+            "GetStats": {
+              "signature": "() map[string]interface{}, error",
+              "receiver": "EventRepository"
+            }
+          }
+        }
+      },
+      "variables": [
+        "event",
+        "dataStr",
+        "events",
+        "totalEvents",
+        "eventType",
+        "count",
+        "entityType"
+      ],
+      "call_graph": {},
+      "package": "repositories"
+    },
+    "internal/database/repositories/project_repo.go": {
+      "language": "go",
+      "parsed": true,
+      "imports": [
+        "database/sql",
+        "fmt",
+        "time",
+        "habibi-go/internal/models"
+      ],
+      "functions": {
+        "NewProjectRepository": "(db *sql.DB) *ProjectRepository"
+      },
+      "types": {
+        "ProjectRepository": {
+          "type": "struct",
+          "fields": {},
+          "methods": {
+            "Create": {
+              "signature": "(project *models.Project) error",
+              "receiver": "ProjectRepository"
+            },
+            "GetByID": {
+              "signature": "(id int) *models.Project, error",
+              "receiver": "ProjectRepository"
+            },
+            "GetByName": {
+              "signature": "(name string) *models.Project, error",
+              "receiver": "ProjectRepository"
+            },
+            "GetAll": {
+              "signature": "() []*models.Project, error",
+              "receiver": "ProjectRepository"
+            },
+            "Update": {
+              "signature": "(project *models.Project) error",
+              "receiver": "ProjectRepository"
+            },
+            "Delete": {
+              "signature": "(id int) error",
+              "receiver": "ProjectRepository"
+            },
+            "Exists": {
+              "signature": "(name string) bool, error",
+              "receiver": "ProjectRepository"
+            },
+            "GetWithSessions": {
+              "signature": "(id int) *models.Project, error",
+              "receiver": "ProjectRepository",
+              "calls": [
+                "GetByID"
+              ]
+            },
+            "GetStats": {
+              "signature": "() map[string]interface{}, error",
+              "receiver": "ProjectRepository"
+            }
+          }
+        }
+      },
+      "variables": [
+        "project",
+        "configStr",
+        "projects",
+        "count",
+        "sessions",
+        "session",
+        "totalProjects",
+        "projectsWithSessions",
+        "recentProject",
+        "recentTime"
+      ],
+      "call_graph": {},
+      "package": "repositories"
+    },
+    "internal/database/repositories/chat_message_repo_v2.go": {
+      "language": "go",
+      "parsed": true,
+      "imports": [
+        "database/sql",
+        "encoding/json",
+        "fmt",
+        "time",
+        "habibi-go/internal/models"
+      ],
+      "functions": {
+        "NewChatMessageV2Repository": {
+          "doc": "NewChatMessageV2Repository creates a new chat message repository",
+          "signature": "(db *sql.DB) *ChatMessageV2Repository"
+        }
+      },
+      "types": {
+        "ChatMessageV2Repository": {
+          "type": "struct",
+          "fields": {},
+          "methods": {
+            "Create": {
+              "signature": "(message *models.ChatMessage) error",
+              "receiver": "ChatMessageV2Repository"
+            },
+            "GetBySessionID": {
+              "signature": "(sessionID int, limit int) []*models.ChatMessage, error",
+              "receiver": "ChatMessageV2Repository"
+            },
+            "GetByID": {
+              "signature": "(id int) *models.ChatMessage, error",
+              "receiver": "ChatMessageV2Repository"
+            },
+            "UpdateContent": {
+              "signature": "(messageID int, content string) error",
+              "receiver": "ChatMessageV2Repository"
+            },
+            "DeleteBySessionID": {
+              "signature": "(sessionID int) error",
+              "receiver": "ChatMessageV2Repository"
+            }
+          }
+        }
+      },
+      "variables": [
+        "messages"
+      ],
+      "call_graph": {},
+      "package": "repositories"
+    },
+    "internal/database/repositories/session_repo.go": {
+      "language": "go",
+      "parsed": true,
+      "imports": [
+        "database/sql",
+        "fmt",
+        "habibi-go/internal/models"
+      ],
+      "functions": {
+        "NewSessionRepository": "(db *sql.DB) *SessionRepository"
+      },
+      "types": {
+        "SessionRepository": {
+          "type": "struct",
+          "fields": {},
+          "methods": {
+            "Create": {
+              "signature": "(session *models.Session) error",
+              "receiver": "SessionRepository"
+            },
+            "GetByID": {
+              "signature": "(id int) *models.Session, error",
+              "receiver": "SessionRepository"
+            },
+            "GetByProjectAndName": {
+              "signature": "(projectID int, name string) *models.Session, error",
+              "receiver": "SessionRepository"
+            },
+            "GetByProjectID": {
+              "signature": "(projectID int) []*models.Session, error",
+              "receiver": "SessionRepository"
+            },
+            "GetAll": {
+              "signature": "() []*models.Session, error",
+              "receiver": "SessionRepository"
+            },
+            "Update": {
+              "signature": "(session *models.Session) error",
+              "receiver": "SessionRepository"
+            },
+            "Delete": {
+              "signature": "(id int) error",
+              "receiver": "SessionRepository"
+            },
+            "Exists": {
+              "signature": "(projectID int, name string) bool, error",
+              "receiver": "SessionRepository"
+            },
+            "UpdateLastUsed": {
+              "signature": "(id int) error",
+              "receiver": "SessionRepository"
+            },
+            "GetActiveByProject": {
+              "signature": "(projectID int) []*models.Session, error",
+              "receiver": "SessionRepository"
+            },
+            "GetByStatus": {
+              "signature": "(status string) []*models.Session, error",
+              "receiver": "SessionRepository"
+            },
+            "GetStats": {
+              "signature": "() map[string]interface{}, error",
+              "receiver": "SessionRepository"
+            },
+            "UpdateActivityStatus": {
+              "signature": "(id int, status string) error",
+              "receiver": "SessionRepository"
+            },
+            "UpdateLastViewed": {
+              "signature": "(id int) error",
+              "receiver": "SessionRepository"
+            }
+          }
+        }
+      },
+      "variables": [
+        "session",
+        "configStr",
+        "sessions",
+        "count",
+        "totalSessions",
+        "status",
+        "activeSessions"
+      ],
+      "call_graph": {},
+      "package": "repositories"
+    },
+    "internal/database/migrations/003_add_original_branch.down.sql": {
+      "language": "sql",
+      "parsed": false
+    },
+    "internal/database/migrations/001_initial.down.sql": {
+      "language": "sql",
+      "parsed": false
+    },
+    "internal/database/migrations/003_add_original_branch.up.sql": {
+      "language": "sql",
+      "parsed": false
+    },
+    "internal/database/migrations/001_initial.up.sql": {
+      "language": "sql",
+      "parsed": false
+    },
+    "internal/database/migrations/002_add_session_activity.up.sql": {
+      "language": "sql",
+      "parsed": false
+    },
+    "internal/database/migrations/002_add_session_activity.down.sql": {
+      "language": "sql",
+      "parsed": false
+    },
+    "internal/database/migrations/simplify_agents.sql": {
+      "language": "sql",
+      "parsed": false
+    }
+  },
+  "dependency_graph": {
+    "main.go": [
+      "embed",
+      "log",
+      "os",
+      "habibi-go/cmd"
+    ],
+    "cmd/session.go": [
+      "fmt",
+      "log",
+      "os",
+      "strconv",
+      "text/tabwriter",
+      "github.com/spf13/cobra",
+      "habibi-go/internal/config",
+      "habibi-go/internal/database",
+      "habibi-go/internal/database/repositories",
+      "habibi-go/internal/models",
+      "habibi-go/internal/services"
+    ],
+    "cmd/config.go": [
+      "fmt",
+      "log",
+      "github.com/spf13/cobra",
+      "habibi-go/internal/config"
+    ],
+    "cmd/project.go": [
+      "fmt",
+      "log",
+      "os",
+      "text/tabwriter",
+      "github.com/spf13/cobra",
+      "habibi-go/internal/config",
+      "habibi-go/internal/database",
+      "habibi-go/internal/database/repositories",
+      "habibi-go/internal/models",
+      "habibi-go/internal/services"
+    ],
+    "cmd/root.go": [
+      "fmt",
+      "os",
+      "github.com/spf13/cobra",
+      "github.com/spf13/viper"
+    ],
+    "cmd/server.go": [
+      "context",
+      "embed",
+      "fmt",
+      "log",
+      "net/http",
+      "os",
+      "os/signal",
+      "syscall",
+      "github.com/gin-gonic/gin",
+      "github.com/spf13/cobra",
+      "habibi-go/internal/api",
+      "habibi-go/internal/api/handlers",
+      "habibi-go/internal/config",
+      "habibi-go/internal/database",
+      "habibi-go/internal/database/repositories",
+      "habibi-go/internal/services"
+    ],
+    "web/src/api/client.ts": [
+      "axios"
+    ],
+    "web/src/features/settings/components/NotificationSettings.tsx": [
+      "react",
+      "web/src/utils/notifications.ts"
+    ],
+    "web/src/features/sessions/components/CreateSessionModal.tsx": [
+      "react",
+      "@tanstack/react-query",
+      "web/src/api/client.ts",
+      "web/src/components/ui/Modal.tsx"
+    ],
+    "web/src/features/sessions/components/SessionView.tsx": [
+      "react",
+      "react-markdown",
+      "remark-gfm",
+      "web/src/features/assistant/components/AssistantView.tsx",
+      "web/src/features/git/components/FileDiffs.tsx",
+      "web/src/features/sessions/components/ManageSession.tsx",
+      "web/src/features/terminal/components/Terminal.tsx",
+      "web/src/features/git/hooks/useDiffStats.ts",
+      "web/src/hooks/useSessionActivity.ts"
+    ],
+    "web/src/features/sessions/components/ManageSession.tsx": [
+      "react",
+      "@tanstack/react-query",
+      "react-router-dom",
+      "web/src/api/client.ts"
+    ],
+    "web/src/features/sessions/components/SessionManager.tsx": [
+      "@tanstack/react-query",
+      "react",
+      "web/src/api/client.ts",
+      "web/src/features/todos/hooks/useSessionTodos.ts",
+      "web/src/api/websocket.ts",
+      "web/src/components/ui/DropdownMenu.tsx",
+      "web/src/features/sessions/api/sessionsApi.ts",
+      "web/src/features/sessions/components/CreateSessionModal.tsx"
+    ],
+    "web/src/features/sessions/slice/sessionsSlice.ts": [
+      "@reduxjs/toolkit",
+      "web/src/shared/types/schemas.ts",
+      "web/src/app/middleware/websocket.ts"
+    ],
+    "web/src/features/assistant/components/ClaudeChat.tsx": [
+      "@tanstack/react-query",
+      "web/src/api/websocket.ts",
+      "react-markdown",
+      "remark-gfm",
+      "web/src/utils/notifications.ts",
+      "web/src/features/todos/components/TaskDrawer.tsx",
+      "lucide-react"
+    ],
+    "web/src/features/assistant/components/AssistantView.tsx": [
+      "web/src/features/assistant/components/ClaudeChat.tsx"
+    ],
+    "web/src/features/todos/components/TodoList.tsx": [
+      "react",
+      "web/src/api/websocket.ts"
+    ],
+    "web/src/features/todos/components/TaskDrawer.tsx": [
+      "web/src/components/ui/RightDrawer.tsx",
+      "web/src/features/todos/components/TodoList.tsx"
+    ],
+    "web/src/features/todos/hooks/useSessionTodos.ts": [
+      "react",
+      "web/src/api/websocket.ts"
+    ],
+    "web/src/features/auth/components/AuthModal.tsx": [
+      "react",
+      "web/src/app/hooks.ts",
+      "web/src/features/auth/slice/authSlice.ts"
+    ],
+    "web/src/features/auth/slice/authSlice.ts": [
+      "@reduxjs/toolkit"
+    ],
+    "web/src/features/terminal/components/Terminal.tsx": [
+      "react",
+      "web/src/features/terminal/hooks/useTerminalManager.ts",
+      "web/src/api/websocket.ts"
+    ],
+    "web/src/features/terminal/hooks/useTerminalManager.ts": [
+      "react",
+      "@xterm/xterm",
+      "@xterm/addon-fit",
+      "@xterm/addon-web-links"
+    ],
+    "web/src/features/git/components/FileDiffs.tsx": [
+      "@tanstack/react-query",
+      "web/src/api/client.ts",
+      "react-syntax-highlighter",
+      "react-syntax-highlighter/dist/esm/styles/prism"
+    ],
+    "web/src/features/git/hooks/useDiffStats.ts": [
+      "@tanstack/react-query",
+      "web/src/api/client.ts"
+    ],
+    "web/src/features/projects/components/CreateProjectModal.tsx": [
+      "react",
+      "@tanstack/react-query",
+      "web/src/api/client.ts",
+      "web/src/components/ui/Modal.tsx"
+    ],
+    "web/src/features/projects/components/EditStartupScriptModal.tsx": [
+      "react",
+      "web/src/components/ui/Modal.tsx",
+      "web/src/features/projects/api/projectsApi.ts",
+      "web/src/shared/types/schemas.ts"
+    ],
+    "web/src/features/projects/components/ProjectManager.tsx": [
+      "@tanstack/react-query",
+      "react",
+      "web/src/api/client.ts",
+      "web/src/components/ui/DropdownMenu.tsx",
+      "web/src/features/projects/components/CreateProjectModal.tsx",
+      "web/src/features/projects/components/CreateSSHProjectModal.tsx",
+      "web/src/features/projects/components/EditProjectModal.tsx",
+      "web/src/features/projects/components/EditStartupScriptModal.tsx"
+    ],
+    "web/src/features/projects/components/EditProjectModal.tsx": [
+      "react",
+      "web/src/components/ui/Modal.tsx",
+      "web/src/features/projects/api/projectsApi.ts",
+      "web/src/shared/types/schemas.ts"
+    ],
+    "web/src/features/projects/components/CreateSSHProjectModal.tsx": [
+      "react",
+      "@tanstack/react-query",
+      "web/src/api/client.ts",
+      "web/src/components/ui/Modal.tsx"
+    ],
+    "web/src/features/projects/components/ProjectList.tsx": [
+      "@tanstack/react-query",
+      "react",
+      "web/src/api/client.ts",
+      "web/src/features/projects/components/AddSSHProjectForm.tsx",
+      "web/src/components/ui/DropdownMenu.tsx",
+      "web/src/features/projects/components/EditStartupScriptModal.tsx",
+      "web/src/features/projects/components/EditProjectModal.tsx"
+    ],
+    "web/src/features/projects/components/AddSSHProjectForm.tsx": [
+      "react",
+      "@tanstack/react-query",
+      "web/src/api/client.ts"
+    ],
+    "web/src/features/projects/slice/projectsSlice.ts": [
+      "@reduxjs/toolkit",
+      "web/src/shared/types/schemas.ts"
+    ],
+    "web/src/components/Layout.tsx": [
+      "react",
+      "web/src/features/settings/components/NotificationSettings.tsx",
+      "web/src/features/settings/components/DarkModeToggle.tsx"
+    ],
+    "web/src/components/ui/RightDrawer.tsx": [
+      "react"
+    ],
+    "web/src/app/hooks.ts": [
+      "react-redux"
+    ],
+    "web/src/app/App.tsx": [
+      "react",
+      "react-redux",
+      "react-router-dom",
+      "web/src/app/store.ts",
+      "web/src/app/hooks.ts",
+      "web/src/app/middleware/websocket.ts",
+      "web/src/features/auth/components/AuthModal.tsx",
+      "web/src/components/Layout.tsx",
+      "web/src/features/projects/components/ProjectManager.tsx",
+      "web/src/features/sessions/components/SessionManager.tsx",
+      "web/src/features/sessions/components/SessionView.tsx",
+      "web/src/features/auth/slice/authSlice.ts",
+      "web/src/shared/components/StoreSync.tsx"
+    ],
+    "web/src/app/middleware/websocket.ts": [
+      "@reduxjs/toolkit"
+    ],
+    "web/src/services/api/baseApi.ts": [
+      "@reduxjs/toolkit/query/react",
+      "web/src/app/store.ts",
+      "web/src/features/auth/slice/authSlice.ts",
+      "web/src/features/auth/slice/authSlice.ts"
+    ],
+    "web/src/store/index.ts": [
+      "zustand",
+      "zustand/middleware"
+    ],
+    "web/src/shared/components/StoreSync.tsx": [
+      "react",
+      "web/src/app/hooks.ts",
+      "web/src/features/projects/slice/projectsSlice.ts",
+      "web/src/features/sessions/slice/sessionsSlice.ts"
+    ],
+    "web/src/shared/hooks/useWebSocketSubscription.ts": [
+      "react",
+      "web/src/app/hooks.ts",
+      "web/src/app/middleware/websocket.ts"
+    ],
+    "web/src/hooks/useSessionActivity.ts": [
+      "react",
+      "@tanstack/react-query",
+      "web/src/api/websocket.ts"
+    ],
+    "internal/api/routes.go": [
+      "embed",
+      "io/fs",
+      "net/http",
+      "strings",
+      "habibi-go/internal/api/handlers",
+      "habibi-go/internal/api/middleware",
+      "habibi-go/internal/config",
+      "github.com/gin-gonic/gin"
+    ],
+    "internal/api/handlers/terminal.go": [
+      "fmt",
+      "io",
+      "log",
+      "net/http",
+      "os",
+      "os/exec",
+      "strconv",
+      "sync",
+      "syscall",
+      "github.com/creack/pty",
+      "github.com/gin-gonic/gin",
+      "github.com/gorilla/websocket",
+      "habibi-go/internal/services"
+    ],
+    "internal/api/handlers/sessions.go": [
+      "net/http",
+      "strconv",
+      "github.com/gin-gonic/gin",
+      "habibi-go/internal/models",
+      "habibi-go/internal/services"
+    ],
+    "internal/api/handlers/projects.go": [
+      "io/ioutil",
+      "net/http",
+      "os",
+      "path/filepath",
+      "strconv",
+      "strings",
+      "github.com/gin-gonic/gin",
+      "habibi-go/internal/models",
+      "habibi-go/internal/services"
+    ],
+    "internal/api/handlers/chat.go": [
+      "net/http",
+      "strconv",
+      "github.com/gin-gonic/gin",
+      "habibi-go/internal/database/repositories",
+      "habibi-go/internal/models"
+    ],
+    "internal/api/handlers/websocket.go": [
+      "encoding/json",
+      "fmt",
+      "log",
+      "net/http",
+      "time",
+      "github.com/gin-gonic/gin",
+      "github.com/gorilla/websocket",
+      "habibi-go/internal/services"
+    ],
+    "internal/api/middleware/logging.go": [
+      "fmt",
+      "time",
+      "github.com/gin-gonic/gin"
+    ],
+    "internal/api/middleware/cors.go": [
+      "time",
+      "github.com/gin-contrib/cors",
+      "github.com/gin-gonic/gin"
+    ],
+    "internal/api/middleware/auth.go": [
+      "crypto/subtle",
+      "net/http",
+      "github.com/gin-gonic/gin",
+      "habibi-go/internal/config"
+    ],
+    "internal/config/config.go": [
+      "fmt",
+      "os",
+      "path/filepath",
+      "strings",
+      "time",
+      "github.com/spf13/viper"
+    ],
+    "internal/models/session.go": [
+      "encoding/json",
+      "fmt",
+      "time"
+    ],
+    "internal/models/chat_message.go": [
+      "time"
+    ],
+    "internal/models/project.go": [
+      "encoding/json",
+      "fmt",
+      "time"
+    ],
+    "internal/models/event.go": [
+      "encoding/json",
+      "fmt",
+      "time"
+    ],
+    "internal/services/claude_session_service.go": [
+      "bufio",
+      "encoding/json",
+      "fmt",
+      "os/exec",
+      "strings",
+      "sync",
+      "habibi-go/internal/database/repositories",
+      "habibi-go/internal/models"
+    ],
+    "internal/services/session_service.go": [
+      "fmt",
+      "os",
+      "os/exec",
+      "strings",
+      "habibi-go/internal/database/repositories",
+      "habibi-go/internal/models"
+    ],
+    "internal/services/git_service.go": [
+      "fmt",
+      "os",
+      "os/exec",
+      "path/filepath",
+      "strconv",
+      "strings",
+      "habibi-go/internal/util"
+    ],
+    "internal/services/project_service.go": [
+      "fmt",
+      "os",
+      "os/exec",
+      "path/filepath",
+      "habibi-go/internal/database/repositories",
+      "habibi-go/internal/models"
+    ],
+    "internal/services/ssh_service.go": [
+      "bytes",
+      "fmt",
+      "io",
+      "os",
+      "path/filepath",
+      "strings",
+      "golang.org/x/crypto/ssh",
+      "habibi-go/internal/models"
+    ],
+    "internal/util/process.go": [
+      "bufio",
+      "fmt",
+      "io",
+      "os",
+      "os/exec",
+      "strconv",
+      "strings",
+      "syscall",
+      "time"
+    ],
+    "internal/util/git.go": [
+      "fmt",
+      "os",
+      "os/exec",
+      "path/filepath",
+      "strings"
+    ],
+    "internal/util/pty_handler.go": [
+      "bufio",
+      "fmt",
+      "io",
+      "os",
+      "os/exec",
+      "github.com/creack/pty"
+    ],
+    "internal/database/connection.go": [
+      "database/sql",
+      "fmt",
+      "os",
+      "path/filepath",
+      "strings",
+      "modernc.org/sqlite"
+    ],
+    "internal/database/repositories/event_repo.go": [
+      "database/sql",
+      "fmt",
+      "habibi-go/internal/models"
+    ],
+    "internal/database/repositories/project_repo.go": [
+      "database/sql",
+      "fmt",
+      "time",
+      "habibi-go/internal/models"
+    ],
+    "internal/database/repositories/chat_message_repo_v2.go": [
+      "database/sql",
+      "encoding/json",
+      "fmt",
+      "time",
+      "habibi-go/internal/models"
+    ],
+    "internal/database/repositories/session_repo.go": [
+      "database/sql",
+      "fmt",
+      "habibi-go/internal/models"
+    ]
+  },
+  "staleness_check": 1754831913.636566
+}
